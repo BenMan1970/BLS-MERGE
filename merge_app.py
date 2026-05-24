@@ -1,5 +1,5 @@
 """
-BLUESTAR MERGE v3.1 — Production-grade Streamlit application.
+BLUESTAR MERGE v3.2 — Production-grade Streamlit application.
 
 Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
 heuristic fallback, full pipeline diagnostics, and hardened against malformed
@@ -9,15 +9,22 @@ Architecture:
     Upload → Parse (cached) → Detect (registry) → Adapt → Merge → Enrich
            → Correlate → Render + Export
 
-Safety guarantees:
-    - No stage can crash the pipeline (defensive _safe_call boundaries)
-    - Hard upper bounds on file count, file size, asset/zone/event counts
-    - Deterministic adapter selection (stable scoring tie-break)
-    - Pydantic v2 strict validation with clamping rather than crashing
-    - Streamlit caching keyed on content fingerprints (deterministic)
-    - No shared mutable defaults (pydantic Field(default_factory=...))
+Hardening guarantees (v3.2):
+    - All pipeline stages defensively boundary-wrapped; no stage can crash
+      the pipeline.
+    - Hard upper bounds on file count, file size, asset/zone/event counts.
+    - Deterministic adapter selection (stable scoring + priority tie-break).
+    - Pydantic v2 strict validation; clamping rather than crashing.
+    - Streamlit cache keys are content-fingerprints (SHA-256), not raw bytes,
+      preventing GB-scale hashing on every rerun.
+    - Lambda closures explicitly bound (no late-binding bugs in loops).
+    - Deep-copy at merge ingress prevents cross-run state corruption.
+    - All exceptions logged with type, message, and a trimmed traceback;
+      never silently swallowed.
+    - Tolerant datetime parsing: ISO-8601, Unix epoch (s & ms), naive→UTC.
+    - Anchored timeframe regex (no false positives on noisy keys).
 
-Deploy: place this file as `app.py` and point Streamlit to it.
+Deploy: place this file as `app.py` and run `streamlit run app.py`.
 """
 from __future__ import annotations
 
@@ -53,8 +60,8 @@ try:
     from rapidfuzz import fuzz as _rf_fuzz
 
     _HAS_RAPIDFUZZ: Final[bool] = True
-except ImportError:  # pragma: no cover
-    _rf_fuzz = None  # type: ignore[assignment]
+except ImportError:  # pragma: no cover - optional dep
+    _rf_fuzz = None
     _HAS_RAPIDFUZZ = False
 
 T = TypeVar("T")
@@ -64,8 +71,8 @@ T = TypeVar("T")
 # ════════════════════════════════════════════════════════════════════════════
 
 MAX_FILES: Final[int] = 32
-MAX_FILE_SIZE_BYTES: Final[int] = 25 * 1024 * 1024  # 25 MB per file
-MAX_TOTAL_SIZE_BYTES: Final[int] = 100 * 1024 * 1024  # 100 MB combined
+MAX_FILE_SIZE_BYTES: Final[int] = 25 * 1024 * 1024          # 25 MB / file
+MAX_TOTAL_SIZE_BYTES: Final[int] = 100 * 1024 * 1024        # 100 MB combined
 MAX_ASSETS: Final[int] = 5_000
 MAX_ZONES_PER_ASSET: Final[int] = 64
 MAX_EVENTS_PER_ASSET: Final[int] = 128
@@ -75,11 +82,12 @@ MAX_SIGNALS_OUT: Final[int] = 10_000
 MAX_HOT_ZONES_OUT: Final[int] = 500
 MAX_CORRELATION_GROUP_SIZE: Final[int] = 50
 MAX_PROVENANCE_ENTRIES: Final[int] = 32
+MAX_DIAGNOSTICS: Final[int] = 5_000  # protect UI from runaway diag explosions
 
-SCHEMA_VERSION: Final[str] = "3.1.0"
+SCHEMA_VERSION: Final[str] = "3.2.0"
 
 # ════════════════════════════════════════════════════════════════════════════
-# LOGGING — structured, prod-ready
+# LOGGING — structured, production-ready
 # ════════════════════════════════════════════════════════════════════════════
 
 _LOG = logging.getLogger("bluestar_merge")
@@ -97,7 +105,7 @@ _LOG.propagate = False
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# DIAGNOSTICS — Result[T] carrier, never raise from pipeline stages
+# DIAGNOSTICS — Result[T] carrier; never raise from pipeline stages
 # ════════════════════════════════════════════════════════════════════════════
 
 class Severity(str, Enum):
@@ -133,17 +141,23 @@ class Result(Generic[T]):
 
     @property
     def ok(self) -> bool:
-        return self.value is not None and not self.has(Severity.ERROR, Severity.CRITICAL)
+        return self.value is not None and not self.has(
+            Severity.ERROR, Severity.CRITICAL
+        )
 
     def has(self, *sev: Severity) -> bool:
         s = set(sev)
         return any(d.severity in s for d in self.diagnostics)
 
     def add(self, d: Diagnostic) -> None:
-        self.diagnostics.append(d)
+        if len(self.diagnostics) < MAX_DIAGNOSTICS:
+            self.diagnostics.append(d)
 
     def extend(self, diags: Iterable[Diagnostic]) -> None:
-        self.diagnostics.extend(diags)
+        room = MAX_DIAGNOSTICS - len(self.diagnostics)
+        if room <= 0:
+            return
+        self.diagnostics.extend(list(diags)[:room])
 
 
 def _safe_call(
@@ -153,28 +167,38 @@ def _safe_call(
     default: T,
     severity: Severity = Severity.ERROR,
 ) -> tuple[T, Diagnostic | None]:
-    """Defensive wrapper — converts any exception into a diagnostic."""
+    """Defensive wrapper — converts ANY exception into a structured diagnostic.
+
+    The boundary catches ``BaseException`` only narrowly via ``Exception`` to
+    deliberately let ``KeyboardInterrupt``/``SystemExit`` propagate.
+    """
     try:
         return fn(), None
-    except Exception as e:  # noqa: BLE001 — boundary by design
-        tb_lines = traceback.format_exc(limit=3).splitlines()
-        _LOG.warning("safe_call boundary caught %s in %s/%s: %s", type(e).__name__, stage, code, e)
-        return default, Diagnostic(
+    except Exception as exc:
+        tb_lines = traceback.format_exc(limit=4).splitlines()
+        _LOG.warning(
+            "safe_call boundary: %s in %s/%s: %s",
+            type(exc).__name__, stage, code, exc,
+        )
+        diag = Diagnostic(
             stage=stage,
             severity=severity,
             code=code,
-            message=f"{type(e).__name__}: {e}",
-            context={"trace_tail": tb_lines[-3:]},
+            message=f"{type(exc).__name__}: {exc}",
+            context={
+                "exception_type": type(exc).__name__,
+                "trace_tail": tb_lines[-4:],
+            },
         )
+        return default, diag
 
 
 def _is_finite_number(value: Any) -> bool:
-    """True iff value is a finite (non-NaN, non-inf) number."""
+    """True iff value is a finite (non-NaN, non-inf) real number."""
     try:
         f = float(value)
     except (TypeError, ValueError):
         return False
-    # NaN != NaN; inf comparison is safe
     return f == f and f not in (float("inf"), float("-inf"))
 
 
@@ -194,9 +218,12 @@ class AssetClass(str, Enum):
 _FIAT_ISO: Final[frozenset[str]] = frozenset({
     "USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD",
     "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "TRY", "ZAR",
-    "MXN", "SGD", "HKD", "CNH", "CNY", "INR", "BRL", "RUB", "ILS", "KRW",
+    "MXN", "SGD", "HKD", "CNH", "CNY", "INR", "BRL", "RUB",
+    "ILS", "KRW",
 })
-_STABLE_QUOTES: Final[frozenset[str]] = frozenset({"USDT", "USDC", "BUSD", "DAI", "TUSD"})
+_STABLE_QUOTES: Final[frozenset[str]] = frozenset({
+    "USDT", "USDC", "BUSD", "DAI", "TUSD",
+})
 
 _METAL_HINT: Final[re.Pattern[str]] = re.compile(
     r"^(XAU|XAG|XPT|XPD|GOLD|SILVER|PLAT)", re.I
@@ -229,13 +256,13 @@ def _classify(base: str, quote: str | None) -> AssetClass:
     q = (quote or "").upper() if quote else None
     if _METAL_HINT.search(b):
         return AssetClass.METAL
-    if _CRYPTO_HINT.match(b) or (q and q in _STABLE_QUOTES):
+    if _CRYPTO_HINT.match(b) or (q is not None and q in _STABLE_QUOTES):
         return AssetClass.CRYPTO
     if _INDEX_HINT.match(b):
         return AssetClass.INDEX
     if b in _FIAT_ISO and (q is None or q in _FIAT_ISO):
         return AssetClass.FOREX
-    if q and q in _FIAT_ISO and len(b) == 3 and b.isalpha():
+    if q is not None and q in _FIAT_ISO and len(b) == 3 and b.isalpha():
         return AssetClass.FOREX
     return AssetClass.UNKNOWN
 
@@ -243,6 +270,17 @@ def _classify(base: str, quote: str | None) -> AssetClass:
 _EMPTY_SYMBOL: Final[CanonicalSymbol] = CanonicalSymbol(
     "", "", "", None, AssetClass.UNKNOWN
 )
+
+
+def _split_concatenated(token: str) -> tuple[str, str | None]:
+    """Best-effort split of a glued symbol like ``EURUSD`` or ``BTCUSDT``."""
+    for q in _STABLE_QUOTES:
+        if token.endswith(q) and len(token) > len(q):
+            return token[: -len(q)], q
+    for q in _FIAT_ISO:
+        if token.endswith(q) and len(token) > len(q):
+            return token[: -len(q)], q
+    return token, None
 
 
 def normalize_symbol(raw: Any) -> CanonicalSymbol:
@@ -255,18 +293,16 @@ def normalize_symbol(raw: Any) -> CanonicalSymbol:
     parts = [p for p in _SEP_RE.split(s) if p]
     if len(parts) >= 2:
         base, quote = parts[0], parts[1]
-        return CanonicalSymbol(s, f"{base}/{quote}", base, quote, _classify(base, quote))
+        return CanonicalSymbol(
+            s, f"{base}/{quote}", base, quote, _classify(base, quote)
+        )
 
     token = parts[0] if parts else s
-    for q in _STABLE_QUOTES:
-        if token.endswith(q) and len(token) > len(q):
-            base = token[: -len(q)]
-            return CanonicalSymbol(s, f"{base}/{q}", base, q, AssetClass.CRYPTO)
-    for q in _FIAT_ISO:
-        if token.endswith(q) and len(token) > len(q):
-            base = token[: -len(q)]
-            return CanonicalSymbol(s, f"{base}/{q}", base, q, _classify(base, q))
-
+    base, quote = _split_concatenated(token)
+    if quote is not None:
+        return CanonicalSymbol(
+            s, f"{base}/{quote}", base, quote, _classify(base, quote)
+        )
     return CanonicalSymbol(s, token, token, None, _classify(token, None))
 
 
@@ -292,7 +328,8 @@ _TF_ALIAS: Final[dict[str, Timeframe]] = {
     "5m": Timeframe.M5, "m5": Timeframe.M5,
     "15m": Timeframe.M15, "m15": Timeframe.M15,
     "30m": Timeframe.M30, "m30": Timeframe.M30,
-    "1h": Timeframe.H1, "h1": Timeframe.H1, "60m": Timeframe.H1, "hourly": Timeframe.H1,
+    "1h": Timeframe.H1, "h1": Timeframe.H1,
+    "60m": Timeframe.H1, "hourly": Timeframe.H1,
     "4h": Timeframe.H4, "h4": Timeframe.H4, "240m": Timeframe.H4,
     "d": Timeframe.D1, "d1": Timeframe.D1, "daily": Timeframe.D1,
     "day": Timeframe.D1, "1d": Timeframe.D1,
@@ -301,9 +338,12 @@ _TF_ALIAS: Final[dict[str, Timeframe]] = {
     "mn": Timeframe.MN, "monthly": Timeframe.MN, "month": Timeframe.MN,
     "1mn": Timeframe.MN,
 }
+# Anchored on word-ish boundaries to avoid false positives on noisy keys.
 _TF_EXTRACT_RE: Final[re.Pattern[str]] = re.compile(
+    r"(?:^|[^a-z0-9])"
     r"(1m|5m|15m|30m|1h|4h|1d|1w|h1|h4|d1|w1|mn|"
-    r"daily|weekly|monthly|hourly)",
+    r"daily|weekly|monthly|hourly)"
+    r"(?:[^a-z0-9]|$)",
     re.I,
 )
 
@@ -350,6 +390,40 @@ def safe_str(value: Any, *, max_len: int = 256) -> str:
     return str(value)[:max_len]
 
 
+def _parse_iso_datetime(raw: Any) -> datetime | None:
+    """Tolerant datetime parser: ISO-8601, Unix epoch (s & ms). UTC-naive."""
+    if raw is None:
+        return None
+    if isinstance(raw, datetime):
+        return raw if raw.tzinfo else raw.replace(tzinfo=timezone.utc)
+
+    # Numeric: epoch seconds or milliseconds.
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        if not _is_finite_number(raw):
+            return None
+        # Heuristic: > 1e12 → ms; otherwise s.
+        ts = float(raw)
+        if abs(ts) > 1e12:
+            ts /= 1000.0
+        try:
+            return datetime.fromtimestamp(ts, tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return None
+
+    s = str(raw).strip()
+    if not s:
+        return None
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(s)
+    except (ValueError, TypeError):
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # CANONICAL MODELS
 # ════════════════════════════════════════════════════════════════════════════
@@ -366,7 +440,7 @@ class DivergenceKind(str, Enum):
     BEAR = "Bearish"
 
 
-_BASE_CFG: Final[ConfigDict] = ConfigDict(
+BaseCfg: Final[ConfigDict] = ConfigDict(
     extra="ignore",
     validate_assignment=False,
     arbitrary_types_allowed=True,
@@ -375,7 +449,7 @@ _BASE_CFG: Final[ConfigDict] = ConfigDict(
 
 
 class RSIReading(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     timeframe: Timeframe
     value: float | None = None
     divergence: DivergenceKind = DivergenceKind.NONE
@@ -391,14 +465,14 @@ class RSIReading(BaseModel):
 
 
 class TrendBias(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     timeframe: Timeframe
     bias: str
     direction: Direction = Direction.NEUTRAL
 
 
 class SRZone(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     side: Literal["BUY", "SELL", "UNKNOWN"] = "UNKNOWN"
     level: float
     score: float = 0.0
@@ -413,7 +487,7 @@ class SRZone(BaseModel):
 
 
 class PriceContext(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     raw: str = ""
     support_level: float | None = None
     support_dist_pct: float | None = None
@@ -425,7 +499,7 @@ class PriceContext(BaseModel):
 
 
 class StructureEvent(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     signal_id: str
     kind: str
     direction: Direction
@@ -446,7 +520,7 @@ class StructureEvent(BaseModel):
 
 
 class MTFConsensus(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     pct: int = 0
     direction: Direction = Direction.NEUTRAL
     quality: str | None = None
@@ -460,8 +534,7 @@ class MTFConsensus(BaseModel):
     @field_validator("pct", mode="before")
     @classmethod
     def _clamp_pct(cls, v: Any) -> int:
-        i = safe_int(v, default=0)
-        return max(0, min(100, i))
+        return max(0, min(100, safe_int(v, default=0)))
 
     @field_validator("nc", "age_d1", mode="before")
     @classmethod
@@ -470,7 +543,7 @@ class MTFConsensus(BaseModel):
 
 
 class CanonicalAsset(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     symbol: str
     base: str = ""
     quote: str | None = None
@@ -494,24 +567,21 @@ class CanonicalAsset(BaseModel):
         )
 
     def add_provenance(self, source: str, tag: str) -> None:
-        """Safe provenance accumulation with cap to prevent unbounded growth."""
-        bucket = self.provenance.get(source)
-        if bucket is None:
-            bucket = []
-            self.provenance[source] = bucket
+        """Append a provenance tag with hard cap (prevents unbounded growth)."""
+        bucket = self.provenance.setdefault(source, [])
         if len(bucket) < MAX_PROVENANCE_ENTRIES:
             bucket.append(tag)
 
 
 class EnrichmentQuality(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     status: Literal["complete", "partial", "minimal", "empty"] = "empty"
     scanners_matched: int = 0
     scanners_total: int = 0
 
 
 class EnrichedSignal(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     event: StructureEvent
     asset: CanonicalAsset
     htf_aligned: bool = False
@@ -523,7 +593,7 @@ class EnrichedSignal(BaseModel):
 
 
 class MergeMeta(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     generated_at: datetime
     version: str = SCHEMA_VERSION
     scanners_detected: list[str] = Field(default_factory=list)
@@ -534,7 +604,7 @@ class MergeMeta(BaseModel):
 
 
 class MergeOutput(BaseModel):
-    model_config = _BASE_CFG
+    model_config = BaseCfg
     meta: MergeMeta
     assets: dict[str, CanonicalAsset]
     signals: list[EnrichedSignal]
@@ -565,13 +635,12 @@ class ScannerAdapter(ABC):
     def adapt(self, payload: Any) -> Result[list[CanonicalAsset]]: ...
 
 
-# ---- GPS adapter ------------------------------------------------------------
+# ---- GPS adapter ----------------------------------------------------------
 
 _MTF_PCT_RE: Final[re.Pattern[str]] = re.compile(r"(\d+(?:\.\d+)?)\s*%")
 _MTF_DIR_RE: Final[re.Pattern[str]] = re.compile(
     r"\b(bullish|bearish|neutral|range)\b", re.I
 )
-
 _GPS_TF_KEYS: Final[dict[str, Timeframe]] = {
     "M": Timeframe.MN, "Monthly": Timeframe.MN, "MN": Timeframe.MN,
     "W": Timeframe.W1, "Weekly": Timeframe.W1, "W1": Timeframe.W1,
@@ -591,13 +660,23 @@ def _parse_mtf_string(raw: Any) -> tuple[int, Direction]:
     if m:
         pct = max(0, min(100, safe_int(m.group(1))))
     d = _MTF_DIR_RE.search(s)
-    if d:
-        t = d.group(1).lower()
-        if t == "bullish":
-            return pct, Direction.BULLISH
-        if t == "bearish":
-            return pct, Direction.BEARISH
+    if d is None:
+        return pct, Direction.NEUTRAL
+    t = d.group(1).lower()
+    if t == "bullish":
+        return pct, Direction.BULLISH
+    if t == "bearish":
+        return pct, Direction.BEARISH
     return pct, Direction.NEUTRAL
+
+
+def _extract_gps_biases(raw: dict[str, Any]) -> dict[str, str]:
+    biases: dict[str, str] = {}
+    for k, tf in _GPS_TF_KEYS.items():
+        v = raw.get(k)
+        if v is not None:
+            biases[tf.value] = safe_str(v, max_len=64)
+    return biases
 
 
 class GPSAdapter(ScannerAdapter):
@@ -625,8 +704,10 @@ class GPSAdapter(ScannerAdapter):
 
         for idx, raw in enumerate(payload):
             if len(out) >= MAX_ASSETS:
-                res.add(Diagnostic("gps", Severity.WARNING, "cap_reached",
-                                   f"MAX_ASSETS={MAX_ASSETS}"))
+                res.add(Diagnostic(
+                    "gps", Severity.WARNING, "cap_reached",
+                    f"MAX_ASSETS={MAX_ASSETS}",
+                ))
                 break
             asset = self._build_asset(raw, idx, res)
             if asset is not None:
@@ -638,31 +719,43 @@ class GPSAdapter(ScannerAdapter):
         raw: Any, idx: int, res: Result[list[CanonicalAsset]]
     ) -> CanonicalAsset | None:
         if not isinstance(raw, dict):
-            res.add(Diagnostic("gps", Severity.DEBUG, "skip",
-                               "non-dict", {"i": idx}))
+            res.add(Diagnostic(
+                "gps", Severity.DEBUG, "skip", "non-dict", {"i": idx}
+            ))
             return None
         sym_raw = raw.get("Paire") or raw.get("pair") or raw.get("symbol")
         if not sym_raw:
-            res.add(Diagnostic("gps", Severity.WARNING, "no_symbol",
-                               "missing pair", {"i": idx}))
+            res.add(Diagnostic(
+                "gps", Severity.WARNING, "no_symbol",
+                "missing pair", {"i": idx},
+            ))
             return None
         sym = normalize_symbol(sym_raw)
         if not sym.canonical:
             return None
+
         asset = CanonicalAsset.from_symbol(sym)
+        mtf, mtf_diag = GPSAdapter._build_mtf(raw, idx)
+        if mtf_diag is not None:
+            res.add(mtf_diag)
+        if mtf is None:
+            return None
+        asset.mtf = mtf
+        asset.add_provenance("gps", "mtf")
+        return asset
 
+    @staticmethod
+    def _build_mtf(
+        raw: dict[str, Any], idx: int
+    ) -> tuple[MTFConsensus | None, Diagnostic | None]:
         pct, direction = _parse_mtf_string(raw.get("MTF", ""))
-        biases: dict[str, str] = {}
-        for k, tf in _GPS_TF_KEYS.items():
-            v = raw.get(k)
-            if v is not None:
-                biases[tf.value] = safe_str(v, max_len=64)
-
+        biases = _extract_gps_biases(raw)
+        quality_raw = raw.get("Quality")
         try:
-            asset.mtf = MTFConsensus(
+            mtf = MTFConsensus(
                 pct=pct,
                 direction=direction,
-                quality=safe_str(raw["Quality"], max_len=8) if raw.get("Quality") else None,
+                quality=safe_str(quality_raw, max_len=8) if quality_raw else None,
                 nc=safe_int(raw.get("NC")),
                 age_d1=safe_int(raw.get("Age D1") or raw.get("AgeD1")),
                 atr_h1=safe_float(raw.get("ATR H1")),
@@ -670,23 +763,28 @@ class GPSAdapter(ScannerAdapter):
                 atr_daily=safe_float(raw.get("ATR Daily") or raw.get("ATR D1")),
                 biases=biases,
             )
-        except Exception as e:  # noqa: BLE001
-            res.add(Diagnostic("gps", Severity.WARNING, "mtf_invalid",
-                               f"{type(e).__name__}: {e}", {"i": idx}))
-            return None
+        except Exception as exc:
+            return None, Diagnostic(
+                "gps", Severity.WARNING, "mtf_invalid",
+                f"{type(exc).__name__}: {exc}", {"i": idx},
+            )
+        return mtf, None
 
-        asset.add_provenance("gps", "mtf")
-        return asset
 
-
-# ---- RSI adapter ------------------------------------------------------------
+# ---- RSI adapter ----------------------------------------------------------
 
 _DIV_MAP: Final[dict[str, DivergenceKind]] = {
-    "none": DivergenceKind.NONE, "aucune": DivergenceKind.NONE, "no": DivergenceKind.NONE,
-    "bull": DivergenceKind.BULL, "bullish": DivergenceKind.BULL,
-    "haussiere": DivergenceKind.BULL, "haussière": DivergenceKind.BULL,
-    "bear": DivergenceKind.BEAR, "bearish": DivergenceKind.BEAR,
-    "baissiere": DivergenceKind.BEAR, "baissière": DivergenceKind.BEAR,
+    "none": DivergenceKind.NONE,
+    "aucune": DivergenceKind.NONE,
+    "no": DivergenceKind.NONE,
+    "bull": DivergenceKind.BULL,
+    "bullish": DivergenceKind.BULL,
+    "haussiere": DivergenceKind.BULL,
+    "haussière": DivergenceKind.BULL,
+    "bear": DivergenceKind.BEAR,
+    "bearish": DivergenceKind.BEAR,
+    "baissiere": DivergenceKind.BEAR,
+    "baissière": DivergenceKind.BEAR,
 }
 
 
@@ -694,6 +792,53 @@ def _norm_div(v: Any) -> DivergenceKind:
     if v is None:
         return DivergenceKind.NONE
     return _DIV_MAP.get(str(v).strip().lower(), DivergenceKind.NONE)
+
+
+def _extract_nested_rsi(tfs: dict[str, Any]) -> list[RSIReading]:
+    readings: list[RSIReading] = []
+    for k, v in tfs.items():
+        tf = parse_timeframe(k)
+        if tf is Timeframe.UNKNOWN or not isinstance(v, dict):
+            continue
+        readings.append(RSIReading(
+            timeframe=tf,
+            value=safe_float(v.get("rsi") or v.get("value")),
+            divergence=_norm_div(v.get("div") or v.get("divergence")),
+        ))
+    return readings
+
+
+def _extract_flat_rsi(raw: dict[str, Any]) -> list[RSIReading]:
+    readings: list[RSIReading] = []
+    seen: set[Timeframe] = set()
+    for k, v in raw.items():
+        if not isinstance(k, str):
+            continue
+        kl = k.lower()
+        if not (kl.startswith("rsi") or kl.startswith("rsi_")):
+            continue
+        tf = parse_timeframe(kl.replace("rsi", "").lstrip("_"))
+        if tf is Timeframe.UNKNOWN or tf in seen:
+            continue
+        seen.add(tf)
+        div_val = _find_matching_div(raw, tf)
+        readings.append(RSIReading(
+            timeframe=tf,
+            value=safe_float(v),
+            divergence=_norm_div(div_val),
+        ))
+    return readings
+
+
+def _find_matching_div(raw: dict[str, Any], tf: Timeframe) -> Any:
+    for kk, vv in raw.items():
+        if (
+            isinstance(kk, str)
+            and kk.lower().startswith("div")
+            and parse_timeframe(kk) is tf
+        ):
+            return vv
+    return None
 
 
 class RSIAdapter(ScannerAdapter):
@@ -708,7 +853,8 @@ class RSIAdapter(ScannerAdapter):
         if not isinstance(sample, dict):
             return AdapterMatch(0.0, "non-dict")
         keys_lc = {k.lower() for k in sample.keys() if isinstance(k, str)}
-        if not ({"pair", "devises", "symbol", "instrument", "paire"} & keys_lc):
+        symbol_keys = {"pair", "devises", "symbol", "instrument", "paire"}
+        if not (symbol_keys & keys_lc):
             return AdapterMatch(0.0, "no symbol key")
         if "timeframes" in keys_lc and isinstance(sample.get("timeframes"), dict):
             return AdapterMatch(0.9, "nested timeframes")
@@ -737,8 +883,10 @@ class RSIAdapter(ScannerAdapter):
 
         for idx, raw in enumerate(items):
             if len(out) >= MAX_ASSETS:
-                res.add(Diagnostic("rsi", Severity.WARNING, "cap_reached",
-                                   f"MAX_ASSETS={MAX_ASSETS}"))
+                res.add(Diagnostic(
+                    "rsi", Severity.WARNING, "cap_reached",
+                    f"MAX_ASSETS={MAX_ASSETS}",
+                ))
                 break
             asset = self._build_asset(raw, idx, res)
             if asset is not None:
@@ -751,11 +899,18 @@ class RSIAdapter(ScannerAdapter):
     ) -> CanonicalAsset | None:
         if not isinstance(raw, dict):
             return None
-        sym_raw = (raw.get("pair") or raw.get("Devises") or raw.get("Paire")
-                   or raw.get("symbol") or raw.get("instrument"))
+        sym_raw = (
+            raw.get("pair")
+            or raw.get("Devises")
+            or raw.get("Paire")
+            or raw.get("symbol")
+            or raw.get("instrument")
+        )
         if not sym_raw:
-            res.add(Diagnostic("rsi", Severity.WARNING, "no_symbol",
-                               "missing pair", {"i": idx}))
+            res.add(Diagnostic(
+                "rsi", Severity.WARNING, "no_symbol",
+                "missing pair", {"i": idx},
+            ))
             return None
         sym = normalize_symbol(sym_raw)
         if not sym.canonical:
@@ -768,46 +923,13 @@ class RSIAdapter(ScannerAdapter):
 
     @staticmethod
     def _extract_readings(raw: dict[str, Any]) -> list[RSIReading]:
-        readings: list[RSIReading] = []
         tfs = raw.get("timeframes")
         if isinstance(tfs, dict):
-            for k, v in tfs.items():
-                tf = parse_timeframe(k)
-                if tf is Timeframe.UNKNOWN or not isinstance(v, dict):
-                    continue
-                readings.append(RSIReading(
-                    timeframe=tf,
-                    value=safe_float(v.get("rsi") or v.get("value")),
-                    divergence=_norm_div(v.get("div") or v.get("divergence")),
-                ))
-            return readings
-
-        seen: set[Timeframe] = set()
-        for k, v in raw.items():
-            if not isinstance(k, str):
-                continue
-            kl = k.lower()
-            if not (kl.startswith("rsi") or kl.startswith("rsi_")):
-                continue
-            tf = parse_timeframe(kl.replace("rsi", "").lstrip("_"))
-            if tf is Timeframe.UNKNOWN or tf in seen:
-                continue
-            seen.add(tf)
-            div_key = next(
-                (kk for kk in raw if isinstance(kk, str)
-                 and kk.lower().startswith("div")
-                 and parse_timeframe(kk) is tf),
-                None,
-            )
-            readings.append(RSIReading(
-                timeframe=tf,
-                value=safe_float(v),
-                divergence=_norm_div(raw.get(div_key) if div_key else None),
-            ))
-        return readings
+            return _extract_nested_rsi(tfs)
+        return _extract_flat_rsi(raw)
 
 
-# ---- S/R adapter ------------------------------------------------------------
+# ---- S/R adapter ----------------------------------------------------------
 
 _SUP_RE: Final[re.Pattern[str]] = re.compile(
     r"(SUR\s+support|S\s+proche|support)[:\s]+([\d.]+)\s*\(([-+]?[\d.]+)\s*%\)",
@@ -826,6 +948,82 @@ _STATUS_COEFF: Final[dict[str, float]] = {
     "tested": 0.8,
     "role reverse": 0.6,
 }
+
+
+def _parse_side(raw: Any) -> Literal["BUY", "SELL", "UNKNOWN"]:
+    sig = str(raw).upper()
+    if "BUY" in sig:
+        return "BUY"
+    if "SELL" in sig:
+        return "SELL"
+    return "UNKNOWN"
+
+
+def _parse_alert(raw: Any) -> str:
+    alert = str(raw or "").upper()
+    if "CHAUDE" in alert or "HOT" in alert:
+        return "ZONE CHAUDE"
+    if "PROCHE" in alert or "NEAR" in alert:
+        return "Proche"
+    return ""
+
+
+def _parse_tf_list(tf_raw: Any) -> list[Timeframe]:
+    tf_list: list[Timeframe] = []
+    if isinstance(tf_raw, list):
+        iterable: Iterable[Any] = tf_raw
+    else:
+        iterable = re.split(r"[+,/]", str(tf_raw))
+    for tok in iterable:
+        tf = parse_timeframe(str(tok).strip())
+        if tf is not Timeframe.UNKNOWN:
+            tf_list.append(tf)
+    return tf_list
+
+
+def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
+    level = safe_float(z.get("level"))
+    if level is None or level <= 0:
+        return None
+    score = safe_float(z.get("score")) or 0.0
+    dist = safe_float(z.get("distance_pct"))
+    if dist is None:
+        dist = 999.0
+    status = safe_str(z.get("status", "Unknown"), max_len=32)
+    coeff = _STATUS_COEFF.get(status.lower(), 0.8)
+    tf_list = _parse_tf_list(z.get("timeframes", ""))
+    return SRZone(
+        side=_parse_side(z.get("signal", "")),
+        level=round(level, 5),
+        score=round(score, 2),
+        weighted_score=round(score * coeff, 2),
+        status=status,
+        distance_pct=round(dist, 3),
+        alert=_parse_alert(z.get("alert", "")),
+        timeframes=tf_list,
+        has_weekly=Timeframe.W1 in tf_list,
+        has_daily=Timeframe.D1 in tf_list,
+        has_h4=Timeframe.H4 in tf_list,
+    )
+
+
+def _parse_price_context(raw: Any) -> PriceContext:
+    ctx = PriceContext(raw=safe_str(raw, max_len=512))
+    s = ctx.raw
+    if not s or _INTER_RE.search(s):
+        ctx.is_intermediate = True
+        return ctx
+    m = _SUP_RE.search(s)
+    if m:
+        ctx.support_tag = m.group(1).strip()
+        ctx.support_level = safe_float(m.group(2))
+        ctx.support_dist_pct = safe_float(m.group(3))
+    m = _RES_RE.search(s)
+    if m:
+        ctx.resistance_tag = m.group(1).strip()
+        ctx.resistance_level = safe_float(m.group(2))
+        ctx.resistance_dist_pct = safe_float(m.group(3))
+    return ctx
 
 
 class SRAdapter(ScannerAdapter):
@@ -864,8 +1062,10 @@ class SRAdapter(ScannerAdapter):
 
         for idx, raw in enumerate(assets):
             if len(out) >= MAX_ASSETS:
-                res.add(Diagnostic("sr", Severity.WARNING, "cap_reached",
-                                   f"MAX_ASSETS={MAX_ASSETS}"))
+                res.add(Diagnostic(
+                    "sr", Severity.WARNING, "cap_reached",
+                    f"MAX_ASSETS={MAX_ASSETS}",
+                ))
                 break
             asset = self._build_asset(raw, idx, res)
             if asset is not None:
@@ -880,127 +1080,40 @@ class SRAdapter(ScannerAdapter):
             return None
         sym_raw = raw.get("symbol") or raw.get("pair") or raw.get("Paire")
         if not sym_raw:
-            res.add(Diagnostic("sr", Severity.WARNING, "no_symbol",
-                               "missing", {"i": idx}))
+            res.add(Diagnostic(
+                "sr", Severity.WARNING, "no_symbol",
+                "missing", {"i": idx},
+            ))
             return None
         sym = normalize_symbol(sym_raw)
         if not sym.canonical:
             return None
         asset = CanonicalAsset.from_symbol(sym)
-        asset.price_context = SRAdapter._parse_ctx(raw.get("price_context", ""))
+        asset.price_context = _parse_price_context(raw.get("price_context", ""))
 
-        zones_raw = raw.get("zones", [])
-        zones: list[SRZone] = []
-        if isinstance(zones_raw, list):
-            for z in zones_raw:
-                if len(zones) >= MAX_ZONES_PER_ASSET:
-                    break
-                if not isinstance(z, dict):
-                    continue
-                parsed = SRAdapter._parse_zone(z)
-                if parsed is not None:
-                    zones.append(parsed)
-        zones.sort(key=lambda z: z.distance_pct)
+        zones = SRAdapter._collect_zones(raw.get("zones", []))
         asset.zones = zones
         asset.add_provenance("sr", f"{len(zones)}zones")
         return asset
 
     @staticmethod
-    def _parse_ctx(raw: Any) -> PriceContext:
-        ctx = PriceContext(raw=safe_str(raw, max_len=512))
-        s = ctx.raw
-        if not s or _INTER_RE.search(s):
-            ctx.is_intermediate = True
-            return ctx
-        m = _SUP_RE.search(s)
-        if m:
-            ctx.support_tag = m.group(1).strip()
-            ctx.support_level = safe_float(m.group(2))
-            ctx.support_dist_pct = safe_float(m.group(3))
-        m = _RES_RE.search(s)
-        if m:
-            ctx.resistance_tag = m.group(1).strip()
-            ctx.resistance_level = safe_float(m.group(2))
-            ctx.resistance_dist_pct = safe_float(m.group(3))
-        return ctx
-
-    @staticmethod
-    def _parse_zone(z: dict[str, Any]) -> SRZone | None:
-        level = safe_float(z.get("level"))
-        if level is None or level <= 0:
-            return None
-        score = safe_float(z.get("score")) or 0.0
-        dist = safe_float(z.get("distance_pct"))
-        dist = 999.0 if dist is None else dist
-        status = safe_str(z.get("status", "Unknown"), max_len=32)
-        coeff = _STATUS_COEFF.get(status.lower(), 0.8)
-        tf_list = SRAdapter._parse_tf_list(z.get("timeframes", ""))
-        side = SRAdapter._parse_side(z.get("signal", ""))
-        alert = SRAdapter._parse_alert(z.get("alert", ""))
-
-        return SRZone(
-            side=side,
-            level=round(level, 5),
-            score=round(score, 2),
-            weighted_score=round(score * coeff, 2),
-            status=status,
-            distance_pct=round(dist, 3),
-            alert=alert,
-            timeframes=tf_list,
-            has_weekly=Timeframe.W1 in tf_list,
-            has_daily=Timeframe.D1 in tf_list,
-            has_h4=Timeframe.H4 in tf_list,
-        )
-
-    @staticmethod
-    def _parse_tf_list(tf_raw: Any) -> list[Timeframe]:
-        tf_list: list[Timeframe] = []
-        if isinstance(tf_raw, list):
-            iterable: Iterable[Any] = tf_raw
-        else:
-            iterable = re.split(r"[+,/]", str(tf_raw))
-        for tok in iterable:
-            tf = parse_timeframe(str(tok).strip())
-            if tf is not Timeframe.UNKNOWN:
-                tf_list.append(tf)
-        return tf_list
-
-    @staticmethod
-    def _parse_side(raw: Any) -> Literal["BUY", "SELL", "UNKNOWN"]:
-        sig = str(raw).upper()
-        if "BUY" in sig:
-            return "BUY"
-        if "SELL" in sig:
-            return "SELL"
-        return "UNKNOWN"
-
-    @staticmethod
-    def _parse_alert(raw: Any) -> str:
-        alert = str(raw or "").upper()
-        if "CHAUDE" in alert or "HOT" in alert:
-            return "ZONE CHAUDE"
-        if "PROCHE" in alert or "NEAR" in alert:
-            return "Proche"
-        return ""
+    def _collect_zones(zones_raw: Any) -> list[SRZone]:
+        zones: list[SRZone] = []
+        if not isinstance(zones_raw, list):
+            return zones
+        for z in zones_raw:
+            if len(zones) >= MAX_ZONES_PER_ASSET:
+                break
+            if not isinstance(z, dict):
+                continue
+            parsed = _build_zone_from_raw(z)
+            if parsed is not None:
+                zones.append(parsed)
+        zones.sort(key=lambda z: z.distance_pct)
+        return zones
 
 
-# ---- CHoCH adapter ----------------------------------------------------------
-
-def _parse_iso_datetime(raw: Any) -> datetime | None:
-    """Tolerant ISO-8601 parser; returns None on failure."""
-    if raw is None:
-        return None
-    s = str(raw).strip()
-    if not s:
-        return None
-    # Normalize trailing Z to +00:00
-    if s.endswith("Z"):
-        s = s[:-1] + "+00:00"
-    try:
-        return datetime.fromisoformat(s)
-    except (ValueError, TypeError):
-        return None
-
+# ---- CHoCH adapter ---------------------------------------------------------
 
 def _parse_direction_text(raw: Any) -> Direction:
     s = str(raw or "").lower()
@@ -1009,6 +1122,14 @@ def _parse_direction_text(raw: Any) -> Direction:
     if "bear" in s:
         return Direction.BEARISH
     return Direction.NEUTRAL
+
+
+def _maybe_str(raw: dict[str, Any], key: str, max_len: int = 32) -> str | None:
+    v = raw.get(key)
+    if v is None:
+        return None
+    s = safe_str(v, max_len=max_len)
+    return s if s else None
 
 
 class CHoCHAdapter(ScannerAdapter):
@@ -1024,15 +1145,19 @@ class CHoCHAdapter(ScannerAdapter):
         sample = sigs[0]
         if not isinstance(sample, dict):
             return AdapterMatch(0.0, "non-dict signal")
+        return AdapterMatch(self._signature_score(sample), "choch signature")
+
+    @staticmethod
+    def _signature_score(sample: dict[str, Any]) -> float:
         keys = set(sample.keys())
         score = 0.3
-        if "type" in keys or "is_choch" in keys or "kind" in keys:
+        if {"type", "is_choch", "kind"} & keys:
             score += 0.3
         if "direction" in keys:
             score += 0.2
         if "confluence_score" in keys:
             score += 0.2
-        return AdapterMatch(min(score, 1.0), "choch signature")
+        return min(score, 1.0)
 
     def adapt(self, payload: Any) -> Result[list[CanonicalAsset]]:
         out: list[CanonicalAsset] = []
@@ -1047,11 +1172,13 @@ class CHoCHAdapter(ScannerAdapter):
 
         by_sym: dict[str, CanonicalAsset] = {}
         for idx, raw in enumerate(sigs):
-            self._ingest_signal(raw, idx, by_sym, res)
             if len(by_sym) >= MAX_ASSETS:
-                res.add(Diagnostic("choch", Severity.WARNING, "cap_reached",
-                                   f"MAX_ASSETS={MAX_ASSETS}"))
+                res.add(Diagnostic(
+                    "choch", Severity.WARNING, "cap_reached",
+                    f"MAX_ASSETS={MAX_ASSETS}",
+                ))
                 break
+            self._ingest_signal(raw, idx, by_sym, res)
         out.extend(by_sym.values())
         return res
 
@@ -1064,11 +1191,15 @@ class CHoCHAdapter(ScannerAdapter):
     ) -> None:
         if not isinstance(raw, dict):
             return
-        sym_raw = (raw.get("pair") or raw.get("symbol")
-                   or raw.get("pair_oanda") or raw.get("Paire"))
+        sym_raw = (
+            raw.get("pair") or raw.get("symbol")
+            or raw.get("pair_oanda") or raw.get("Paire")
+        )
         if not sym_raw:
-            res.add(Diagnostic("choch", Severity.WARNING, "no_symbol",
-                               "missing", {"i": idx}))
+            res.add(Diagnostic(
+                "choch", Severity.WARNING, "no_symbol",
+                "missing", {"i": idx},
+            ))
             return
         sym = normalize_symbol(sym_raw)
         if not sym.canonical:
@@ -1093,16 +1224,22 @@ class CHoCHAdapter(ScannerAdapter):
         ts_raw = raw.get("signal_time") or raw.get("timestamp")
         ts = _parse_iso_datetime(ts_raw)
         if ts_raw and ts is None:
-            res.add(Diagnostic("choch", Severity.DEBUG, "bad_time",
-                               "unparseable signal_time",
-                               {"v": safe_str(ts_raw, max_len=40)}))
+            res.add(Diagnostic(
+                "choch", Severity.DEBUG, "bad_time",
+                "unparseable signal_time",
+                {"v": safe_str(ts_raw, max_len=40)},
+            ))
         try:
             return StructureEvent(
                 signal_id=safe_str(
-                    raw.get("signal_id") or raw.get("id") or f"auto_{idx}_{symbol}",
+                    raw.get("signal_id") or raw.get("id")
+                    or f"auto_{idx}_{symbol}",
                     max_len=128,
                 ),
-                kind=safe_str(raw.get("type") or raw.get("kind") or "CHoCH", max_len=32),
+                kind=safe_str(
+                    raw.get("type") or raw.get("kind") or "CHoCH",
+                    max_len=32,
+                ),
                 direction=_parse_direction_text(raw.get("direction")),
                 timeframe=parse_timeframe(raw.get("timeframe") or raw.get("tf")),
                 level=safe_float(raw.get("level")),
@@ -1113,20 +1250,22 @@ class CHoCHAdapter(ScannerAdapter):
                 signal_time=ts,
                 distance_pct=safe_float(raw.get("distance_pct")),
                 distance_atr_multiple=safe_float(raw.get("distance_atr_multiple")),
-                volatility=safe_str(raw["volatility"], max_len=32) if raw.get("volatility") else None,
-                force=safe_str(raw["force"], max_len=32) if raw.get("force") else None,
-                bb_regime=safe_str(raw["bb_regime"], max_len=32) if raw.get("bb_regime") else None,
-                session=safe_str(raw["session"], max_len=32) if raw.get("session") else None,
+                volatility=_maybe_str(raw, "volatility"),
+                force=_maybe_str(raw, "force"),
+                bb_regime=_maybe_str(raw, "bb_regime"),
+                session=_maybe_str(raw, "session"),
                 candles_elapsed=safe_int(raw.get("candles_elapsed")),
             )
-        except Exception as e:  # noqa: BLE001
-            res.add(Diagnostic("choch", Severity.WARNING, "event_invalid",
-                               f"{type(e).__name__}: {e}",
-                               {"i": idx, "sym": symbol}))
+        except Exception as exc:
+            res.add(Diagnostic(
+                "choch", Severity.WARNING, "event_invalid",
+                f"{type(exc).__name__}: {exc}",
+                {"i": idx, "sym": symbol},
+            ))
             return None
 
 
-# ---- Heuristic fallback ----------------------------------------------------
+# ---- Heuristic fallback ---------------------------------------------------
 
 _SYMBOL_HINTS: Final[tuple[str, ...]] = (
     "pair", "symbol", "instrument", "ticker", "devises", "paire", "asset",
@@ -1202,30 +1341,36 @@ class HeuristicAdapter(ScannerAdapter):
             asset = self._build_asset(raw)
             if asset is not None:
                 out.append(asset)
-        res.add(Diagnostic("heuristic", Severity.INFO, "introspected",
-                           f"extracted {len(out)} assets"))
+        res.add(Diagnostic(
+            "heuristic", Severity.INFO, "introspected",
+            f"extracted {len(out)} assets",
+        ))
         return res
 
     @staticmethod
     def _build_asset(raw: Any) -> CanonicalAsset | None:
         if not isinstance(raw, dict):
             return None
-        keys = list(raw.keys())
-        sym_key: str | None = None
-        for hint in _SYMBOL_HINTS:
-            k = _best_fuzzy_key(keys, hint, 80)
-            if k is not None:
-                sym_key = k
-                break
+        sym_key = HeuristicAdapter._find_symbol_key(raw)
         if sym_key is None:
             return None
         sym = normalize_symbol(raw[sym_key])
         if not sym.canonical:
             return None
         asset = CanonicalAsset.from_symbol(sym)
-        asset.rsi = HeuristicAdapter._extract_rsi(raw)[:MAX_RSI_READINGS_PER_ASSET]
+        readings = HeuristicAdapter._extract_rsi(raw)
+        asset.rsi = readings[:MAX_RSI_READINGS_PER_ASSET]
         asset.add_provenance("heuristic", "introspected")
         return asset
+
+    @staticmethod
+    def _find_symbol_key(raw: dict[str, Any]) -> str | None:
+        keys = list(raw.keys())
+        for hint in _SYMBOL_HINTS:
+            k = _best_fuzzy_key(keys, hint, 80)
+            if k is not None:
+                return k
+        return None
 
     @staticmethod
     def _extract_rsi(raw: dict[str, Any]) -> list[RSIReading]:
@@ -1234,14 +1379,7 @@ class HeuristicAdapter(ScannerAdapter):
         for k, v in raw.items():
             if not isinstance(k, str) or "rsi" not in k.lower():
                 continue
-            if isinstance(v, dict):
-                val = safe_float(v.get("rsi") or v.get("value"))
-                tf = parse_timeframe(k)
-                if tf is Timeframe.UNKNOWN:
-                    tf = parse_timeframe(v.get("tf") or v.get("timeframe"))
-            else:
-                val = safe_float(v)
-                tf = parse_timeframe(k)
+            val, tf = HeuristicAdapter._rsi_value_and_tf(k, v)
             if val is None or val < 0 or val > 100:
                 continue
             if tf is Timeframe.UNKNOWN or tf in seen:
@@ -1250,9 +1388,21 @@ class HeuristicAdapter(ScannerAdapter):
             readings.append(RSIReading(timeframe=tf, value=val))
         return readings
 
+    @staticmethod
+    def _rsi_value_and_tf(
+        key: str, value: Any
+    ) -> tuple[float | None, Timeframe]:
+        if isinstance(value, dict):
+            val = safe_float(value.get("rsi") or value.get("value"))
+            tf = parse_timeframe(key)
+            if tf is Timeframe.UNKNOWN:
+                tf = parse_timeframe(value.get("tf") or value.get("timeframe"))
+            return val, tf
+        return safe_float(value), parse_timeframe(key)
+
 
 # ════════════════════════════════════════════════════════════════════════════
-# REGISTRY
+# REGISTRY — deterministic adapter selection
 # ════════════════════════════════════════════════════════════════════════════
 
 @dataclass(slots=True)
@@ -1279,48 +1429,66 @@ class ScannerRegistry:
 
     def detect(self, payload: Any) -> DetectionResult:
         best = DetectionResult(None, 0.0, "no match")
-        for a in self._adapters:
-            m, diag = _safe_call(
-                f"registry.detect.{a.name}", "detect_crash",
-                lambda adapter=a: adapter.detect(payload),
-                AdapterMatch(0.0, "crash"),
-                severity=Severity.WARNING,
-            )
-            if diag is not None:
-                _LOG.warning("adapter %s.detect crashed", a.name)
+        for adapter in self._adapters:
+            match = self._safe_detect(adapter, payload)
+            if match is None:
                 continue
-            # Stable selection: strictly greater score wins;
-            # on equal score, higher priority wins (deterministic).
-            if m.score > best.score or (
-                m.score == best.score
-                and best.adapter is not None
-                and a.priority > best.adapter.priority
-            ):
-                best = DetectionResult(a, m.score, m.reason)
+            if self._is_better(match, adapter, best):
+                best = DetectionResult(adapter, match.score, match.reason)
 
         if best.score < self._FALLBACK_THRESHOLD and self._fallback is not None:
-            fb, _ = _safe_call(
-                "registry.detect.fallback", "fallback_crash",
-                lambda: self._fallback.detect(payload) if self._fallback else AdapterMatch(0.0, ""),
-                AdapterMatch(0.4, "fallback default"),
-                severity=Severity.WARNING,
-            )
-            if fb.score > best.score:
-                return DetectionResult(self._fallback, fb.score, "fallback")
+            fb_match = self._safe_detect(self._fallback, payload)
+            if fb_match is not None and fb_match.score > best.score:
+                return DetectionResult(
+                    self._fallback, fb_match.score, "fallback"
+                )
         return best
+
+    @staticmethod
+    def _safe_detect(
+        adapter: ScannerAdapter, payload: Any
+    ) -> AdapterMatch | None:
+        match, diag = _safe_call(
+            f"registry.detect.{adapter.name}", "detect_crash",
+            lambda a=adapter, p=payload: a.detect(p),
+            AdapterMatch(0.0, "crash"),
+            severity=Severity.WARNING,
+        )
+        if diag is not None:
+            _LOG.warning("adapter %s.detect crashed", adapter.name)
+            return None
+        return match
+
+    @staticmethod
+    def _is_better(
+        match: AdapterMatch,
+        adapter: ScannerAdapter,
+        best: DetectionResult,
+    ) -> bool:
+        if match.score > best.score:
+            return True
+        if (
+            match.score == best.score
+            and best.adapter is not None
+            and adapter.priority > best.adapter.priority
+        ):
+            return True
+        return False
 
     def adapt(self, payload: Any) -> tuple[str, Result[list[CanonicalAsset]]]:
         det = self.detect(payload)
         if det.adapter is None:
             r: Result[list[CanonicalAsset]] = Result(value=[])
-            r.add(Diagnostic("registry", Severity.ERROR, "no_adapter",
-                             "no adapter matched", {"reason": det.reason}))
+            r.add(Diagnostic(
+                "registry", Severity.ERROR, "no_adapter",
+                "no adapter matched", {"reason": det.reason},
+            ))
             return "unknown", r
 
         adapter = det.adapter
         result, crash_diag = _safe_call(
             f"registry.adapt.{adapter.name}", "adapter_crash",
-            lambda: adapter.adapt(payload),
+            lambda a=adapter, p=payload: a.adapt(p),
             Result(value=cast(list[CanonicalAsset], [])),
             severity=Severity.ERROR,
         )
@@ -1337,10 +1505,12 @@ class ScannerRegistry:
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# MERGE ENGINE — decomposed for clarity and safety
+# MERGE ENGINE
 # ════════════════════════════════════════════════════════════════════════════
 
 class MergeEngine:
+    """Deterministic, defensive merger of partial asset groups into a canon."""
+
     def merge(
         self, partial_groups: list[list[CanonicalAsset]]
     ) -> Result[dict[str, CanonicalAsset]]:
@@ -1349,36 +1519,53 @@ class MergeEngine:
         collisions: dict[str, int] = defaultdict(int)
 
         for group in partial_groups:
-            for asset in group:
-                if len(merged) >= MAX_ASSETS and asset.symbol not in merged:
-                    res.add(Diagnostic("merge", Severity.WARNING, "cap_reached",
-                                       f"MAX_ASSETS={MAX_ASSETS}"))
-                    return res
-                key = asset.symbol
-                if not key:
-                    res.add(Diagnostic("merge", Severity.WARNING, "empty_symbol", "dropped"))
-                    continue
-                existing = merged.get(key)
-                if existing is None:
-                    merged[key] = asset.model_copy(deep=True)
-                else:
-                    _, diag = _safe_call(
-                        "merge", "fold_crash",
-                        lambda t=existing, s=asset: self._fold_into(t, s, res),
-                        None,
-                        severity=Severity.WARNING,
-                    )
-                    if diag is not None:
-                        res.add(diag)
-                    collisions[key] += 1
+            stop = self._merge_group(group, merged, collisions, res)
+            if stop:
+                break
 
         res.add(Diagnostic(
             "merge", Severity.INFO, "summary",
             f"merged {len(merged)} assets",
-            {"collisions_top": dict(sorted(collisions.items(),
-                                           key=lambda kv: -kv[1])[:10])},
+            {"collisions_top": dict(
+                sorted(collisions.items(), key=lambda kv: -kv[1])[:10]
+            )},
         ))
         return res
+
+    @staticmethod
+    def _merge_group(
+        group: list[CanonicalAsset],
+        merged: dict[str, CanonicalAsset],
+        collisions: dict[str, int],
+        res: Result[dict[str, CanonicalAsset]],
+    ) -> bool:
+        for asset in group:
+            if len(merged) >= MAX_ASSETS and asset.symbol not in merged:
+                res.add(Diagnostic(
+                    "merge", Severity.WARNING, "cap_reached",
+                    f"MAX_ASSETS={MAX_ASSETS}",
+                ))
+                return True
+            key = asset.symbol
+            if not key:
+                res.add(Diagnostic(
+                    "merge", Severity.WARNING, "empty_symbol", "dropped"
+                ))
+                continue
+            existing = merged.get(key)
+            if existing is None:
+                merged[key] = asset.model_copy(deep=True)
+                continue
+            _, diag = _safe_call(
+                "merge", "fold_crash",
+                lambda t=existing, s=asset, r=res: MergeEngine._fold_into(t, s, r),
+                None,
+                severity=Severity.WARNING,
+            )
+            if diag is not None:
+                res.add(diag)
+            collisions[key] += 1
+        return False
 
     @staticmethod
     def _fold_into(
@@ -1386,18 +1573,24 @@ class MergeEngine:
         source: CanonicalAsset,
         res: Result[dict[str, CanonicalAsset]],
     ) -> None:
-        MergeEngine._fold_identity(target, source)
-        MergeEngine._fold_rsi(target, source, res)
-        MergeEngine._fold_biases(target, source)
-        MergeEngine._fold_mtf(target, source)
-        MergeEngine._fold_price_context(target, source)
-        MergeEngine._fold_zones(target, source)
-        MergeEngine._fold_events(target, source)
-        MergeEngine._fold_provenance(target, source)
+        # Deep-copy source defensively so that mutating target never aliases
+        # caller-owned objects.
+        src = source.model_copy(deep=True)
+        MergeEngine._fold_identity(target, src)
+        MergeEngine._fold_rsi(target, src, res)
+        MergeEngine._fold_biases(target, src)
+        MergeEngine._fold_mtf(target, src)
+        MergeEngine._fold_price_context(target, src)
+        MergeEngine._fold_zones(target, src)
+        MergeEngine._fold_events(target, src)
+        MergeEngine._fold_provenance(target, src)
 
     @staticmethod
     def _fold_identity(target: CanonicalAsset, source: CanonicalAsset) -> None:
-        if target.asset_class is AssetClass.UNKNOWN and source.asset_class is not AssetClass.UNKNOWN:
+        if (
+            target.asset_class is AssetClass.UNKNOWN
+            and source.asset_class is not AssetClass.UNKNOWN
+        ):
             target.asset_class = source.asset_class
         if not target.base and source.base:
             target.base = source.base
@@ -1411,16 +1604,18 @@ class MergeEngine:
         res: Result[dict[str, CanonicalAsset]],
     ) -> None:
         existing_tfs = {r.timeframe for r in target.rsi}
-        for r in source.rsi:
+        for reading in source.rsi:
             if len(target.rsi) >= MAX_RSI_READINGS_PER_ASSET:
                 break
-            if r.timeframe in existing_tfs:
-                res.add(Diagnostic("merge", Severity.DEBUG, "rsi_conflict",
-                                   f"{r.timeframe.value} duplicate",
-                                   {"sym": target.symbol}))
+            if reading.timeframe in existing_tfs:
+                res.add(Diagnostic(
+                    "merge", Severity.DEBUG, "rsi_conflict",
+                    f"{reading.timeframe.value} duplicate",
+                    {"sym": target.symbol},
+                ))
                 continue
-            target.rsi.append(r)
-            existing_tfs.add(r.timeframe)
+            target.rsi.append(reading)
+            existing_tfs.add(reading.timeframe)
 
     @staticmethod
     def _fold_biases(target: CanonicalAsset, source: CanonicalAsset) -> None:
@@ -1440,13 +1635,18 @@ class MergeEngine:
             target.mtf = source.mtf
 
     @staticmethod
-    def _fold_price_context(target: CanonicalAsset, source: CanonicalAsset) -> None:
+    def _fold_price_context(
+        target: CanonicalAsset, source: CanonicalAsset
+    ) -> None:
         if source.price_context is None:
             return
         if target.price_context is None:
             target.price_context = source.price_context
             return
-        if not source.price_context.is_intermediate and target.price_context.is_intermediate:
+        if (
+            not source.price_context.is_intermediate
+            and target.price_context.is_intermediate
+        ):
             target.price_context = source.price_context
 
     @staticmethod
@@ -1490,6 +1690,19 @@ _DIR_TOKENS: Final[dict[Direction, tuple[str, ...]]] = {
     Direction.BEARISH: ("bearish", "bear", "baissier", "baisse", "short"),
 }
 
+_HTF_LOOKUP: Final[dict[Timeframe, tuple[Timeframe, ...]]] = {
+    Timeframe.M1: (Timeframe.H4, Timeframe.H1, Timeframe.D1),
+    Timeframe.M5: (Timeframe.H4, Timeframe.H1, Timeframe.D1),
+    Timeframe.M15: (Timeframe.H4, Timeframe.H1, Timeframe.D1),
+    Timeframe.M30: (Timeframe.H4, Timeframe.H1, Timeframe.D1),
+    Timeframe.H1: (Timeframe.H4, Timeframe.D1),
+    Timeframe.H4: (Timeframe.D1, Timeframe.W1),
+    Timeframe.D1: (Timeframe.D1, Timeframe.W1),
+    Timeframe.W1: (Timeframe.W1, Timeframe.MN),
+    Timeframe.MN: (Timeframe.MN,),
+    Timeframe.UNKNOWN: (Timeframe.D1, Timeframe.W1),
+}
+
 
 def _direction_from_text(text: str) -> Direction:
     s = (text or "").lower()
@@ -1499,51 +1712,81 @@ def _direction_from_text(text: str) -> Direction:
     return Direction.NEUTRAL
 
 
+def _split_zones_by_alignment(
+    asset: CanonicalAsset, direction: Direction
+) -> tuple[list[SRZone], list[SRZone]]:
+    aligned: list[SRZone] = []
+    opposite: list[SRZone] = []
+    if direction is Direction.NEUTRAL:
+        return aligned, opposite
+    for z in asset.zones:
+        if direction is Direction.BULLISH:
+            if z.side == "BUY":
+                aligned.append(z)
+            elif z.side == "SELL":
+                opposite.append(z)
+        else:  # BEARISH
+            if z.side == "SELL":
+                aligned.append(z)
+            elif z.side == "BUY":
+                opposite.append(z)
+    return aligned, opposite
+
+
 class EnrichmentEngine:
-    def enrich(self, assets: dict[str, CanonicalAsset]) -> Result[list[EnrichedSignal]]:
+    """Computes HTF alignment, confluence, and TP zones for each event."""
+
+    def enrich(
+        self, assets: dict[str, CanonicalAsset]
+    ) -> Result[list[EnrichedSignal]]:
         signals: list[EnrichedSignal] = []
         res: Result[list[EnrichedSignal]] = Result(value=signals)
 
         for asset in assets.values():
-            for event in asset.structure_events:
-                if len(signals) >= MAX_SIGNALS_OUT:
-                    res.add(Diagnostic("enrich", Severity.WARNING, "cap_reached",
-                                       f"MAX_SIGNALS_OUT={MAX_SIGNALS_OUT}"))
-                    return res
-                signal, diag = _safe_call(
-                    "enrich", "signal_build_crash",
-                    lambda a=asset, e=event: self._build_signal(a, e),
-                    None,
-                    severity=Severity.WARNING,
-                )
-                if diag is not None:
-                    res.add(diag)
-                if signal is not None:
-                    signals.append(signal)
+            if self._enrich_asset(asset, signals, res):
+                break
 
-        res.add(Diagnostic("enrich", Severity.INFO, "summary",
-                           f"enriched {len(signals)} signals from {len(assets)} assets"))
+        res.add(Diagnostic(
+            "enrich", Severity.INFO, "summary",
+            f"enriched {len(signals)} signals from {len(assets)} assets",
+        ))
         return res
 
-    def _build_signal(self, asset: CanonicalAsset, event: StructureEvent) -> EnrichedSignal:
-        aligned_zones: list[SRZone] = []
-        opposite_zones: list[SRZone] = []
-        for z in asset.zones:
-            if event.direction is Direction.BULLISH and z.side == "BUY":
-                aligned_zones.append(z)
-            elif event.direction is Direction.BULLISH and z.side == "SELL":
-                opposite_zones.append(z)
-            elif event.direction is Direction.BEARISH and z.side == "SELL":
-                aligned_zones.append(z)
-            elif event.direction is Direction.BEARISH and z.side == "BUY":
-                opposite_zones.append(z)
+    def _enrich_asset(
+        self,
+        asset: CanonicalAsset,
+        signals: list[EnrichedSignal],
+        res: Result[list[EnrichedSignal]],
+    ) -> bool:
+        for event in asset.structure_events:
+            if len(signals) >= MAX_SIGNALS_OUT:
+                res.add(Diagnostic(
+                    "enrich", Severity.WARNING, "cap_reached",
+                    f"MAX_SIGNALS_OUT={MAX_SIGNALS_OUT}",
+                ))
+                return True
+            signal, diag = _safe_call(
+                "enrich", "signal_build_crash",
+                lambda a=asset, e=event: self._build_signal(a, e),
+                None,
+                severity=Severity.WARNING,
+            )
+            if diag is not None:
+                res.add(diag)
+            if signal is not None:
+                signals.append(signal)
+        return False
 
+    def _build_signal(
+        self, asset: CanonicalAsset, event: StructureEvent
+    ) -> EnrichedSignal:
+        aligned, opposite = _split_zones_by_alignment(asset, event.direction)
         return EnrichedSignal(
             event=event,
             asset=asset,
             htf_aligned=self._htf_aligned(asset, event),
-            nearest_aligned_zone=aligned_zones[0] if aligned_zones else None,
-            tp_zones=opposite_zones[:3],
+            nearest_aligned_zone=aligned[0] if aligned else None,
+            tp_zones=opposite[:3],
             confluence_total=self._confluence(asset, event),
             enrichment=self._enrichment_quality(asset),
             warnings=self._warnings(asset, event),
@@ -1553,16 +1796,7 @@ class EnrichmentEngine:
     def _htf_aligned(asset: CanonicalAsset, event: StructureEvent) -> bool:
         if asset.mtf is None:
             return False
-        # Compare against the most relevant HTF bias for the event timeframe.
-        candidate_tfs: tuple[Timeframe, ...]
-        if event.timeframe in (Timeframe.M1, Timeframe.M5, Timeframe.M15, Timeframe.M30):
-            candidate_tfs = (Timeframe.H4, Timeframe.H1, Timeframe.D1)
-        elif event.timeframe is Timeframe.H1:
-            candidate_tfs = (Timeframe.H4, Timeframe.D1)
-        elif event.timeframe is Timeframe.H4:
-            candidate_tfs = (Timeframe.D1, Timeframe.W1)
-        else:
-            candidate_tfs = (Timeframe.D1, Timeframe.W1)
+        candidate_tfs = _HTF_LOOKUP.get(event.timeframe, (Timeframe.D1, Timeframe.W1))
         for tf in candidate_tfs:
             bias = asset.mtf.biases.get(tf.value)
             if bias and _direction_from_text(bias) == event.direction:
@@ -1615,27 +1849,41 @@ _QUALITY_RANK: Final[dict[str, int]] = {"A+": 4, "A": 3, "B+": 2, "B": 1}
 
 
 class CorrelationEngine:
+    """Groups signals by base/quote currency for cross-pair correlation."""
+
     def build(
         self, signals: list[EnrichedSignal]
     ) -> dict[str, list[dict[str, Any]]]:
         groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for s in signals:
-            asset = s.asset
-            for leg in (asset.base, asset.quote):
-                if not leg:
-                    continue
-                bucket = groups[leg]
-                if len(bucket) >= MAX_CORRELATION_GROUP_SIZE:
-                    continue
-                bucket.append({
-                    "symbol": asset.symbol,
-                    "direction": s.event.direction.value,
-                    "kind": s.event.kind,
-                    "timeframe": s.event.timeframe.value,
-                    "mtf_pct": asset.mtf.pct if asset.mtf else 0,
-                    "quality": asset.mtf.quality if asset.mtf else None,
-                    "confluence": s.confluence_total,
-                })
+            self._append_signal_legs(s, groups)
+        return self._finalize_groups(groups)
+
+    @staticmethod
+    def _append_signal_legs(
+        s: EnrichedSignal, groups: dict[str, list[dict[str, Any]]]
+    ) -> None:
+        asset = s.asset
+        for leg in (asset.base, asset.quote):
+            if not leg:
+                continue
+            bucket = groups[leg]
+            if len(bucket) >= MAX_CORRELATION_GROUP_SIZE:
+                continue
+            bucket.append({
+                "symbol": asset.symbol,
+                "direction": s.event.direction.value,
+                "kind": s.event.kind,
+                "timeframe": s.event.timeframe.value,
+                "mtf_pct": asset.mtf.pct if asset.mtf else 0,
+                "quality": asset.mtf.quality if asset.mtf else None,
+                "confluence": s.confluence_total,
+            })
+
+    @staticmethod
+    def _finalize_groups(
+        groups: dict[str, list[dict[str, Any]]]
+    ) -> dict[str, list[dict[str, Any]]]:
         return {
             leg: sorted(
                 items,
@@ -1697,40 +1945,22 @@ class MergePipeline:
 
         if not files:
             res: Result[MergeOutput] = Result(value=None)
-            res.add(Diagnostic("pipeline", Severity.ERROR, "no_input", "no files provided"))
+            res.add(Diagnostic(
+                "pipeline", Severity.ERROR, "no_input", "no files provided"
+            ))
             return res
 
-        partials, scanners_detected, unknown_count = self._adapt_phase(files, diags)
-        merged_r = self._merger.merge(partials)
-        diags.extend(merged_r.diagnostics)
-        assets = merged_r.value or {}
-
-        enriched_r = self._enricher.enrich(assets)
-        diags.extend(enriched_r.diagnostics)
-        signals = enriched_r.value or []
-
-        groups, _ = _safe_call(
-            "pipeline.correlate", "correlate_crash",
-            lambda: self._correlator.build(signals),
-            cast(dict[str, list[dict[str, Any]]], {}),
-        )
-        hot, _ = _safe_call(
-            "pipeline.hot_zones", "hot_zones_crash",
-            lambda: self._hot_zones(assets),
-            cast(list[dict[str, Any]], []),
-        )
-        top, _ = _safe_call(
-            "pipeline.top_consensus", "top_consensus_crash",
-            lambda: self._top_consensus(assets),
-            cast(dict[str, list[dict[str, Any]]], {}),
-        )
+        partials, scanners, unknown = self._adapt_phase(files, diags)
+        assets = self._merge_phase(partials, diags)
+        signals = self._enrich_phase(assets, diags)
+        groups, hot, top = self._post_phase(assets, signals)
 
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         out = MergeOutput(
             meta=MergeMeta(
                 generated_at=datetime.now(timezone.utc),
-                scanners_detected=scanners_detected,
-                scanners_unknown=unknown_count,
+                scanners_detected=scanners,
+                scanners_unknown=unknown,
                 assets_count=len(assets),
                 signals_count=len(signals),
                 elapsed_ms=round(elapsed_ms, 2),
@@ -1762,15 +1992,64 @@ class MergePipeline:
             partials.append(r.value)
         return partials, scanners_detected, unknown_count
 
+    def _merge_phase(
+        self,
+        partials: list[list[CanonicalAsset]],
+        diags: list[Diagnostic],
+    ) -> dict[str, CanonicalAsset]:
+        merged_r = self._merger.merge(partials)
+        diags.extend(merged_r.diagnostics)
+        return merged_r.value or {}
+
+    def _enrich_phase(
+        self,
+        assets: dict[str, CanonicalAsset],
+        diags: list[Diagnostic],
+    ) -> list[EnrichedSignal]:
+        enriched_r = self._enricher.enrich(assets)
+        diags.extend(enriched_r.diagnostics)
+        return enriched_r.value or []
+
+    def _post_phase(
+        self,
+        assets: dict[str, CanonicalAsset],
+        signals: list[EnrichedSignal],
+    ) -> tuple[
+        dict[str, list[dict[str, Any]]],
+        list[dict[str, Any]],
+        dict[str, list[dict[str, Any]]],
+    ]:
+        groups, _ = _safe_call(
+            "pipeline.correlate", "correlate_crash",
+            lambda s=signals: self._correlator.build(s),
+            cast(dict[str, list[dict[str, Any]]], {}),
+        )
+        hot, _ = _safe_call(
+            "pipeline.hot_zones", "hot_zones_crash",
+            lambda a=assets: self._hot_zones(a),
+            cast(list[dict[str, Any]], []),
+        )
+        top, _ = _safe_call(
+            "pipeline.top_consensus", "top_consensus_crash",
+            lambda a=assets: self._top_consensus(a),
+            cast(dict[str, list[dict[str, Any]]], {}),
+        )
+        return groups, hot, top
+
     @staticmethod
-    def _hot_zones(assets: dict[str, CanonicalAsset]) -> list[dict[str, Any]]:
+    def _hot_zones(
+        assets: dict[str, CanonicalAsset]
+    ) -> list[dict[str, Any]]:
         zones: list[dict[str, Any]] = []
+        soft_cap = MAX_HOT_ZONES_OUT * 2
         for sym, asset in assets.items():
             for z in asset.zones:
                 if z.distance_pct < 2.0:
                     zones.append({"symbol": sym, **_zone_dict(z)})
-                    if len(zones) >= MAX_HOT_ZONES_OUT * 2:
+                    if len(zones) >= soft_cap:
                         break
+            if len(zones) >= soft_cap:
+                break
         zones.sort(key=lambda x: safe_float(x["distance_pct"]) or 999.0)
         return zones[:MAX_HOT_ZONES_OUT]
 
@@ -1822,12 +2101,35 @@ def _json_default(o: Any) -> Any:
 
 def export_json(output: MergeOutput, *, indent: int = 2) -> str:
     payload = output.model_dump(mode="json")
-    return json.dumps(payload, indent=indent, ensure_ascii=False, default=_json_default)
+    return json.dumps(
+        payload, indent=indent, ensure_ascii=False, default=_json_default
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# STREAMLIT — caching & UI
+# STREAMLIT — caching layer (content-addressable, never hashes raw bytes)
 # ════════════════════════════════════════════════════════════════════════════
+
+@dataclass(frozen=True, slots=True)
+class FileEntry:
+    """Content-addressed file. Streamlit hashes via `__hash__`/`__eq__`,
+    which use only the SHA-256 fingerprint — never the raw bytes."""
+    name: str
+    sha256: str
+    data: bytes = field(repr=False)
+
+    def __hash__(self) -> int:  # type: ignore[override]
+        return hash((self.name, self.sha256))
+
+    def __eq__(self, other: object) -> bool:  # type: ignore[override]
+        if not isinstance(other, FileEntry):
+            return NotImplemented
+        return self.name == other.name and self.sha256 == other.sha256
+
+
+def _make_file_entry(name: str, data: bytes) -> FileEntry:
+    return FileEntry(name=name, sha256=hashlib.sha256(data).hexdigest(), data=data)
+
 
 @st.cache_resource(show_spinner=False)
 def get_pipeline() -> MergePipeline:
@@ -1843,73 +2145,88 @@ def get_pipeline() -> MergePipeline:
 
 
 @st.cache_data(show_spinner=False, max_entries=128, ttl=3600, persist=False)
-def parse_json_bytes(data: bytes, name: str) -> tuple[Any | None, str | None]:
-    """Cache-friendly JSON parsing keyed on raw bytes + name."""
+def parse_json_bytes(entry: FileEntry) -> tuple[Any | None, str | None]:
+    """Cache-friendly JSON parsing — keyed on (name, sha256), not raw bytes."""
+    data = entry.data
+    name = entry.name
     if not data:
         return None, f"{name}: empty file"
     if len(data) > MAX_FILE_SIZE_BYTES:
-        return None, f"{name}: file too large ({len(data)} > {MAX_FILE_SIZE_BYTES} bytes)"
+        return None, (
+            f"{name}: file too large ({len(data)} > {MAX_FILE_SIZE_BYTES} bytes)"
+        )
     try:
         text = data.decode("utf-8")
     except UnicodeDecodeError:
         try:
             text = data.decode("utf-8-sig")
-        except UnicodeDecodeError as e:
-            return None, f"{name}: encoding error ({e})"
+        except UnicodeDecodeError as exc:
+            return None, f"{name}: encoding error ({exc})"
     try:
         return json.loads(text), None
-    except json.JSONDecodeError as e:
-        return None, f"{name}: invalid JSON at line {e.lineno} col {e.colno} ({e.msg})"
-    except (RecursionError, MemoryError) as e:
-        return None, f"{name}: resource error ({type(e).__name__})"
-    except ValueError as e:
-        return None, f"{name}: {type(e).__name__}: {e}"
+    except json.JSONDecodeError as exc:
+        return None, (
+            f"{name}: invalid JSON at line {exc.lineno} col {exc.colno} "
+            f"({exc.msg})"
+        )
+    except (RecursionError, MemoryError) as exc:
+        return None, f"{name}: resource error ({type(exc).__name__})"
+    except ValueError as exc:
+        return None, f"{name}: {type(exc).__name__}: {exc}"
 
 
-def _files_fingerprint(files: list[tuple[str, bytes]]) -> str:
+def _files_fingerprint(entries: Sequence[FileEntry]) -> str:
+    """Deterministic combined fingerprint of multiple files."""
     h = hashlib.sha256()
-    for name, data in sorted(files, key=lambda x: x[0]):
-        h.update(name.encode("utf-8"))
+    for e in sorted(entries, key=lambda x: (x.name, x.sha256)):
+        h.update(e.name.encode("utf-8"))
         h.update(b"\x00")
-        h.update(len(data).to_bytes(8, "big"))
-        h.update(hashlib.sha256(data).digest())
+        h.update(e.sha256.encode("ascii"))
+        h.update(b"\x00")
     return h.hexdigest()
 
 
 @st.cache_data(show_spinner=False, max_entries=16, ttl=1800, persist=False)
 def run_pipeline_cached(
-    fingerprint: str,
-    files_raw: list[tuple[str, bytes]],
+    fingerprint: str, entries: tuple[FileEntry, ...]
 ) -> dict[str, Any]:
     """
-    Cached pipeline run. Key = fingerprint (deterministic, content-derived).
-    Returns serializable dict to avoid keeping pydantic objects in cache.
+    Cached pipeline run. Cache key = ``fingerprint`` (string) +
+    deterministic ``__hash__`` of each ``FileEntry`` (name + sha256).
+    Raw bytes are NEVER hashed by Streamlit.
+
+    Returns a serializable dict to avoid keeping pydantic objects in cache,
+    which would be sensitive to schema evolution.
     """
-    _ = fingerprint  # explicit cache key for clarity
+    _ = fingerprint  # explicit cache discriminator
     pipeline = get_pipeline()
     ingested: list[IngestedFile] = []
     parse_errors: list[str] = []
-    for name, data in files_raw:
-        payload, err = parse_json_bytes(data, name)
+    for entry in entries:
+        payload, err = parse_json_bytes(entry)
         if err is not None:
             parse_errors.append(err)
             continue
-        ingested.append(IngestedFile(name=name, payload=payload))
+        ingested.append(IngestedFile(name=entry.name, payload=payload))
 
     result, crash_diag = _safe_call(
         "pipeline", "pipeline_crash",
-        lambda: pipeline.run(ingested),
-        Result(value=None),
+        lambda p=pipeline, i=ingested: p.run(i),
+        Result(value=cast(MergeOutput | None, None)),
         severity=Severity.CRITICAL,
     )
     if crash_diag is not None:
         result.add(crash_diag)
         _LOG.error("pipeline crashed; degraded result returned")
 
+    output_dict: dict[str, Any] | None = None
+    if result.value is not None:
+        output_dict = result.value.model_dump(mode="json")
+
     return {
         "ok": result.ok,
         "parse_errors": parse_errors,
-        "output": result.value.model_dump(mode="json") if result.value else None,
+        "output": output_dict,
         "diagnostics": [d.to_dict() for d in result.diagnostics],
         "schema_version": SCHEMA_VERSION,
     }
@@ -1937,7 +2254,8 @@ def _render_header() -> None:
             BLUESTAR SYSTEM · GENERIC MULTI-SCANNER MERGE
           </div>
           <div style="font-family:monospace;font-size:22px;font-weight:700">
-            BLUESTAR MERGE <span style="opacity:.6;font-size:14px">v{SCHEMA_VERSION}</span>
+            BLUESTAR MERGE
+            <span style="opacity:.6;font-size:14px">v{SCHEMA_VERSION}</span>
           </div>
           <div style="font-family:monospace;font-size:11px;opacity:.85">
             Auto-detection · Canonical pivot · Format-agnostic · Heuristic fallback
@@ -1955,7 +2273,37 @@ def _render_metrics(meta: dict[str, Any], hot_count: int) -> None:
     cols[2].metric("Actifs", safe_int(meta.get("assets_count")))
     cols[3].metric("Signaux", safe_int(meta.get("signals_count")))
     cols[4].metric("Zones chaudes", hot_count)
-    cols[5].metric("Latence", f"{safe_float(meta.get('elapsed_ms')) or 0.0:.0f} ms")
+    cols[5].metric(
+        "Latence", f"{safe_float(meta.get('elapsed_ms')) or 0.0:.0f} ms"
+    )
+
+
+def _zone_text(nz: dict[str, Any] | None) -> str:
+    if not nz or not isinstance(nz, dict):
+        return "_no aligned zone_"
+    return (
+        f"@ `{nz.get('level')}` "
+        f"(d={safe_float(nz.get('distance_pct')) or 0.0:.2f}%, "
+        f"sc={nz.get('score')})"
+    )
+
+
+def _render_one_signal(s: dict[str, Any]) -> None:
+    ev = s.get("event") or {}
+    asset = s.get("asset") or {}
+    enr = s.get("enrichment") or {}
+    status = str(enr.get("status", "empty"))
+    badge = _STATUS_BADGE.get(status, "⚪")
+    htf = "✅" if s.get("htf_aligned") else "⚠️"
+    zone_txt = _zone_text(s.get("nearest_aligned_zone"))
+    warns = s.get("warnings") or []
+    warn_txt = f" ⚡{len(warns)}w" if warns else ""
+    st.markdown(
+        f"- {badge} `{asset.get('symbol', '?')}` "
+        f"[{ev.get('timeframe', '?')}] **{ev.get('direction', '?')}** · "
+        f"HTF {htf} · {zone_txt} · "
+        f"confluence={s.get('confluence_total', 0)}{warn_txt}"
+    )
 
 
 def _render_signals(signals: list[dict[str, Any]]) -> None:
@@ -1963,32 +2311,15 @@ def _render_signals(signals: list[dict[str, Any]]) -> None:
         st.info("Aucun signal de structure trouvé dans les fichiers fournis.")
         return
     st.subheader(f"📊 Signaux enrichis ({len(signals)})")
-    for s in signals[:200]:  # UI cap, prevents browser stall
-        ev = s.get("event", {}) or {}
-        asset = s.get("asset", {}) or {}
-        enr = s.get("enrichment", {}) or {}
-        status = str(enr.get("status", "empty"))
-        badge = _STATUS_BADGE.get(status, "⚪")
-        htf = "✅" if s.get("htf_aligned") else "⚠️"
-        nz = s.get("nearest_aligned_zone")
-        if nz and isinstance(nz, dict):
-            zone_txt = (
-                f"@ `{nz.get('level')}` "
-                f"(d={safe_float(nz.get('distance_pct')) or 0.0:.2f}%, "
-                f"sc={nz.get('score')})"
-            )
-        else:
-            zone_txt = "_no aligned zone_"
-        warns = s.get("warnings") or []
-        warn_txt = f" ⚡{len(warns)}w" if warns else ""
-        st.markdown(
-            f"- {badge} `{asset.get('symbol', '?')}` "
-            f"[{ev.get('timeframe', '?')}] **{ev.get('direction', '?')}** · "
-            f"HTF {htf} · {zone_txt} · "
-            f"confluence={s.get('confluence_total', 0)}{warn_txt}"
+    ui_cap = 200
+    for s in signals[:ui_cap]:
+        _render_one_signal(s)
+    if len(signals) > ui_cap:
+        extra = len(signals) - ui_cap
+        st.caption(
+            f"_({extra} signaux supplémentaires masqués — "
+            f"exporter le JSON pour la liste complète)_"
         )
-    if len(signals) > 200:
-        st.caption(f"_({len(signals) - 200} signaux supplémentaires masqués — exporter le JSON pour la liste complète)_")
 
 
 def _render_top_consensus(top: dict[str, Any]) -> None:
@@ -2017,24 +2348,29 @@ def _render_consensus_column(label: str, entries: list[dict[str, Any]]) -> None:
         st.markdown(f"- `{symbol}` · {pct}% · Q={quality} · NC={nc}")
 
 
+def _hot_zone_tags(z: dict[str, Any]) -> str:
+    parts = [
+        t for t in (
+            "W" if z.get("has_weekly") else "",
+            "D" if z.get("has_daily") else "",
+            "H4" if z.get("has_h4") else "",
+        ) if t
+    ]
+    return " ".join(parts) or "—"
+
+
 def _render_hot_zones(hot: list[dict[str, Any]]) -> None:
     if not hot:
         return
     with st.expander(f"🔥 Zones chaudes ({len(hot)})"):
         for z in hot[:50]:
-            tags_parts = [
-                t for t in (
-                    "W" if z.get("has_weekly") else "",
-                    "D" if z.get("has_daily") else "",
-                    "H4" if z.get("has_h4") else "",
-                ) if t
-            ]
-            tags = " ".join(tags_parts) or "—"
             dist = safe_float(z.get("distance_pct")) or 0.0
             st.markdown(
-                f"- `{z.get('symbol', '?')}` {z.get('side', '?')} @ `{z.get('level')}` "
+                f"- `{z.get('symbol', '?')}` {z.get('side', '?')} "
+                f"@ `{z.get('level')}` "
                 f"(d={dist:.2f}%, sc={z.get('weighted_score')}, "
-                f"TF={tags}, {z.get('status')}) {z.get('alert') or ''}"
+                f"TF={_hot_zone_tags(z)}, {z.get('status')}) "
+                f"{z.get('alert') or ''}"
             )
 
 
@@ -2053,6 +2389,16 @@ def _render_correlations(groups: dict[str, list[dict[str, Any]]]) -> None:
             st.markdown(f"**{leg}** {flag} · {members}{extra}")
 
 
+def _diag_context_text(ctx: Any) -> str:
+    if not ctx:
+        return ""
+    try:
+        s = json.dumps(ctx, ensure_ascii=False, default=str)
+    except (TypeError, ValueError):
+        return ""
+    return f" · `{s[:120]}`"
+
+
 def _render_diagnostics(diags: list[dict[str, Any]]) -> None:
     if not diags:
         return
@@ -2060,38 +2406,46 @@ def _render_diagnostics(diags: list[dict[str, Any]]) -> None:
     err = sum(1 for s in severities if s in ("error", "critical"))
     warn = sum(1 for s in severities if s == "warning")
     info = sum(1 for s in severities if s == "info")
-    label = f"🔧 Diagnostics · {len(diags)} total · {err}🔴 · {warn}🟡 · {info}🔵"
+    label = (
+        f"🔧 Diagnostics · {len(diags)} total · "
+        f"{err}🔴 · {warn}🟡 · {info}🔵"
+    )
     with st.expander(label):
-        priority = {"critical": 0, "error": 1, "warning": 2, "info": 3, "debug": 4}
-        ordered = sorted(diags, key=lambda x: priority.get(x.get("severity", "info"), 9))
-        for d in ordered[:500]:
+        priority = {
+            "critical": 0, "error": 1, "warning": 2, "info": 3, "debug": 4,
+        }
+        ordered = sorted(
+            diags, key=lambda x: priority.get(x.get("severity", "info"), 9)
+        )
+        ui_cap = 500
+        for d in ordered[:ui_cap]:
             icon = _SEV_ICON.get(d.get("severity", "info"), "•")
-            ctx = d.get("context") or {}
-            ctx_txt = ""
-            if ctx:
-                try:
-                    ctx_str = json.dumps(ctx, ensure_ascii=False, default=str)
-                    ctx_txt = f" · `{ctx_str[:120]}`"
-                except (TypeError, ValueError):
-                    ctx_txt = ""
+            ctx_txt = _diag_context_text(d.get("context") or {})
             st.markdown(
                 f"{icon} `[{d.get('stage')}/{d.get('code')}]` "
                 f"{d.get('message')}{ctx_txt}"
             )
-        if len(ordered) > 500:
-            st.caption(f"_({len(ordered) - 500} diagnostics supplémentaires masqués)_")
+        if len(ordered) > ui_cap:
+            extra = len(ordered) - ui_cap
+            st.caption(f"_({extra} diagnostics supplémentaires masqués)_")
 
 
 def _render_export(payload_dict: dict[str, Any]) -> None:
     payload, diag = _safe_call(
         "ui.export", "serialize_crash",
-        lambda: json.dumps(payload_dict, indent=2, ensure_ascii=False, default=_json_default),
+        lambda p=payload_dict: json.dumps(
+            p, indent=2, ensure_ascii=False, default=_json_default
+        ),
         None,
     )
     if payload is None:
-        st.error(f"Export JSON impossible: {diag.message if diag else 'unknown'}")
+        msg = diag.message if diag else "unknown"
+        st.error(f"Export JSON impossible: {msg}")
         return
-    fname = f"bluestar_merged_{datetime.now(timezone.utc):%Y%m%d_%H%M}UTC.json"
+    fname = (
+        f"bluestar_merged_"
+        f"{datetime.now(timezone.utc):%Y%m%d_%H%M}UTC.json"
+    )
     st.download_button(
         "📥 Télécharger merged_pipeline.json",
         data=payload.encode("utf-8"),
@@ -2101,7 +2455,10 @@ def _render_export(payload_dict: dict[str, Any]) -> None:
         type="primary",
     )
     with st.expander("Prévisualiser JSON (4000 premiers caractères)"):
-        st.code(payload[:4000] + ("\n…" if len(payload) > 4000 else ""), language="json")
+        st.code(
+            payload[:4000] + ("\n…" if len(payload) > 4000 else ""),
+            language="json",
+        )
 
 
 def _render_asset_browser(assets: dict[str, Any]) -> None:
@@ -2114,48 +2471,70 @@ def _render_asset_browser(assets: dict[str, Any]) -> None:
             st.json(assets[selected], expanded=False)
 
 
-# ---- Upload handling -------------------------------------------------------
+# ---- Upload handling ------------------------------------------------------
 
-def _read_uploads(uploads: list[Any]) -> tuple[list[tuple[str, bytes]], list[str]]:
+def _read_one_upload(f: Any) -> tuple[bytes | None, str | None]:
+    """Read a single upload defensively. Returns (data, error)."""
+    try:
+        f.seek(0)
+        data = f.read()
+    except Exception as exc:
+        name = getattr(f, "name", "?")
+        return None, (
+            f"Lecture impossible de `{name}`: {type(exc).__name__}: {exc}"
+        )
+    if not isinstance(data, (bytes, bytearray)):
+        try:
+            data = str(data).encode("utf-8")
+        except Exception as exc:
+            name = getattr(f, "name", "?")
+            return None, (
+                f"Encodage impossible de `{name}`: {type(exc).__name__}: {exc}"
+            )
+    return bytes(data), None
+
+
+def _read_uploads(uploads: list[Any]) -> tuple[list[FileEntry], list[str]]:
     """Read uploaded files defensively with size/count limits."""
-    files_raw: list[tuple[str, bytes]] = []
+    files: list[FileEntry] = []
     errors: list[str] = []
     total_size = 0
 
     if len(uploads) > MAX_FILES:
-        errors.append(f"Trop de fichiers ({len(uploads)} > MAX_FILES={MAX_FILES}); seuls les {MAX_FILES} premiers seront traités.")
+        errors.append(
+            f"Trop de fichiers ({len(uploads)} > MAX_FILES={MAX_FILES}); "
+            f"seuls les {MAX_FILES} premiers seront traités."
+        )
         uploads = uploads[:MAX_FILES]
 
     for f in uploads:
-        try:
-            f.seek(0)
-            data = f.read()
-            if not isinstance(data, (bytes, bytearray)):
-                data = str(data).encode("utf-8")
-            data = bytes(data)
-        except Exception as e:  # noqa: BLE001 — IO boundary
-            errors.append(f"Lecture impossible de `{getattr(f, 'name', '?')}`: {type(e).__name__}: {e}")
+        data, err = _read_one_upload(f)
+        if data is None:
+            if err:
+                errors.append(err)
             continue
 
+        name = getattr(f, "name", "?")
         size = len(data)
         if size == 0:
-            errors.append(f"`{f.name}`: fichier vide ignoré")
+            errors.append(f"`{name}`: fichier vide ignoré")
             continue
         if size > MAX_FILE_SIZE_BYTES:
             errors.append(
-                f"`{f.name}`: fichier trop volumineux ({size} > {MAX_FILE_SIZE_BYTES} octets), ignoré"
+                f"`{name}`: fichier trop volumineux "
+                f"({size} > {MAX_FILE_SIZE_BYTES} octets), ignoré"
             )
             continue
         if total_size + size > MAX_TOTAL_SIZE_BYTES:
             errors.append(
-                f"`{f.name}`: dépasserait la limite globale "
+                f"`{name}`: dépasserait la limite globale "
                 f"({MAX_TOTAL_SIZE_BYTES} octets), ignoré"
             )
             continue
 
         total_size += size
-        files_raw.append((f.name, data))
-    return files_raw, errors
+        files.append(_make_file_entry(name, data))
+    return files, errors
 
 
 def _render_sidebar() -> None:
@@ -2169,7 +2548,8 @@ def _render_sidebar() -> None:
             "- `choch` · structure events\n"
             "- `heuristic` · fuzzy fallback"
         )
-        st.caption(f"RapidFuzz: {'✅ natif' if _HAS_RAPIDFUZZ else '⚠️ fallback Python'}")
+        fuzz_state = "✅ natif" if _HAS_RAPIDFUZZ else "⚠️ fallback Python"
+        st.caption(f"RapidFuzz: {fuzz_state}")
         st.caption(f"Schema: `v{SCHEMA_VERSION}`")
         st.caption(
             f"Limits: {MAX_FILES} fichiers · "
@@ -2186,7 +2566,10 @@ def _render_sidebar() -> None:
 def _render_results(result: dict[str, Any]) -> None:
     parse_errors = result.get("parse_errors") or []
     if parse_errors:
-        st.error("Fichiers JSON invalides :\n" + "\n".join(f"- {e}" for e in parse_errors))
+        st.error(
+            "Fichiers JSON invalides :\n"
+            + "\n".join(f"- {e}" for e in parse_errors)
+        )
 
     output = result.get("output")
     diagnostics = result.get("diagnostics") or []
@@ -2196,7 +2579,7 @@ def _render_results(result: dict[str, Any]) -> None:
         _render_diagnostics(diagnostics)
         return
 
-    meta = output.get("meta", {}) or {}
+    meta = output.get("meta") or {}
     hot = output.get("hot_zones") or []
     _render_metrics(meta, len(hot))
     st.divider()
@@ -2238,28 +2621,34 @@ def main() -> None:
         st.info("⬆️ Déposez 1 à N fichiers JSON pour démarrer.")
         return
 
-    files_raw, read_errors = _read_uploads(uploads)
+    entries, read_errors = _read_uploads(uploads)
     for err in read_errors:
         st.warning(err)
-    if not files_raw:
+    if not entries:
         st.error("Aucun fichier lisible.")
         return
 
-    run_btn = st.button("🚀 Exécuter le pipeline", type="primary", use_container_width=True)
+    run_btn = st.button(
+        "🚀 Exécuter le pipeline",
+        type="primary",
+        use_container_width=True,
+    )
     if not run_btn:
-        st.caption(f"{len(files_raw)} fichier(s) prêt(s).")
+        st.caption(f"{len(entries)} fichier(s) prêt(s).")
         return
 
-    fingerprint = _files_fingerprint(files_raw)
+    fingerprint = _files_fingerprint(entries)
+    entries_tuple = tuple(entries)
     with st.spinner("Pipeline en cours…"):
         result, diag = _safe_call(
             "ui.run", "ui_pipeline_crash",
-            lambda: run_pipeline_cached(fingerprint, files_raw),
+            lambda fp=fingerprint, e=entries_tuple: run_pipeline_cached(fp, e),
             None,
             severity=Severity.CRITICAL,
         )
     if result is None:
-        st.error(f"Erreur fatale du pipeline: {diag.message if diag else 'unknown'}")
+        msg = diag.message if diag else "unknown"
+        st.error(f"Erreur fatale du pipeline: {msg}")
         return
 
     _render_results(result)
@@ -2267,3 +2656,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
