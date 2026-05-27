@@ -1,43 +1,53 @@
 """
-BLUESTAR MERGE v3.3.1 — Production-grade Streamlit application.
+BLUESTAR MERGE v3.4.0 — Production-grade Streamlit application.
 Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
 heuristic fallback, full pipeline diagnostics, and hardened against malformed
 input, DoS, and partial failures.
 
-Architecture:
-    Upload → Parse (cached) → Detect (registry) → Adapt → Merge → Enrich
-    → Correlate → Render + Export
+v3.4.0 — Pre-computation layer for prompt v9.0 (BLUESTAR DIRECT):
+    The LLM downstream now receives ALL deterministic arithmetic pre-computed,
+    eliminating ~40% of arithmetic ops on the model side and stabilising
+    cross-model behaviour. Specifically:
 
-v3.3.1 hardening (over v3.3.0):
-    - P0 FIX: _parse_price_context() restores regex fallback on dict["raw"]
-      when structured fields are missing (regression from v3.2 → v3.3.0).
-    - P1 FIX: _build_zone_from_nearest() forces distance_pct >= 0 (abs) and
-      tags status="SR_nearest" so synthetic zones are distinguishable.
-    - P2 FIX: _select_nearest_aligned_zone() prefers real SR zones (score>0,
-      status not Unknown/SR_nearest) before falling back to synthetic ones.
-    - P3 FIX: _hot_zones() excludes synthetic/invalid zones
-      (score <= 0 or status in {Unknown, SR_nearest}).
+      • CanonicalAsset gains:
+          - atr_effective   : float | None  (ATR cascade output)
+          - atr_source      : Literal[h4, h1_proxy, d1_proxy, synthetic]
+          - conviction_cap  : Literal[A, BBB] | None
+          - nearest_aligned_zone : SRZone | None  (real SR preferred)
+          - hot_zone_primary     : SRZone | None  (incl. UNKNOWN pivots)
 
-v3.3 hardening (inherited, preserved):
-    - BUG 1 FIX: htf_aligned requires BOTH D1 AND H4 aligned (no more OR).
-    - GAP 3 FIX: current_price promoted to CanonicalAsset level.
-    - GAP 4 FIX: rsi_by_tf dict + rsi_h4_status pre-computed on CanonicalAsset.
-    - GAP 5 FIX: rsi_h4_status pre-computed (extreme_OB/OB/neutral/OS/extreme_OS).
-    - GAP 6 FIX: sl_price / tp1_price / rr_estimated pre-computed on EnrichedSignal.
-    - GAP 7 FIX: nearest_aligned_zone uses 5% threshold + price_context fallback.
+      • CanonicalAsset.rsi_h4_status now uses the 7-level v9.0 scale:
+            extreme_overbought | overbought | grey_high | favorable |
+            grey_low | oversold | extreme_oversold
+        (previously: 5-level). Same scale applied per-TF in rsi_by_tf.
 
-Hardening guarantees (inherited from v3.2):
-    - All pipeline stages defensively boundary-wrapped; no stage can crash
-      the pipeline.
-    - Hard upper bounds on file count, file size, asset/zone/event counts.
-    - Deterministic adapter selection (stable scoring + priority tie-break).
-    - Pydantic v2 strict validation; clamping rather than crashing.
-    - Streamlit cache keys are content-fingerprints (SHA-256), not raw bytes.
-    - Lambda closures explicitly bound (no late-binding bugs in loops).
-    - Deep-copy at merge ingress prevents cross-run state corruption.
-    - All exceptions logged with type, message, and a trimmed traceback.
-    - Tolerant datetime parsing: ISO-8601, Unix epoch (s & ms), naive→UTC.
-    - Anchored timeframe regex (no false positives on noisy keys).
+      • EnrichedSignal.precomputed gains a typed sub-model carrying:
+          - atr_effective, atr_source
+          - bb_mult            (Squeeze=1.0 / Normal=1.5 / Expansion=2.0)
+          - sl_distance_min    (= atr_effective × 0.8 — SL floor)
+          - sl_distance_raw    (= atr_effective × bb_mult)
+          - rsi_h4_value, rsi_h4_status
+          - candles_elapsed
+          - sig_fresh_aligned  (Fresh + direction match + ≤2 candles)
+
+      • SL / TP1 / RR now use atr_effective (with cascade fallback) instead of
+        the raw atr_h1, so signals on assets missing atr_h4 still get usable
+        levels with a conviction_cap flagged.
+
+      • meta.version bumped to "3.4.0".
+
+v3.3.1 fixes inherited and preserved:
+    - P0: _parse_price_context() regex fallback restored on dict["raw"]
+    - P1: synthetic nearest zones tagged "SR_nearest" + abs(distance)
+    - P2: _select_nearest_aligned_zone() prefers real SR over synthetic
+    - P3: _hot_zones() excludes synthetic/invalid zones
+
+v3.3 fixes inherited and preserved:
+    - BUG 1: htf_aligned requires BOTH D1 AND H4 aligned
+    - GAP 3: current_price promoted to CanonicalAsset level
+    - GAP 4: rsi_by_tf dict + rsi_h4_status pre-computed on CanonicalAsset
+    - GAP 6: sl_price / tp1_price / rr_estimated pre-computed on EnrichedSignal
+    - GAP 7: nearest_aligned_zone uses 5% threshold + price_context fallback
 
 Deploy: place this file as `app.py` and run `streamlit run app.py`.
 """
@@ -100,10 +110,9 @@ MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
 MAX_TP_ZONES: Final[int] = 3
 
-SCHEMA_VERSION: Final[str] = "3.3.1"
+SCHEMA_VERSION: Final[str] = "3.4.0"
 
 # Status values identifying synthetic zones built from price_context fallback.
-# These zones have no real SR scoring and must be deprioritized / filtered.
 _SR_NEAREST_STATUS: Final[str] = "SR_nearest"
 _INVALID_ZONE_STATUSES: Final[frozenset[str]] = frozenset({
     "Unknown", _SR_NEAREST_STATUS,
@@ -456,20 +465,66 @@ BaseCfg: Final[ConfigDict] = ConfigDict(
 )
 
 
-# ── RSI status mapping (deterministic, pre-computed; GAP 5) ───────────────
+# ── RSI status mapping — v9.0 prompt-compatible 7-level scale ─────────────
+# Thresholds (inclusive lower bound, ordered DESC):
+#   80     → extreme_overbought
+#   72     → overbought
+#   68     → grey_high
+#   32     → favorable    (the "neutral" healthy band)
+#   28     → grey_low
+#   20     → oversold
+#   <20    → extreme_oversold
+_RSI_STATUS_THRESHOLDS: Final[tuple[tuple[float, str], ...]] = (
+    (80.0, "extreme_overbought"),
+    (72.0, "overbought"),
+    (68.0, "grey_high"),
+    (32.0, "favorable"),
+    (28.0, "grey_low"),
+    (20.0, "oversold"),
+)
+
+
 def _rsi_status_from_value(v: float | None) -> str | None:
-    """Map RSI value to categorical status. Returns None if value missing."""
+    """Map RSI value to categorical status using the v9.0 7-level scale.
+    Returns None if value missing. Anything < 20 → 'extreme_oversold'."""
     if v is None or not _is_finite_number(v):
         return None
-    if v >= 80.0:
-        return "extreme_overbought"
-    if v >= 70.0:
-        return "overbought"
-    if v >= 30.0:
-        return "neutral"
-    if v >= 20.0:
-        return "oversold"
+    for threshold, status in _RSI_STATUS_THRESHOLDS:
+        if v >= threshold:
+            return status
     return "extreme_oversold"
+
+
+# Conviction cap mapping driven by ATR cascade fallback level (v9.0 §5.1).
+# None = no cap. The downstream LLM is responsible for actually applying
+# the cap; the merger only annotates the source + cap deterministically.
+_ATR_CONVICTION_CAP: Final[dict[str, str | None]] = {
+    "h4":        None,
+    "h1_proxy":  "A",
+    "d1_proxy":  "BBB",
+    "synthetic": "BBB",
+}
+
+# Multiplier applied to atr_h1 when used as proxy for ATR_H4.
+_ATR_H1_PROXY_MULT: Final[float] = 1.8
+# Multiplier applied to atr_daily when used as proxy for ATR_H4.
+_ATR_D1_PROXY_MULT: Final[float] = 0.25
+# Synthetic ATR = current_price × this (0.5% of price).
+_ATR_SYNTHETIC_PCT: Final[float] = 0.005
+# SL floor distance multiplier (v9.0 §8.2).
+_SL_FLOOR_MULT: Final[float] = 0.8
+# SL raw distance multiplier (default = Normal regime, v9.0 §8.2).
+_SL_RAW_DEFAULT_MULT: Final[float] = 1.1
+
+# BB-regime → SL multiplier (v9.0 §8.2).
+_BB_REGIME_SL_MULT: Final[dict[str, float]] = {
+    "Squeeze":   1.0,
+    "Normal":    1.5,
+    "Expansion": 2.0,
+}
+
+# Fresh signal alignment thresholds (v9.0 §6.1).
+_FRESH_CANDLES_MAX: Final[int] = 2
 
 
 class RSIReading(BaseModel):
@@ -572,10 +627,19 @@ class MTFConsensus(BaseModel):
 
 
 class CanonicalAsset(BaseModel):
-    """Canonical asset pivot. v3.3 adds:
-    - current_price (GAP 3)
-    - rsi_by_tf dict (GAP 4)
-    - rsi_h4_status pre-computed (GAP 5)
+    """Canonical asset pivot.
+
+    v3.4 adds (pre-computation for prompt v9.0):
+      - atr_effective       : float | None     (ATR cascade output)
+      - atr_source          : str | None       (h4 | h1_proxy | d1_proxy | synthetic)
+      - conviction_cap      : str | None       (A | BBB | None)
+      - nearest_aligned_zone: SRZone | None    (real SR preferred over synth)
+      - hot_zone_primary    : SRZone | None    (incl. UNKNOWN pivots by sign)
+
+    v3.3 added:
+      - current_price (GAP 3)
+      - rsi_by_tf dict (GAP 4)
+      - rsi_h4_status pre-computed (GAP 5)
     """
     model_config = BaseCfg
     symbol: str
@@ -592,6 +656,13 @@ class CanonicalAsset(BaseModel):
     zones: list[SRZone] = Field(default_factory=list)
     structure_events: list[StructureEvent] = Field(default_factory=list)
     provenance: dict[str, list[str]] = Field(default_factory=dict)
+
+    # ── v3.4 pre-computation layer ────────────────────────────────────────
+    atr_effective: float | None = None
+    atr_source: Literal["h4", "h1_proxy", "d1_proxy", "synthetic"] | None = None
+    conviction_cap: Literal["A", "BBB"] | None = None
+    nearest_aligned_zone: SRZone | None = None
+    hot_zone_primary: SRZone | None = None
 
     @classmethod
     def from_symbol(cls, sym: CanonicalSymbol) -> CanonicalAsset:
@@ -610,7 +681,7 @@ class CanonicalAsset(BaseModel):
     def recompute_rsi_views(self) -> None:
         """Build rsi_by_tf dict + rsi_h4_status from rsi list.
         Called after each fold so views stay in sync. (GAP 4 + 5)
-        """
+        v3.4: uses the 7-level v9.0 scale."""
         by_tf: dict[str, dict[str, Any]] = {}
         for r in self.rsi:
             key = r.timeframe.value
@@ -640,9 +711,27 @@ class EnrichmentQuality(BaseModel):
     scanners_total: int = 0
 
 
+# ── v3.4: typed pre-computation block embedded in every EnrichedSignal ────
+class SignalPrecomputed(BaseModel):
+    """Deterministic pre-computations for the v9.0 DAG.
+    All fields are derived ONLY from the merged asset + event — no I/O.
+    """
+    model_config = BaseCfg
+    atr_effective: float | None = None
+    atr_source: Literal["h4", "h1_proxy", "d1_proxy", "synthetic"] | None = None
+    bb_mult: float = _SL_RAW_DEFAULT_MULT
+    sl_distance_min: float | None = None
+    sl_distance_raw: float | None = None
+    rsi_h4_value: float | None = None
+    rsi_h4_status: str | None = None
+    candles_elapsed: int = 999
+    sig_fresh_aligned: bool = False
+    htf_aligned: bool = False
+    conviction_cap: Literal["A", "BBB"] | None = None
+
+
 class EnrichedSignal(BaseModel):
-    """v3.3 adds: sl_price, sl_atr_multiple, tp1_price, tp1_atr_multiple,
-    rr_estimated (GAP 6)."""
+    """v3.4 adds the typed `precomputed` sub-model (SignalPrecomputed)."""
     model_config = BaseCfg
     event: StructureEvent
     asset: CanonicalAsset
@@ -651,12 +740,13 @@ class EnrichedSignal(BaseModel):
     tp_zones: list[SRZone] = Field(default_factory=list)
     confluence_total: float = 0.0
     sl_price: float | None = None
-    sl_atr_multiple: float = 1.1
+    sl_atr_multiple: float = _SL_RAW_DEFAULT_MULT
     tp1_price: float | None = None
     tp1_atr_multiple: float | None = None
     rr_estimated: float | None = None
     enrichment: EnrichmentQuality = Field(default_factory=EnrichmentQuality)
     warnings: list[str] = Field(default_factory=list)
+    precomputed: SignalPrecomputed = Field(default_factory=SignalPrecomputed)
 
 
 class MergeMeta(BaseModel):
@@ -679,6 +769,91 @@ class MergeOutput(BaseModel):
     hot_zones: list[dict[str, Any]] = Field(default_factory=list)
     top_consensus: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
     diagnostics: list[dict[str, Any]] = Field(default_factory=list)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# v3.4 — ATR CASCADE & ZONE PRE-COMPUTATION HELPERS
+# ════════════════════════════════════════════════════════════════════════════
+def compute_atr_effective(
+    mtf: MTFConsensus | None,
+    current_price: float | None,
+) -> tuple[float | None, Literal["h4", "h1_proxy", "d1_proxy", "synthetic"] | None]:
+    """ATR cascade per v9.0 §5.1. First level available wins.
+
+    Returns (atr_effective, atr_source). (None, None) only if all levels
+    are unusable — which gates G5 rejects the asset downstream (LLM side).
+    """
+    if mtf is not None:
+        h4 = mtf.atr_h4
+        if h4 is not None and _is_finite_number(h4) and h4 > 0:
+            return float(h4), "h4"
+        h1 = mtf.atr_h1
+        if h1 is not None and _is_finite_number(h1) and h1 > 0:
+            return round(float(h1) * _ATR_H1_PROXY_MULT, 8), "h1_proxy"
+        d1 = mtf.atr_daily
+        if d1 is not None and _is_finite_number(d1) and d1 > 0:
+            return round(float(d1) * _ATR_D1_PROXY_MULT, 8), "d1_proxy"
+    if current_price is not None and _is_finite_number(current_price) and current_price > 0:
+        return round(float(current_price) * _ATR_SYNTHETIC_PCT, 8), "synthetic"
+    return None, None
+
+
+def _select_hot_zone_primary(
+    asset: CanonicalAsset, direction: Direction
+) -> SRZone | None:
+    """Pick the most relevant 'ZONE CHAUDE' for the asset's direction.
+    Includes UNKNOWN-side pivot zones if their distance sign is coherent with
+    the direction (per v9.0 §6.2). Real SR zones are preferred over synthetic
+    nearest zones — the latter rarely carry an 'alert' flag anyway."""
+    if direction is Direction.NEUTRAL:
+        return None
+    wanted = "BUY" if direction is Direction.BULLISH else "SELL"
+
+    def _alignment_ok(z: SRZone) -> bool:
+        if z.alert != "ZONE CHAUDE":
+            return False
+        if z.side == wanted:
+            return True
+        if z.side == "UNKNOWN":
+            # Pivots: below price for bullish, above for bearish.
+            # Note: distance_pct is stored absolute since v3.3.1 (P1 fix),
+            # so we cannot use its sign. Fall back to the raw level.
+            # The hot zone must be on the "right" side of current_price.
+            cp = asset.current_price
+            if cp is None or not _is_finite_number(cp) or cp <= 0:
+                # Can't disambiguate → conservative: include UNKNOWN.
+                return True
+            if direction is Direction.BULLISH:
+                return z.level <= cp
+            return z.level >= cp
+        return False
+
+    aligned_hot = [z for z in asset.zones if _alignment_ok(z)]
+    if not aligned_hot:
+        return None
+    # Prefer real SR zones; among those, the closest one wins.
+    real_hot = [z for z in aligned_hot if z.is_real_sr()]
+    pool = real_hot if real_hot else aligned_hot
+    pool.sort(key=lambda z: z.distance_pct)
+    return pool[0]
+
+
+def _select_nearest_aligned_for_asset(
+    asset: CanonicalAsset, direction: Direction
+) -> SRZone | None:
+    """Pick the closest aligned zone for the asset's MTF direction.
+    Mirrors the enrichment-stage selector but operates at asset level so the
+    LLM sees a pre-computed `asset.nearest_aligned_zone`."""
+    if direction is Direction.NEUTRAL:
+        return None
+    wanted = "BUY" if direction is Direction.BULLISH else "SELL"
+    aligned = [z for z in asset.zones if z.side == wanted]
+    if not aligned:
+        return None
+    real = [z for z in aligned if z.is_real_sr()]
+    pool = real if real else aligned
+    pool.sort(key=lambda z: z.distance_pct)
+    return pool[0]
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -1015,7 +1190,7 @@ def _extract_rsi_list(items: list[Any]) -> list[RSIReading]:
     return out
 
 
-# ──── S/R adapter (v3.3.1: fixed price_context regression + nearest zones) ─
+# ──── S/R adapter ─────────────────────────────────────────────────────────
 _SUP_RE: Final[re.Pattern[str]] = re.compile(
     r"(SUR\s+support|S\s+proche|support)[:\s]+([\d.]+)\s*(([-+]?[\d.]+)\s*%)",
     re.I,
@@ -1085,7 +1260,7 @@ def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
         score=round(score, 2),
         weighted_score=round(score * coeff, 2),
         status=status,
-        distance_pct=round(abs(dist), 3),   # P1: distance always positive
+        distance_pct=round(abs(dist), 3),
         alert=_parse_alert(z.get("alert", "")),
         timeframes=tf_list,
         has_weekly=Timeframe.W1 in tf_list,
@@ -1095,11 +1270,7 @@ def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
 
 
 def _parse_price_context_from_text(s: str) -> PriceContext:
-    """Regex-based parser for the legacy textual price_context format.
-    Example input:
-        'SUR support: 1.37884 (-0.35%)  |  R proche: 1.39447 (+0.78%)'
-    Returns a PriceContext with support_level/resistance_level populated.
-    """
+    """Regex-based parser for the legacy textual price_context format."""
     ctx = PriceContext(raw=s)
     if not s or _INTER_RE.search(s):
         ctx.is_intermediate = True
@@ -1120,32 +1291,17 @@ def _parse_price_context_from_text(s: str) -> PriceContext:
 
 
 def _parse_price_context(raw: Any) -> PriceContext:
-    """
-    v3.3.1 (P0 FIX): robust parser that handles three shapes:
-      1) dict with structured fields  → use them directly
-      2) dict with only a 'raw' text  → fall back to regex on raw (P0 fix)
-      3) raw string                   → regex directly (legacy, v3.2 behavior)
-
-    This restores the v3.2 parsing capability that was lost in v3.3.0 when
-    the scanner provides price_context as {raw: "SUR support: ..."} without
-    structured support_level / resistance_level keys.
-    """
+    """v3.3.1 (P0 FIX): robust parser; falls back to regex on dict['raw']."""
     if raw is None:
         return PriceContext(raw="")
-
-    # Case 1 & 2: dict input
     if isinstance(raw, dict):
         raw_text = safe_str(raw.get("raw") or "", max_len=512)
-
-        # Try structured fields first
         sup_level = safe_float(raw.get("support_level"))
         sup_dist = safe_float(raw.get("support_dist_pct"))
         sup_tag = raw.get("support_tag")
         res_level = safe_float(raw.get("resistance_level"))
         res_dist = safe_float(raw.get("resistance_dist_pct"))
         res_tag = raw.get("resistance_tag")
-
-        # Also accept nearest_support / nearest_resistance structured objects
         if sup_level is None:
             ns = raw.get("nearest_support")
             if isinstance(ns, dict):
@@ -1158,11 +1314,6 @@ def _parse_price_context(raw: Any) -> PriceContext:
                 res_level = safe_float(nr.get("level"))
                 res_dist = safe_float(nr.get("distance_pct"))
                 res_tag = nr.get("tag") or nr.get("status")
-
-        # P0 FIX: if structured fields are still missing but 'raw' text is
-        # present, fall back to the regex parser (v3.2 behavior). This is
-        # the critical regression fix — without it, all price_context values
-        # from the current SR scanner come back null.
         if (
             sup_level is None
             and res_level is None
@@ -1176,10 +1327,6 @@ def _parse_price_context(raw: Any) -> PriceContext:
             res_level = fallback.resistance_level
             res_dist = fallback.resistance_dist_pct
             res_tag = fallback.resistance_tag or res_tag
-            if fallback.is_intermediate:
-                # keep the raw text but mark intermediate
-                pass
-
         ctx = PriceContext(raw=raw_text)
         ctx.support_level = sup_level
         ctx.support_dist_pct = sup_dist
@@ -1187,7 +1334,6 @@ def _parse_price_context(raw: Any) -> PriceContext:
         ctx.resistance_level = res_level
         ctx.resistance_dist_pct = res_dist
         ctx.resistance_tag = safe_str(res_tag, max_len=64) if res_tag else None
-
         is_inter = raw.get("is_intermediate")
         if isinstance(is_inter, bool):
             ctx.is_intermediate = is_inter
@@ -1196,8 +1342,6 @@ def _parse_price_context(raw: Any) -> PriceContext:
         elif sup_level is None and res_level is None:
             ctx.is_intermediate = True
         return ctx
-
-    # Case 3: raw text (legacy v3.2 shape)
     s = safe_str(raw, max_len=512)
     return _parse_price_context_from_text(s)
 
@@ -1205,13 +1349,8 @@ def _parse_price_context(raw: Any) -> PriceContext:
 def _build_zone_from_nearest(
     obj: Any, side: Literal["BUY", "SELL"]
 ) -> SRZone | None:
-    """Build a SRZone from a nearest_support / nearest_resistance dict.
-
-    v3.3.1 (P1 FIX):
-      - Forces distance_pct to be non-negative (abs) for stable sort order.
-      - Tags status with _SR_NEAREST_STATUS so downstream logic can
-        distinguish synthetic zones from real scanner-provided zones.
-    """
+    """Build a synthetic SRZone from nearest_support / nearest_resistance.
+    v3.3.1 (P1): distance_pct forced positive, status tagged 'SR_nearest'."""
     if not isinstance(obj, dict):
         return None
     level = safe_float(obj.get("level"))
@@ -1220,8 +1359,8 @@ def _build_zone_from_nearest(
     dist = safe_float(obj.get("distance_pct"))
     if dist is None:
         dist = 999.0
-    status = _SR_NEAREST_STATUS   # P1: explicit synthetic marker
-    score = 0.0                   # P1: no real score → mark as synthetic
+    status = _SR_NEAREST_STATUS
+    score = 0.0
     tf_list = _parse_tf_list(obj.get("timeframes") or obj.get("tf") or "")
     return SRZone(
         side=side,
@@ -1229,7 +1368,7 @@ def _build_zone_from_nearest(
         score=round(score, 2),
         weighted_score=0.0,
         status=status,
-        distance_pct=round(abs(dist), 3),   # P1: always positive
+        distance_pct=round(abs(dist), 3),
         alert=_parse_alert(obj.get("alert", "")),
         timeframes=tf_list,
         has_weekly=Timeframe.W1 in tf_list,
@@ -1300,17 +1439,11 @@ class SRAdapter(ScannerAdapter):
         if not sym.canonical:
             return None
         asset = CanonicalAsset.from_symbol(sym)
-
-        # v3.3 (GAP 3): promote current_price from SR
         cp = safe_float(raw.get("current_price") or raw.get("price"))
         if cp is not None:
             asset.current_price = cp
-
         asset.price_context = _parse_price_context(raw.get("price_context", ""))
-
         zones = SRAdapter._collect_zones(raw.get("zones", []))
-
-        # v3.3 (GAP 7): also lift nearest_support / nearest_resistance into zones
         pc_raw = raw.get("price_context")
         if isinstance(pc_raw, dict):
             ns = pc_raw.get("nearest_support")
@@ -1324,8 +1457,6 @@ class SRAdapter(ScannerAdapter):
             zones.append(z_ns)
         if z_nr is not None:
             zones.append(z_nr)
-
-        # de-dup by (side, level)
         seen: set[tuple[str, float]] = set()
         dedup: list[SRZone] = []
         for z in zones:
@@ -1757,9 +1888,11 @@ class MergeEngine:
             if stop:
                 break
 
+        # ── Phase 2: per-asset pre-computation (v3.4) ────────────────────
         for asset in merged.values():
             asset.recompute_rsi_views()
             asset.recompute_current_price()
+            self._enrich_asset_precompute(asset, res)
 
         res.add(Diagnostic(
             "merge", Severity.INFO, "summary",
@@ -1769,6 +1902,42 @@ class MergeEngine:
             )},
         ))
         return res
+
+    # ── v3.4: per-asset pre-computation (ATR cascade, zones) ──────────────
+    @staticmethod
+    def _enrich_asset_precompute(
+        asset: CanonicalAsset,
+        res: Result[dict[str, CanonicalAsset]],
+    ) -> None:
+        """Compute ATR cascade output, conviction cap, nearest aligned zone
+        and primary hot zone. Pure, deterministic, no I/O."""
+        atr_eff, atr_src = compute_atr_effective(asset.mtf, asset.current_price)
+        asset.atr_effective = atr_eff
+        asset.atr_source = atr_src
+        cap = _ATR_CONVICTION_CAP.get(atr_src) if atr_src is not None else None
+        # cast for type-checker; values are constrained to A | BBB | None
+        asset.conviction_cap = cast(
+            "Literal['A', 'BBB'] | None", cap
+        )
+
+        direction = asset.mtf.direction if asset.mtf else Direction.NEUTRAL
+        asset.nearest_aligned_zone = _select_nearest_aligned_for_asset(
+            asset, direction
+        )
+        asset.hot_zone_primary = _select_hot_zone_primary(asset, direction)
+
+        if atr_eff is None:
+            res.add(Diagnostic(
+                "merge.precompute", Severity.WARNING, "no_atr",
+                "ATR cascade exhausted — asset will be downgraded downstream",
+                {"sym": asset.symbol},
+            ))
+        elif atr_src != "h4":
+            res.add(Diagnostic(
+                "merge.precompute", Severity.INFO, "atr_fallback",
+                f"using {atr_src} (cap={cap})",
+                {"sym": asset.symbol, "atr_effective": atr_eff},
+            ))
 
     @staticmethod
     def _merge_group(
@@ -1886,8 +2055,6 @@ class MergeEngine:
         ):
             target.price_context = source.price_context
             return
-        # v3.3 (BUG 2): lift missing structured levels without replacing the
-        # whole context, so both sides contribute whatever they have.
         tpc = target.price_context
         spc = source.price_context
         if tpc.support_level is None and spc.support_level is not None:
@@ -1983,7 +2150,8 @@ def _split_zones_by_alignment(
 
 
 class EnrichmentEngine:
-    """Computes HTF alignment, confluence, TP zones, SL/TP1/RR for each event."""
+    """Computes HTF alignment, confluence, TP zones, SL/TP1/RR and the
+    v3.4 typed `precomputed` block for each event."""
 
     def enrich(
         self, assets: dict[str, CanonicalAsset]
@@ -2032,19 +2200,26 @@ class EnrichmentEngine:
         tp_zones = opposite[:MAX_TP_ZONES]
         htf_aligned = self._htf_aligned(asset, event)
         confluence = self._confluence(asset, event)
-        sl_price, tp1_price, rr = self._compute_sl_tp_rr(
+
+        # v3.4: SL/TP/RR now use atr_effective (cascade-aware)
+        sl_price, tp1_price, rr, sl_mult = self._compute_sl_tp_rr(
             asset, event, nearest, tp_zones
         )
+
+        # TP1 ATR multiple is computed using atr_effective when available.
         tp1_atr = None
         if (
             tp1_price is not None
             and event.level is not None
-            and asset.mtf is not None
-            and asset.mtf.atr_h1
+            and asset.atr_effective is not None
+            and asset.atr_effective > 0
         ):
-            atr = asset.mtf.atr_h1
-            if atr and atr > 0:
-                tp1_atr = round(abs(tp1_price - event.level) / atr, 2)
+            tp1_atr = round(
+                abs(tp1_price - event.level) / asset.atr_effective, 2
+            )
+
+        precomputed = self._build_precomputed(asset, event, htf_aligned, sl_mult)
+
         return EnrichedSignal(
             event=event,
             asset=asset,
@@ -2053,19 +2228,65 @@ class EnrichmentEngine:
             tp_zones=tp_zones,
             confluence_total=confluence,
             sl_price=sl_price,
-            sl_atr_multiple=1.1,
+            sl_atr_multiple=sl_mult,
             tp1_price=tp1_price,
             tp1_atr_multiple=tp1_atr,
             rr_estimated=rr,
             enrichment=self._enrichment_quality(asset),
             warnings=self._warnings(asset, event),
+            precomputed=precomputed,
+        )
+
+    # ── v3.4: typed precomputed block (consumed verbatim by prompt v9.0) ─
+    @staticmethod
+    def _build_precomputed(
+        asset: CanonicalAsset,
+        event: StructureEvent,
+        htf_aligned: bool,
+        sl_mult: float,
+    ) -> SignalPrecomputed:
+        bb_mult = _BB_REGIME_SL_MULT.get(
+            event.bb_regime or "", _SL_RAW_DEFAULT_MULT
+        )
+        atr_eff = asset.atr_effective
+        sl_distance_min: float | None = None
+        sl_distance_raw: float | None = None
+        if atr_eff is not None and _is_finite_number(atr_eff) and atr_eff > 0:
+            sl_distance_min = round(atr_eff * _SL_FLOOR_MULT, 8)
+            sl_distance_raw = round(atr_eff * bb_mult, 8)
+
+        h4_view = asset.rsi_by_tf.get(Timeframe.H4.value) or {}
+        rsi_h4_value = safe_float(h4_view.get("value"))
+
+        candles = safe_int(event.candles_elapsed, default=999)
+        # sig_fresh_aligned: Fresh + direction match + ≤2 candles since signal.
+        # event.status is free-form text from the scanner; we lowercase-compare.
+        is_fresh = str(event.status or "").strip().lower() == "fresh"
+        sig_fresh_aligned = bool(
+            is_fresh
+            and event.direction is not Direction.NEUTRAL
+            and asset.mtf is not None
+            and event.direction == asset.mtf.direction
+            and candles <= _FRESH_CANDLES_MAX
+        )
+
+        return SignalPrecomputed(
+            atr_effective=atr_eff,
+            atr_source=asset.atr_source,
+            bb_mult=bb_mult,
+            sl_distance_min=sl_distance_min,
+            sl_distance_raw=sl_distance_raw,
+            rsi_h4_value=rsi_h4_value,
+            rsi_h4_status=asset.rsi_h4_status,
+            candles_elapsed=candles,
+            sig_fresh_aligned=sig_fresh_aligned,
+            htf_aligned=htf_aligned,
+            conviction_cap=asset.conviction_cap,
         )
 
     # ── BUG 1 FIX: htf_aligned requires BOTH D1 AND H4 aligned ────────────
     @staticmethod
     def _htf_aligned(asset: CanonicalAsset, event: StructureEvent) -> bool:
-        """Return True iff both D1 and H4 biases match the event direction.
-        Any missing or neutral bias fails the test (no more OR fallback)."""
         if asset.mtf is None:
             return False
         if event.direction is Direction.NEUTRAL:
@@ -2080,74 +2301,64 @@ class EnrichmentEngine:
             return False
         return d1_dir == event.direction and h4_dir == event.direction
 
-    # ── P2 FIX: nearest_aligned_zone prioritizes real SR zones ────────────
     @staticmethod
     def _select_nearest_aligned_zone(
         asset: CanonicalAsset,
         event: StructureEvent,
         aligned_zones: list[SRZone],
     ) -> SRZone | None:
-        """Pick the best aligned zone, strictly preferring real SR zones
-        (score > 0, status not in _INVALID_ZONE_STATUSES) over synthetic
-        nearest_support/resistance zones built from price_context."""
         if not aligned_zones:
             return None
-
-        # 1. Real SR zones first, sorted by distance
         real = [z for z in aligned_zones if z.is_real_sr()]
         if real:
             real.sort(key=lambda z: z.distance_pct)
             return real[0]
-
-        # 2. Otherwise return the closest synthetic zone (fallback)
-        aligned_zones_sorted = sorted(aligned_zones, key=lambda z: z.distance_pct)
-        return aligned_zones_sorted[0]
+        aligned_sorted = sorted(aligned_zones, key=lambda z: z.distance_pct)
+        return aligned_sorted[0]
 
     @staticmethod
     def _confluence(asset: CanonicalAsset, event: StructureEvent) -> float:
         total = event.confluence_score or 0.0
         if asset.mtf is not None:
             total += asset.mtf.pct * 0.5
-        # Only count real SR zones in confluence — synthetic zones (score=0)
-        # must not dilute the confluence signal.
         for z in asset.zones:
             if not z.is_real_sr():
                 continue
             total += z.weighted_score * 0.1
-            if len([zz for zz in asset.zones if zz.is_real_sr()]) >= 3:
-                # soft cap: only the first 3 real zones contribute
-                pass
         return round(total, 2)
 
-    # ── GAP 6 FIX: deterministic SL / TP1 / RR ────────────────────────────
+    # ── GAP 6 + v3.4: SL / TP1 / RR using atr_effective ───────────────────
     @staticmethod
     def _compute_sl_tp_rr(
         asset: CanonicalAsset,
         event: StructureEvent,
         nearest: SRZone | None,
         tp_zones: list[SRZone],
-    ) -> tuple[float | None, float | None, float | None]:
-        """Compute SL (level ± 1.1 × ATR_H1), TP1 (nearest opposite zone or
-        nearest PC level), and RR = |TP1 - level| / |level - SL|.
-        Only real SR zones are considered for TP1. Synthetic zones (score=0)
-        are used as last resort via price_context."""
+    ) -> tuple[float | None, float | None, float | None, float]:
+        """Compute SL / TP1 / RR. v3.4 uses asset.atr_effective (cascade).
+        Returns (sl_price, tp1_price, rr, sl_mult_actually_used).
+        sl_mult is the BB-regime multiplier (or 1.1 fallback) so callers can
+        persist it on EnrichedSignal.sl_atr_multiple."""
         level = event.level
+        sl_mult = _BB_REGIME_SL_MULT.get(
+            event.bb_regime or "", _SL_RAW_DEFAULT_MULT
+        )
         if level is None or not _is_finite_number(level) or level <= 0:
-            return None, None, None
-        atr_h1 = asset.mtf.atr_h1 if asset.mtf else None
-        if atr_h1 is None or not _is_finite_number(atr_h1) or atr_h1 <= 0:
+            return None, None, None, sl_mult
+
+        atr_eff = asset.atr_effective
+        if atr_eff is None or not _is_finite_number(atr_eff) or atr_eff <= 0:
             sl_price: float | None = None
         else:
             if event.direction is Direction.BULLISH:
-                sl_price = round(level - 1.1 * atr_h1, 5)
+                sl_price = round(level - sl_mult * atr_eff, 5)
             elif event.direction is Direction.BEARISH:
-                sl_price = round(level + 1.1 * atr_h1, 5)
+                sl_price = round(level + sl_mult * atr_eff, 5)
             else:
                 sl_price = None
 
         tp1_price: float | None = None
         if event.direction is Direction.BULLISH:
-            # 1. Nearest real opposite (SELL) zone
             real_tp = [z for z in tp_zones if z.is_real_sr()]
             if real_tp:
                 tp1_price = real_tp[0].level
@@ -2155,10 +2366,8 @@ class EnrichmentEngine:
                 asset.price_context is not None
                 and asset.price_context.resistance_level is not None
             ):
-                # 2. Fall back to price_context resistance
                 tp1_price = asset.price_context.resistance_level
             elif tp_zones:
-                # 3. Last resort: synthetic opposite zone
                 tp1_price = tp_zones[0].level
         elif event.direction is Direction.BEARISH:
             real_tp = [z for z in tp_zones if z.is_real_sr()]
@@ -2186,7 +2395,7 @@ class EnrichmentEngine:
             reward = abs(tp1_price - level)
             if risk > 0:
                 rr = round(reward / risk, 2)
-        return sl_price, tp1_price, rr
+        return sl_price, tp1_price, rr, sl_mult
 
     @staticmethod
     def _enrichment_quality(asset: CanonicalAsset) -> EnrichmentQuality:
@@ -2214,6 +2423,10 @@ class EnrichmentEngine:
         for r in asset.rsi:
             if r.value is not None and not 0 <= r.value <= 100:
                 w.append(f"rsi {r.timeframe.value} out of range")
+        if asset.atr_effective is None:
+            w.append("atr_cascade_exhausted")
+        elif asset.atr_source and asset.atr_source != "h4":
+            w.append(f"atr_source={asset.atr_source}")
         return w
 
 
@@ -2412,14 +2625,12 @@ class MergePipeline:
     def _hot_zones(
         assets: dict[str, CanonicalAsset]
     ) -> list[dict[str, Any]]:
-        """Only real SR zones (score > 0, status not in {Unknown, SR_nearest})
-        and within 2% distance make it into the hot_zones list."""
         zones: list[dict[str, Any]] = []
         soft_cap = MAX_HOT_ZONES_OUT * 2
         for sym, asset in assets.items():
             for z in asset.zones:
                 if not z.is_real_sr():
-                    continue                       # P3: drop synthetic
+                    continue
                 if z.distance_pct >= 2.0:
                     continue
                 zones.append({"symbol": sym, **_zone_dict(z)})
@@ -2565,12 +2776,7 @@ def _files_fingerprint(entries: Sequence[FileEntry]) -> str:
 def run_pipeline_cached(
     fingerprint: str, entries: tuple[FileEntry, ...]
 ) -> dict[str, Any]:
-    """
-    Cached pipeline run. Cache key = `fingerprint` (string) +
-    deterministic `__hash__` of each `FileEntry` (name + sha256).
-    Raw bytes are NEVER hashed by Streamlit.
-    Returns a serializable dict to avoid keeping pydantic objects in cache.
-    """
+    """Cached pipeline run. Returns a serializable dict."""
     _ = fingerprint
     pipeline = get_pipeline()
     ingested: list[IngestedFile] = []
@@ -2606,7 +2812,7 @@ def run_pipeline_cached(
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# UI RENDERING  (visual identity preserved from v3.2)
+# UI RENDERING
 # ════════════════════════════════════════════════════════════════════════════
 _SEV_ICON: Final[dict[str, str]] = {
     "critical": "🔴", "error": "🔴", "warning": "🟡",
@@ -2614,6 +2820,12 @@ _SEV_ICON: Final[dict[str, str]] = {
 }
 _STATUS_BADGE: Final[dict[str, str]] = {
     "complete": "🟢", "partial": "🟡", "minimal": "🟠", "empty": "🔴",
+}
+_ATR_SRC_BADGE: Final[dict[str, str]] = {
+    "h4": "🟢H4",
+    "h1_proxy": "🟡H1×1.8",
+    "d1_proxy": "🟠D1×0.25",
+    "synthetic": "🔴SYNTH",
 }
 
 
@@ -2630,7 +2842,7 @@ def _render_header() -> None:
             <span style="opacity:.6;font-size:14px">v{SCHEMA_VERSION}</span>
           </div>
           <div style="font-family:monospace;font-size:11px;opacity:.85">
-            Auto-detection · Canonical pivot · Format-agnostic · Heuristic fallback
+            Auto-detection · Canonical pivot · Pre-computation layer for v9.0 prompt
           </div>
         </div>
         """,
@@ -2656,7 +2868,7 @@ def _zone_text(nz: dict[str, Any] | None) -> str:
     status = nz.get("status")
     synth = " ⚠️synth" if status in _INVALID_ZONE_STATUSES else ""
     return (
-        f"@ `{nz.get('level')}`"
+        f"@ `{nz.get('level')}` "
         f"(d={safe_float(nz.get('distance_pct')) or 0.0:.2f}%, "
         f"sc={nz.get('score')}, {status}){synth}"
     )
@@ -2673,6 +2885,7 @@ def _render_one_signal(s: dict[str, Any]) -> None:
     ev = s.get("event") or {}
     asset = s.get("asset") or {}
     enr = s.get("enrichment") or {}
+    pre = s.get("precomputed") or {}
     status = str(enr.get("status", "empty"))
     badge = _STATUS_BADGE.get(status, "⚪")
     htf = "✅" if s.get("htf_aligned") else "⚠️"
@@ -2680,7 +2893,6 @@ def _render_one_signal(s: dict[str, Any]) -> None:
     warns = s.get("warnings") or []
     warn_txt = f" ⚡{len(warns)}w" if warns else ""
 
-    # SL / TP1 / RR enrichment line (v3.3) — deterministic, non-LLM
     sl = s.get("sl_price")
     tp1 = s.get("tp1_price")
     rr = s.get("rr_estimated")
@@ -2693,11 +2905,23 @@ def _render_one_signal(s: dict[str, Any]) -> None:
         trade_bits.append(f"RR={rr:.2f}")
     trade_txt = (" · " + " ".join(trade_bits)) if trade_bits else ""
 
+    # v3.4 pre-computed badges
+    extra_bits: list[str] = []
+    atr_src = pre.get("atr_source") or asset.get("atr_source")
+    if atr_src:
+        extra_bits.append(_ATR_SRC_BADGE.get(atr_src, atr_src))
+    if pre.get("sig_fresh_aligned"):
+        extra_bits.append("🔥FRESH")
+    cap = pre.get("conviction_cap") or asset.get("conviction_cap")
+    if cap:
+        extra_bits.append(f"cap≤{cap}")
+    extra_txt = (" · " + " ".join(extra_bits)) if extra_bits else ""
+
     st.markdown(
         f"- {badge}  `{asset.get('symbol', '?')}` "
         f"[{ev.get('timeframe', '?')}]  {ev.get('direction', '?')}  ·  "
         f"HTF {htf} · {zone_txt} ·  "
-        f"confluence={s.get('confluence_total', 0)}{warn_txt}{trade_txt}"
+        f"confluence={s.get('confluence_total', 0)}{warn_txt}{trade_txt}{extra_txt}"
     )
 
 
@@ -2868,7 +3092,6 @@ def _render_asset_browser(assets: dict[str, Any]) -> None:
 
 # ──── Upload handling ─────────────────────────────────────────────────────
 def _read_one_upload(f: Any) -> tuple[bytes | None, str | None]:
-    """Read a single upload defensively. Returns (data, error)."""
     try:
         f.seek(0)
         data = f.read()
@@ -2889,7 +3112,6 @@ def _read_one_upload(f: Any) -> tuple[bytes | None, str | None]:
 
 
 def _read_uploads(uploads: list[Any]) -> tuple[list[FileEntry], list[str]]:
-    """Read uploaded files defensively with size/count limits."""
     files: list[FileEntry] = []
     errors: list[str] = []
     total_size = 0
@@ -2933,10 +3155,18 @@ def _render_sidebar() -> None:
         st.caption("Adapters actifs:")
         st.markdown(
             "- `gps` · MTF consensus\n"
-            "- `rsi` · flat & nested\n"
+            "- `rsi` · flat & nested (7-level v9.0 scale)\n"
             "- `sr` · zones + price context\n"
             "- `choch` · structure events\n"
             "- `heuristic` · fuzzy fallback"
+        )
+        st.markdown("### 🧮 Pré-calculs v3.4")
+        st.markdown(
+            "- ATR cascade (`h4 → h1×1.8 → d1×0.25 → synth`)\n"
+            "- `nearest_aligned_zone` (réelles prioritaires)\n"
+            "- `hot_zone_primary` (avec pivots UNKNOWN)\n"
+            "- `sig_fresh_aligned`, `bb_mult`, `sl_distance_*`\n"
+            "- `conviction_cap` selon source ATR"
         )
         fuzz_state = "✅ natif" if _HAS_RAPIDFUZZ else "⚠️ fallback Python"
         st.caption(f"RapidFuzz: {fuzz_state}")
