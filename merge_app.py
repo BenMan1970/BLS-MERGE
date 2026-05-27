@@ -1,15 +1,22 @@
 """
-BLUESTAR MERGE v3.2 — Production-grade Streamlit application.
-
+BLUESTAR MERGE v3.3 — Production-grade Streamlit application.
 Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
 heuristic fallback, full pipeline diagnostics, and hardened against malformed
 input, DoS, and partial failures.
 
 Architecture:
     Upload → Parse (cached) → Detect (registry) → Adapt → Merge → Enrich
-           → Correlate → Render + Export
+    → Correlate → Render + Export
 
-Hardening guarantees (v3.2):
+v3.3 hardening (over v3.2):
+    - BUG FIX: htf_aligned now requires BOTH D1 AND H4 aligned (no more OR).
+    - BUG FIX: SRAdapter parses structured price_context objects (not only text).
+    - GAP FIX: current_price promoted to CanonicalAsset level.
+    - GAP FIX: rsi_by_tf dict + rsi_h4_status pre-computed on CanonicalAsset.
+    - GAP FIX: sl_price / tp1_price / rr_estimated pre-computed on EnrichedSignal.
+    - GAP FIX: nearest_aligned_zone uses 5% threshold + price_context fallback.
+
+Hardening guarantees (inherited from v3.2):
     - All pipeline stages defensively boundary-wrapped; no stage can crash
       the pipeline.
     - Hard upper bounds on file count, file size, asset/zone/event counts.
@@ -31,6 +38,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import sys
@@ -54,11 +62,10 @@ from typing import (
 )
 
 import streamlit as st
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 try:
     from rapidfuzz import fuzz as _rf_fuzz
-
     _HAS_RAPIDFUZZ: Final[bool] = True
 except ImportError:  # pragma: no cover - optional dep
     _rf_fuzz = None
@@ -66,10 +73,10 @@ except ImportError:  # pragma: no cover - optional dep
 
 T = TypeVar("T")
 
+
 # ════════════════════════════════════════════════════════════════════════════
 # PRODUCTION LIMITS — hard caps to prevent DoS and runaway memory
 # ════════════════════════════════════════════════════════════════════════════
-
 MAX_FILES: Final[int] = 32
 MAX_FILE_SIZE_BYTES: Final[int] = 25 * 1024 * 1024          # 25 MB / file
 MAX_TOTAL_SIZE_BYTES: Final[int] = 100 * 1024 * 1024        # 100 MB combined
@@ -82,14 +89,15 @@ MAX_SIGNALS_OUT: Final[int] = 10_000
 MAX_HOT_ZONES_OUT: Final[int] = 500
 MAX_CORRELATION_GROUP_SIZE: Final[int] = 50
 MAX_PROVENANCE_ENTRIES: Final[int] = 32
-MAX_DIAGNOSTICS: Final[int] = 5_000  # protect UI from runaway diag explosions
+MAX_DIAGNOSTICS: Final[int] = 5_000
+MAX_TP_ZONES: Final[int] = 3
 
-SCHEMA_VERSION: Final[str] = "3.2.0"
+SCHEMA_VERSION: Final[str] = "3.3.0"
+
 
 # ════════════════════════════════════════════════════════════════════════════
 # LOGGING — structured, production-ready
 # ════════════════════════════════════════════════════════════════════════════
-
 _LOG = logging.getLogger("bluestar_merge")
 if not _LOG.handlers:
     _handler = logging.StreamHandler(sys.stderr)
@@ -100,14 +108,13 @@ if not _LOG.handlers:
         )
     )
     _LOG.addHandler(_handler)
-_LOG.setLevel(os.environ.get("BLUESTAR_LOG_LEVEL", "INFO").upper())
-_LOG.propagate = False
+    _LOG.setLevel(os.environ.get("BLUESTAR_LOG_LEVEL", "INFO").upper())
+    _LOG.propagate = False
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # DIAGNOSTICS — Result[T] carrier; never raise from pipeline stages
 # ════════════════════════════════════════════════════════════════════════════
-
 class Severity(str, Enum):
     DEBUG = "debug"
     INFO = "info"
@@ -167,11 +174,7 @@ def _safe_call(
     default: T,
     severity: Severity = Severity.ERROR,
 ) -> tuple[T, Diagnostic | None]:
-    """Defensive wrapper — converts ANY exception into a structured diagnostic.
-
-    The boundary catches ``BaseException`` only narrowly via ``Exception`` to
-    deliberately let ``KeyboardInterrupt``/``SystemExit`` propagate.
-    """
+    """Defensive wrapper — converts ANY exception into a structured diagnostic."""
     try:
         return fn(), None
     except Exception as exc:
@@ -205,7 +208,6 @@ def _is_finite_number(value: Any) -> bool:
 # ════════════════════════════════════════════════════════════════════════════
 # SYMBOL NORMALIZATION
 # ════════════════════════════════════════════════════════════════════════════
-
 class AssetClass(str, Enum):
     FOREX = "forex"
     METAL = "metal"
@@ -224,13 +226,12 @@ _FIAT_ISO: Final[frozenset[str]] = frozenset({
 _STABLE_QUOTES: Final[frozenset[str]] = frozenset({
     "USDT", "USDC", "BUSD", "DAI", "TUSD",
 })
-
 _METAL_HINT: Final[re.Pattern[str]] = re.compile(
     r"^(XAU|XAG|XPT|XPD|GOLD|SILVER|PLAT)", re.I
 )
 _INDEX_HINT: Final[re.Pattern[str]] = re.compile(
     r"^(US\d+|SPX|NDX|DAX|FTSE|NIKKEI|HSI|ASX|UK\d+|GER\d+|"
-    r"JP\d+|FRA\d+|EUSTX|VIX|NAS|DOW)",
+    r"JP\d+|FRA\d+|EUSTX|VIX|NAS|DOW|DE\d+)",
     re.I,
 )
 _CRYPTO_HINT: Final[re.Pattern[str]] = re.compile(
@@ -273,7 +274,7 @@ _EMPTY_SYMBOL: Final[CanonicalSymbol] = CanonicalSymbol(
 
 
 def _split_concatenated(token: str) -> tuple[str, str | None]:
-    """Best-effort split of a glued symbol like ``EURUSD`` or ``BTCUSDT``."""
+    """Best-effort split of a glued symbol like `EURUSD` or `BTCUSDT`."""
     for q in _STABLE_QUOTES:
         if token.endswith(q) and len(token) > len(q):
             return token[: -len(q)], q
@@ -289,14 +290,12 @@ def normalize_symbol(raw: Any) -> CanonicalSymbol:
     s = str(raw).strip().upper()[:_MAX_SYMBOL_LEN]
     if not s:
         return _EMPTY_SYMBOL
-
     parts = [p for p in _SEP_RE.split(s) if p]
     if len(parts) >= 2:
         base, quote = parts[0], parts[1]
         return CanonicalSymbol(
             s, f"{base}/{quote}", base, quote, _classify(base, quote)
         )
-
     token = parts[0] if parts else s
     base, quote = _split_concatenated(token)
     if quote is not None:
@@ -309,7 +308,6 @@ def normalize_symbol(raw: Any) -> CanonicalSymbol:
 # ════════════════════════════════════════════════════════════════════════════
 # TIMEFRAMES
 # ════════════════════════════════════════════════════════════════════════════
-
 class Timeframe(str, Enum):
     M1 = "M1"
     M5 = "M5"
@@ -338,7 +336,7 @@ _TF_ALIAS: Final[dict[str, Timeframe]] = {
     "mn": Timeframe.MN, "monthly": Timeframe.MN, "month": Timeframe.MN,
     "1mn": Timeframe.MN,
 }
-# Anchored on word-ish boundaries to avoid false positives on noisy keys.
+
 _TF_EXTRACT_RE: Final[re.Pattern[str]] = re.compile(
     r"(?:^|[^a-z0-9])"
     r"(1m|5m|15m|30m|1h|4h|1d|1w|h1|h4|d1|w1|mn|"
@@ -396,12 +394,9 @@ def _parse_iso_datetime(raw: Any) -> datetime | None:
         return None
     if isinstance(raw, datetime):
         return raw if raw.tzinfo else raw.replace(tzinfo=timezone.utc)
-
-    # Numeric: epoch seconds or milliseconds.
     if isinstance(raw, (int, float)) and not isinstance(raw, bool):
         if not _is_finite_number(raw):
             return None
-        # Heuristic: > 1e12 → ms; otherwise s.
         ts = float(raw)
         if abs(ts) > 1e12:
             ts /= 1000.0
@@ -409,7 +404,6 @@ def _parse_iso_datetime(raw: Any) -> datetime | None:
             return datetime.fromtimestamp(ts, tz=timezone.utc)
         except (OverflowError, OSError, ValueError):
             return None
-
     s = str(raw).strip()
     if not s:
         return None
@@ -427,7 +421,6 @@ def _parse_iso_datetime(raw: Any) -> datetime | None:
 # ════════════════════════════════════════════════════════════════════════════
 # CANONICAL MODELS
 # ════════════════════════════════════════════════════════════════════════════
-
 class Direction(str, Enum):
     BULLISH = "Bullish"
     BEARISH = "Bearish"
@@ -446,6 +439,22 @@ BaseCfg: Final[ConfigDict] = ConfigDict(
     arbitrary_types_allowed=True,
     str_strip_whitespace=True,
 )
+
+
+# ── RSI status mapping (deterministic, pre-computed; GAP 5) ───────────────
+def _rsi_status_from_value(v: float | None) -> str | None:
+    """Map RSI value to categorical status. Returns None if value missing."""
+    if v is None or not _is_finite_number(v):
+        return None
+    if v >= 80.0:
+        return "extreme_overbought"
+    if v >= 70.0:
+        return "overbought"
+    if v >= 30.0:
+        return "neutral"
+    if v >= 20.0:
+        return "oversold"
+    return "extreme_oversold"
 
 
 class RSIReading(BaseModel):
@@ -543,13 +552,20 @@ class MTFConsensus(BaseModel):
 
 
 class CanonicalAsset(BaseModel):
+    """Canonical asset pivot. v3.3 adds:
+    - current_price (GAP 3)
+    - rsi_by_tf dict (GAP 4)
+    - rsi_h4_status pre-computed (GAP 5)
+    """
     model_config = BaseCfg
     symbol: str
     base: str = ""
     quote: str | None = None
     asset_class: AssetClass = AssetClass.UNKNOWN
-
+    current_price: float | None = None
     rsi: list[RSIReading] = Field(default_factory=list)
+    rsi_by_tf: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    rsi_h4_status: str | None = None
     biases: list[TrendBias] = Field(default_factory=list)
     mtf: MTFConsensus | None = None
     price_context: PriceContext | None = None
@@ -567,10 +583,34 @@ class CanonicalAsset(BaseModel):
         )
 
     def add_provenance(self, source: str, tag: str) -> None:
-        """Append a provenance tag with hard cap (prevents unbounded growth)."""
         bucket = self.provenance.setdefault(source, [])
         if len(bucket) < MAX_PROVENANCE_ENTRIES:
             bucket.append(tag)
+
+    def recompute_rsi_views(self) -> None:
+        """Build rsi_by_tf dict + rsi_h4_status from rsi list.
+        Called after each fold so views stay in sync. (GAP 4 + 5)
+        """
+        by_tf: dict[str, dict[str, Any]] = {}
+        for r in self.rsi:
+            key = r.timeframe.value
+            by_tf[key] = {
+                "value": r.value,
+                "divergence": r.divergence.value,
+                "status": _rsi_status_from_value(r.value),
+            }
+        self.rsi_by_tf = by_tf
+        h4 = by_tf.get(Timeframe.H4.value)
+        self.rsi_h4_status = h4.get("status") if h4 else None
+
+    def recompute_current_price(self) -> None:
+        """Promote current_price from first structure_event if missing. (GAP 3)"""
+        if self.current_price is not None:
+            return
+        for ev in self.structure_events:
+            if ev.current_price is not None and _is_finite_number(ev.current_price):
+                self.current_price = ev.current_price
+                return
 
 
 class EnrichmentQuality(BaseModel):
@@ -581,6 +621,8 @@ class EnrichmentQuality(BaseModel):
 
 
 class EnrichedSignal(BaseModel):
+    """v3.3 adds: sl_price, sl_atr_multiple, tp1_price, tp1_atr_multiple,
+    rr_estimated (GAP 6)."""
     model_config = BaseCfg
     event: StructureEvent
     asset: CanonicalAsset
@@ -588,6 +630,11 @@ class EnrichedSignal(BaseModel):
     nearest_aligned_zone: SRZone | None = None
     tp_zones: list[SRZone] = Field(default_factory=list)
     confluence_total: float = 0.0
+    sl_price: float | None = None
+    sl_atr_multiple: float = 1.1
+    tp1_price: float | None = None
+    tp1_atr_multiple: float | None = None
+    rr_estimated: float | None = None
     enrichment: EnrichmentQuality = Field(default_factory=EnrichmentQuality)
     warnings: list[str] = Field(default_factory=list)
 
@@ -617,7 +664,6 @@ class MergeOutput(BaseModel):
 # ════════════════════════════════════════════════════════════════════════════
 # ADAPTERS — abstract base + concrete implementations
 # ════════════════════════════════════════════════════════════════════════════
-
 @dataclass(frozen=True, slots=True)
 class AdapterMatch:
     score: float
@@ -626,7 +672,7 @@ class AdapterMatch:
 
 class ScannerAdapter(ABC):
     name: str = "unknown"
-    priority: int = 0  # tie-breaker; higher wins on equal score
+    priority: int = 0
 
     @abstractmethod
     def detect(self, payload: Any) -> AdapterMatch: ...
@@ -635,8 +681,7 @@ class ScannerAdapter(ABC):
     def adapt(self, payload: Any) -> Result[list[CanonicalAsset]]: ...
 
 
-# ---- GPS adapter ----------------------------------------------------------
-
+# ──── GPS adapter ─────────────────────────────────────────────────────────
 _MTF_PCT_RE: Final[re.Pattern[str]] = re.compile(r"(\d+(?:\.\d+)?)\s*%")
 _MTF_DIR_RE: Final[re.Pattern[str]] = re.compile(
     r"\b(bullish|bearish|neutral|range)\b", re.I
@@ -676,6 +721,13 @@ def _extract_gps_biases(raw: dict[str, Any]) -> dict[str, str]:
         v = raw.get(k)
         if v is not None:
             biases[tf.value] = safe_str(v, max_len=64)
+    # Also accept nested 'biases' dict if present
+    nested = raw.get("biases")
+    if isinstance(nested, dict):
+        for kk, vv in nested.items():
+            tf = parse_timeframe(kk)
+            if tf is not Timeframe.UNKNOWN and vv is not None:
+                biases[tf.value] = safe_str(vv, max_len=64)
     return biases
 
 
@@ -701,7 +753,6 @@ class GPSAdapter(ScannerAdapter):
         if not isinstance(payload, list):
             res.add(Diagnostic("gps", Severity.ERROR, "bad_root", "expected list"))
             return res
-
         for idx, raw in enumerate(payload):
             if len(out) >= MAX_ASSETS:
                 res.add(Diagnostic(
@@ -733,7 +784,6 @@ class GPSAdapter(ScannerAdapter):
         sym = normalize_symbol(sym_raw)
         if not sym.canonical:
             return None
-
         asset = CanonicalAsset.from_symbol(sym)
         mtf, mtf_diag = GPSAdapter._build_mtf(raw, idx)
         if mtf_diag is not None:
@@ -771,8 +821,7 @@ class GPSAdapter(ScannerAdapter):
         return mtf, None
 
 
-# ---- RSI adapter ----------------------------------------------------------
-
+# ──── RSI adapter ─────────────────────────────────────────────────────────
 _DIV_MAP: Final[dict[str, DivergenceKind]] = {
     "none": DivergenceKind.NONE,
     "aucune": DivergenceKind.NONE,
@@ -880,7 +929,6 @@ class RSIAdapter(ScannerAdapter):
         if not items:
             res.add(Diagnostic("rsi", Severity.ERROR, "empty", "no instruments"))
             return res
-
         for idx, raw in enumerate(items):
             if len(out) >= MAX_ASSETS:
                 res.add(Diagnostic(
@@ -918,6 +966,7 @@ class RSIAdapter(ScannerAdapter):
         asset = CanonicalAsset.from_symbol(sym)
         readings = RSIAdapter._extract_readings(raw)
         asset.rsi = readings[:MAX_RSI_READINGS_PER_ASSET]
+        asset.recompute_rsi_views()
         asset.add_provenance("rsi", f"{len(asset.rsi)}tf")
         return asset
 
@@ -926,17 +975,35 @@ class RSIAdapter(ScannerAdapter):
         tfs = raw.get("timeframes")
         if isinstance(tfs, dict):
             return _extract_nested_rsi(tfs)
+        # Also accept flat list of {timeframe, value, divergence}
+        if isinstance(tfs, list):
+            return _extract_rsi_list(tfs)
         return _extract_flat_rsi(raw)
 
 
-# ---- S/R adapter ----------------------------------------------------------
+def _extract_rsi_list(items: list[Any]) -> list[RSIReading]:
+    out: list[RSIReading] = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        tf = parse_timeframe(it.get("timeframe") or it.get("tf"))
+        if tf is Timeframe.UNKNOWN:
+            continue
+        out.append(RSIReading(
+            timeframe=tf,
+            value=safe_float(it.get("value") or it.get("rsi")),
+            divergence=_norm_div(it.get("divergence") or it.get("div")),
+        ))
+    return out
 
+
+# ──── S/R adapter (v3.3: structured price_context + nearest zones) ────────
 _SUP_RE: Final[re.Pattern[str]] = re.compile(
-    r"(SUR\s+support|S\s+proche|support)[:\s]+([\d.]+)\s*\(([-+]?[\d.]+)\s*%\)",
+    r"(SUR\s+support|S\s+proche|support)[:\s]+([\d.]+)\s*(([-+]?[\d.]+)\s*%)",
     re.I,
 )
 _RES_RE: Final[re.Pattern[str]] = re.compile(
-    r"(SUR\s+resistance|R\s+proche|resistance)[:\s]+([\d.]+)\s*\(([-+]?[\d.]+)\s*%\)",
+    r"(SUR\s+resistance|R\s+proche|resistance)[:\s]+([\d.]+)\s*(([-+]?[\d.]+)\s*%)",
     re.I,
 )
 _INTER_RE: Final[re.Pattern[str]] = re.compile(
@@ -944,6 +1011,7 @@ _INTER_RE: Final[re.Pattern[str]] = re.compile(
 )
 _STATUS_COEFF: Final[dict[str, float]] = {
     "vierge": 1.0,
+    "virgin": 1.0,
     "testee": 0.8,
     "tested": 0.8,
     "role reverse": 0.6,
@@ -951,7 +1019,7 @@ _STATUS_COEFF: Final[dict[str, float]] = {
 
 
 def _parse_side(raw: Any) -> Literal["BUY", "SELL", "UNKNOWN"]:
-    sig = str(raw).upper()
+    sig = str(raw or "").upper()
     if "BUY" in sig:
         return "BUY"
     if "SELL" in sig:
@@ -973,7 +1041,7 @@ def _parse_tf_list(tf_raw: Any) -> list[Timeframe]:
     if isinstance(tf_raw, list):
         iterable: Iterable[Any] = tf_raw
     else:
-        iterable = re.split(r"[+,/]", str(tf_raw))
+        iterable = re.split(r"[+,/]", str(tf_raw or ""))
     for tok in iterable:
         tf = parse_timeframe(str(tok).strip())
         if tf is not Timeframe.UNKNOWN:
@@ -992,8 +1060,9 @@ def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
     status = safe_str(z.get("status", "Unknown"), max_len=32)
     coeff = _STATUS_COEFF.get(status.lower(), 0.8)
     tf_list = _parse_tf_list(z.get("timeframes", ""))
+    side_src = z.get("signal") or z.get("side")
     return SRZone(
-        side=_parse_side(z.get("signal", "")),
+        side=_parse_side(side_src),
         level=round(level, 5),
         score=round(score, 2),
         weighted_score=round(score * coeff, 2),
@@ -1008,8 +1077,56 @@ def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
 
 
 def _parse_price_context(raw: Any) -> PriceContext:
-    ctx = PriceContext(raw=safe_str(raw, max_len=512))
-    s = ctx.raw
+    """v3.3 (BUG 2): parse STRUCTURED price_context dict first, fall back
+    to text parsing only if structured fields are missing."""
+    if raw is None:
+        return PriceContext(raw="")
+
+    # Case 1: structured dict
+    if isinstance(raw, dict):
+        raw_text = safe_str(raw.get("raw") or "", max_len=512)
+        ctx = PriceContext(raw=raw_text)
+
+        sup_level = safe_float(raw.get("support_level"))
+        sup_dist = safe_float(raw.get("support_dist_pct"))
+        sup_tag = raw.get("support_tag")
+        res_level = safe_float(raw.get("resistance_level"))
+        res_dist = safe_float(raw.get("resistance_dist_pct"))
+        res_tag = raw.get("resistance_tag")
+
+        # Also accept nearest_support / nearest_resistance structured objects
+        if sup_level is None:
+            ns = raw.get("nearest_support")
+            if isinstance(ns, dict):
+                sup_level = safe_float(ns.get("level"))
+                sup_dist = safe_float(ns.get("distance_pct"))
+                sup_tag = ns.get("tag") or ns.get("status")
+        if res_level is None:
+            nr = raw.get("nearest_resistance")
+            if isinstance(nr, dict):
+                res_level = safe_float(nr.get("level"))
+                res_dist = safe_float(nr.get("distance_pct"))
+                res_tag = nr.get("tag") or nr.get("status")
+
+        ctx.support_level = sup_level
+        ctx.support_dist_pct = sup_dist
+        ctx.support_tag = safe_str(sup_tag, max_len=64) if sup_tag else None
+        ctx.resistance_level = res_level
+        ctx.resistance_dist_pct = res_dist
+        ctx.resistance_tag = safe_str(res_tag, max_len=64) if res_tag else None
+
+        is_inter = raw.get("is_intermediate")
+        if isinstance(is_inter, bool):
+            ctx.is_intermediate = is_inter
+        elif raw_text and _INTER_RE.search(raw_text):
+            ctx.is_intermediate = True
+        elif sup_level is None and res_level is None:
+            ctx.is_intermediate = True
+        return ctx
+
+    # Case 2: raw text (legacy)
+    s = safe_str(raw, max_len=512)
+    ctx = PriceContext(raw=s)
     if not s or _INTER_RE.search(s):
         ctx.is_intermediate = True
         return ctx
@@ -1024,6 +1141,37 @@ def _parse_price_context(raw: Any) -> PriceContext:
         ctx.resistance_level = safe_float(m.group(2))
         ctx.resistance_dist_pct = safe_float(m.group(3))
     return ctx
+
+
+def _build_zone_from_nearest(
+    obj: Any, side: Literal["BUY", "SELL"]
+) -> SRZone | None:
+    """Build a SRZone from a nearest_support / nearest_resistance dict."""
+    if not isinstance(obj, dict):
+        return None
+    level = safe_float(obj.get("level"))
+    if level is None or level <= 0:
+        return None
+    dist = safe_float(obj.get("distance_pct"))
+    if dist is None:
+        dist = 999.0
+    status = safe_str(obj.get("status") or obj.get("tag") or "Unknown", max_len=32)
+    score = safe_float(obj.get("score")) or 0.0
+    coeff = _STATUS_COEFF.get(status.lower(), 0.8)
+    tf_list = _parse_tf_list(obj.get("timeframes") or obj.get("tf") or "")
+    return SRZone(
+        side=side,
+        level=round(level, 5),
+        score=round(score, 2),
+        weighted_score=round(score * coeff, 2),
+        status=status,
+        distance_pct=round(dist, 3),
+        alert=_parse_alert(obj.get("alert", "")),
+        timeframes=tf_list,
+        has_weekly=Timeframe.W1 in tf_list,
+        has_daily=Timeframe.D1 in tf_list,
+        has_h4=Timeframe.H4 in tf_list,
+    )
 
 
 class SRAdapter(ScannerAdapter):
@@ -1059,7 +1207,6 @@ class SRAdapter(ScannerAdapter):
         if not isinstance(assets, list):
             res.add(Diagnostic("sr", Severity.ERROR, "bad_assets", "assets not list"))
             return res
-
         for idx, raw in enumerate(assets):
             if len(out) >= MAX_ASSETS:
                 res.add(Diagnostic(
@@ -1089,11 +1236,44 @@ class SRAdapter(ScannerAdapter):
         if not sym.canonical:
             return None
         asset = CanonicalAsset.from_symbol(sym)
+
+        # v3.3 (GAP 3): promote current_price from SR
+        cp = safe_float(raw.get("current_price") or raw.get("price"))
+        if cp is not None:
+            asset.current_price = cp
+
         asset.price_context = _parse_price_context(raw.get("price_context", ""))
 
         zones = SRAdapter._collect_zones(raw.get("zones", []))
-        asset.zones = zones
-        asset.add_provenance("sr", f"{len(zones)}zones")
+
+        # v3.3 (GAP 7): also lift nearest_support / nearest_resistance into zones
+        # so they are visible to the enrichment engine as aligned / opposite zones.
+        pc_raw = raw.get("price_context")
+        if isinstance(pc_raw, dict):
+            ns = pc_raw.get("nearest_support")
+            nr = pc_raw.get("nearest_resistance")
+        else:
+            ns = raw.get("nearest_support")
+            nr = raw.get("nearest_resistance")
+        z_ns = _build_zone_from_nearest(ns, "BUY")
+        z_nr = _build_zone_from_nearest(nr, "SELL")
+        if z_ns is not None:
+            zones.append(z_ns)
+        if z_nr is not None:
+            zones.append(z_nr)
+
+        # de-dup by (side, level)
+        seen: set[tuple[str, float]] = set()
+        dedup: list[SRZone] = []
+        for z in zones:
+            key = (z.side, round(z.level, 5))
+            if key in seen:
+                continue
+            seen.add(key)
+            dedup.append(z)
+        dedup.sort(key=lambda z: z.distance_pct)
+        asset.zones = dedup[:MAX_ZONES_PER_ASSET]
+        asset.add_provenance("sr", f"{len(asset.zones)}zones")
         return asset
 
     @staticmethod
@@ -1113,8 +1293,7 @@ class SRAdapter(ScannerAdapter):
         return zones
 
 
-# ---- CHoCH adapter ---------------------------------------------------------
-
+# ──── CHoCH adapter ───────────────────────────────────────────────────────
 def _parse_direction_text(raw: Any) -> Direction:
     s = str(raw or "").lower()
     if "bull" in s:
@@ -1169,7 +1348,6 @@ class CHoCHAdapter(ScannerAdapter):
         if not isinstance(sigs, list):
             res.add(Diagnostic("choch", Severity.ERROR, "bad_signals", "not list"))
             return res
-
         by_sym: dict[str, CanonicalAsset] = {}
         for idx, raw in enumerate(sigs):
             if len(by_sym) >= MAX_ASSETS:
@@ -1207,12 +1385,14 @@ class CHoCHAdapter(ScannerAdapter):
         asset = by_sym.setdefault(sym.canonical, CanonicalAsset.from_symbol(sym))
         if len(asset.structure_events) >= MAX_EVENTS_PER_ASSET:
             return
-
         event = CHoCHAdapter._build_event(raw, idx, sym.canonical, res)
         if event is None:
             return
         asset.structure_events.append(event)
         asset.add_provenance("choch", event.signal_id)
+        # v3.3 (GAP 3): promote current_price from event if asset lacks one
+        if asset.current_price is None and event.current_price is not None:
+            asset.current_price = event.current_price
 
     @staticmethod
     def _build_event(
@@ -1265,8 +1445,7 @@ class CHoCHAdapter(ScannerAdapter):
             return None
 
 
-# ---- Heuristic fallback ---------------------------------------------------
-
+# ──── Heuristic fallback ─────────────────────────────────────────────────
 _SYMBOL_HINTS: Final[tuple[str, ...]] = (
     "pair", "symbol", "instrument", "ticker", "devises", "paire", "asset",
 )
@@ -1334,7 +1513,6 @@ class HeuristicAdapter(ScannerAdapter):
         if not items:
             res.add(Diagnostic("heuristic", Severity.ERROR, "empty", "no items"))
             return res
-
         for raw in items:
             if len(out) >= MAX_ASSETS:
                 break
@@ -1360,6 +1538,7 @@ class HeuristicAdapter(ScannerAdapter):
         asset = CanonicalAsset.from_symbol(sym)
         readings = HeuristicAdapter._extract_rsi(raw)
         asset.rsi = readings[:MAX_RSI_READINGS_PER_ASSET]
+        asset.recompute_rsi_views()
         asset.add_provenance("heuristic", "introspected")
         return asset
 
@@ -1404,7 +1583,6 @@ class HeuristicAdapter(ScannerAdapter):
 # ════════════════════════════════════════════════════════════════════════════
 # REGISTRY — deterministic adapter selection
 # ════════════════════════════════════════════════════════════════════════════
-
 @dataclass(slots=True)
 class DetectionResult:
     adapter: ScannerAdapter | None
@@ -1414,7 +1592,6 @@ class DetectionResult:
 
 class ScannerRegistry:
     """Deterministic adapter selection with score + priority tie-break."""
-
     _FALLBACK_THRESHOLD: Final[float] = 0.5
 
     def __init__(
@@ -1435,7 +1612,6 @@ class ScannerRegistry:
                 continue
             if self._is_better(match, adapter, best):
                 best = DetectionResult(adapter, match.score, match.reason)
-
         if best.score < self._FALLBACK_THRESHOLD and self._fallback is not None:
             fb_match = self._safe_detect(self._fallback, payload)
             if fb_match is not None and fb_match.score > best.score:
@@ -1484,7 +1660,6 @@ class ScannerRegistry:
                 "no adapter matched", {"reason": det.reason},
             ))
             return "unknown", r
-
         adapter = det.adapter
         result, crash_diag = _safe_call(
             f"registry.adapt.{adapter.name}", "adapter_crash",
@@ -1495,7 +1670,6 @@ class ScannerRegistry:
         if crash_diag is not None:
             result.add(crash_diag)
             return adapter.name, result
-
         result.add(Diagnostic(
             "registry", Severity.INFO, "selected",
             f"{adapter.name} (score={det.score:.2f})",
@@ -1507,7 +1681,6 @@ class ScannerRegistry:
 # ════════════════════════════════════════════════════════════════════════════
 # MERGE ENGINE
 # ════════════════════════════════════════════════════════════════════════════
-
 class MergeEngine:
     """Deterministic, defensive merger of partial asset groups into a canon."""
 
@@ -1517,11 +1690,16 @@ class MergeEngine:
         merged: dict[str, CanonicalAsset] = {}
         res: Result[dict[str, CanonicalAsset]] = Result(value=merged)
         collisions: dict[str, int] = defaultdict(int)
-
         for group in partial_groups:
             stop = self._merge_group(group, merged, collisions, res)
             if stop:
                 break
+
+        # Final pass: ensure every asset has rsi_by_tf / rsi_h4_status /
+        # current_price computed from the merged state.
+        for asset in merged.values():
+            asset.recompute_rsi_views()
+            asset.recompute_current_price()
 
         res.add(Diagnostic(
             "merge", Severity.INFO, "summary",
@@ -1573,8 +1751,6 @@ class MergeEngine:
         source: CanonicalAsset,
         res: Result[dict[str, CanonicalAsset]],
     ) -> None:
-        # Deep-copy source defensively so that mutating target never aliases
-        # caller-owned objects.
         src = source.model_copy(deep=True)
         MergeEngine._fold_identity(target, src)
         MergeEngine._fold_rsi(target, src, res)
@@ -1583,6 +1759,7 @@ class MergeEngine:
         MergeEngine._fold_price_context(target, src)
         MergeEngine._fold_zones(target, src)
         MergeEngine._fold_events(target, src)
+        MergeEngine._fold_current_price(target, src)
         MergeEngine._fold_provenance(target, src)
 
     @staticmethod
@@ -1648,6 +1825,19 @@ class MergeEngine:
             and target.price_context.is_intermediate
         ):
             target.price_context = source.price_context
+            return
+        # v3.3 (BUG 2): if source has structured levels and target lacks them,
+        # lift them without replacing the whole context.
+        tpc = target.price_context
+        spc = source.price_context
+        if tpc.support_level is None and spc.support_level is not None:
+            tpc.support_level = spc.support_level
+            tpc.support_dist_pct = spc.support_dist_pct
+            tpc.support_tag = spc.support_tag
+        if tpc.resistance_level is None and spc.resistance_level is not None:
+            tpc.resistance_level = spc.resistance_level
+            tpc.resistance_dist_pct = spc.resistance_dist_pct
+            tpc.resistance_tag = spc.resistance_tag
 
     @staticmethod
     def _fold_zones(target: CanonicalAsset, source: CanonicalAsset) -> None:
@@ -1672,6 +1862,13 @@ class MergeEngine:
                 existing.add(e.signal_id)
 
     @staticmethod
+    def _fold_current_price(
+        target: CanonicalAsset, source: CanonicalAsset
+    ) -> None:
+        if target.current_price is None and source.current_price is not None:
+            target.current_price = source.current_price
+
+    @staticmethod
     def _fold_provenance(target: CanonicalAsset, source: CanonicalAsset) -> None:
         for k, v in source.provenance.items():
             bucket = target.provenance.setdefault(k, [])
@@ -1684,23 +1881,9 @@ class MergeEngine:
 # ════════════════════════════════════════════════════════════════════════════
 # ENRICHMENT
 # ════════════════════════════════════════════════════════════════════════════
-
 _DIR_TOKENS: Final[dict[Direction, tuple[str, ...]]] = {
     Direction.BULLISH: ("bullish", "bull", "haussier", "hausse", "long"),
     Direction.BEARISH: ("bearish", "bear", "baissier", "baisse", "short"),
-}
-
-_HTF_LOOKUP: Final[dict[Timeframe, tuple[Timeframe, ...]]] = {
-    Timeframe.M1: (Timeframe.H4, Timeframe.H1, Timeframe.D1),
-    Timeframe.M5: (Timeframe.H4, Timeframe.H1, Timeframe.D1),
-    Timeframe.M15: (Timeframe.H4, Timeframe.H1, Timeframe.D1),
-    Timeframe.M30: (Timeframe.H4, Timeframe.H1, Timeframe.D1),
-    Timeframe.H1: (Timeframe.H4, Timeframe.D1),
-    Timeframe.H4: (Timeframe.D1, Timeframe.W1),
-    Timeframe.D1: (Timeframe.D1, Timeframe.W1),
-    Timeframe.W1: (Timeframe.W1, Timeframe.MN),
-    Timeframe.MN: (Timeframe.MN,),
-    Timeframe.UNKNOWN: (Timeframe.D1, Timeframe.W1),
 }
 
 
@@ -1712,6 +1895,10 @@ def _direction_from_text(text: str) -> Direction:
     return Direction.NEUTRAL
 
 
+# v3.3 (GAP 7): relaxed threshold for aligned zone detection.
+_ALIGNED_ZONE_MAX_DIST_PCT: Final[float] = 5.0
+
+
 def _split_zones_by_alignment(
     asset: CanonicalAsset, direction: Direction
 ) -> tuple[list[SRZone], list[SRZone]]:
@@ -1720,6 +1907,8 @@ def _split_zones_by_alignment(
     if direction is Direction.NEUTRAL:
         return aligned, opposite
     for z in asset.zones:
+        if z.distance_pct > _ALIGNED_ZONE_MAX_DIST_PCT:
+            continue
         if direction is Direction.BULLISH:
             if z.side == "BUY":
                 aligned.append(z)
@@ -1734,18 +1923,16 @@ def _split_zones_by_alignment(
 
 
 class EnrichmentEngine:
-    """Computes HTF alignment, confluence, and TP zones for each event."""
+    """Computes HTF alignment, confluence, TP zones, SL/TP1/RR for each event."""
 
     def enrich(
         self, assets: dict[str, CanonicalAsset]
     ) -> Result[list[EnrichedSignal]]:
         signals: list[EnrichedSignal] = []
         res: Result[list[EnrichedSignal]] = Result(value=signals)
-
         for asset in assets.values():
             if self._enrich_asset(asset, signals, res):
                 break
-
         res.add(Diagnostic(
             "enrich", Severity.INFO, "summary",
             f"enriched {len(signals)} signals from {len(assets)} assets",
@@ -1781,27 +1968,97 @@ class EnrichmentEngine:
         self, asset: CanonicalAsset, event: StructureEvent
     ) -> EnrichedSignal:
         aligned, opposite = _split_zones_by_alignment(asset, event.direction)
+        nearest = self._select_nearest_aligned_zone(asset, event, aligned)
+        tp_zones = opposite[:MAX_TP_ZONES]
+        htf_aligned = self._htf_aligned(asset, event)
+        confluence = self._confluence(asset, event)
+        sl_price, tp1_price, rr = self._compute_sl_tp_rr(
+            asset, event, nearest, tp_zones
+        )
+        tp1_atr = None
+        if (
+            tp1_price is not None
+            and event.level is not None
+            and asset.mtf is not None
+            and asset.mtf.atr_h1
+        ):
+            atr = asset.mtf.atr_h1
+            if atr and atr > 0:
+                tp1_atr = round(abs(tp1_price - event.level) / atr, 2)
         return EnrichedSignal(
             event=event,
             asset=asset,
-            htf_aligned=self._htf_aligned(asset, event),
-            nearest_aligned_zone=aligned[0] if aligned else None,
-            tp_zones=opposite[:3],
-            confluence_total=self._confluence(asset, event),
+            htf_aligned=htf_aligned,
+            nearest_aligned_zone=nearest,
+            tp_zones=tp_zones,
+            confluence_total=confluence,
+            sl_price=sl_price,
+            sl_atr_multiple=1.1,
+            tp1_price=tp1_price,
+            tp1_atr_multiple=tp1_atr,
+            rr_estimated=rr,
             enrichment=self._enrichment_quality(asset),
             warnings=self._warnings(asset, event),
         )
 
+    # ── BUG 1 FIX: htf_aligned requires BOTH D1 AND H4 aligned ────────────
     @staticmethod
     def _htf_aligned(asset: CanonicalAsset, event: StructureEvent) -> bool:
+        """Return True iff both D1 and H4 biases match the event direction.
+        Any missing or neutral bias fails the test (no more OR fallback)."""
         if asset.mtf is None:
             return False
-        candidate_tfs = _HTF_LOOKUP.get(event.timeframe, (Timeframe.D1, Timeframe.W1))
-        for tf in candidate_tfs:
-            bias = asset.mtf.biases.get(tf.value)
-            if bias and _direction_from_text(bias) == event.direction:
-                return True
-        return False
+        if event.direction is Direction.NEUTRAL:
+            return False
+        d1_bias = asset.mtf.biases.get(Timeframe.D1.value)
+        h4_bias = asset.mtf.biases.get(Timeframe.H4.value)
+        if not d1_bias or not h4_bias:
+            return False
+        d1_dir = _direction_from_text(d1_bias)
+        h4_dir = _direction_from_text(h4_bias)
+        if d1_dir is Direction.NEUTRAL or h4_dir is Direction.NEUTRAL:
+            return False
+        return d1_dir == event.direction and h4_dir == event.direction
+
+    # ── GAP 7 FIX: nearest_aligned_zone with relaxed threshold + PC fallback
+    @staticmethod
+    def _select_nearest_aligned_zone(
+        asset: CanonicalAsset,
+        event: StructureEvent,
+        aligned_zones: list[SRZone],
+    ) -> SRZone | None:
+        if aligned_zones:
+            return aligned_zones[0]
+        # Fallback: build a synthetic aligned zone from price_context
+        # (support for BUY, resistance for SELL) if within threshold.
+        pc = asset.price_context
+        if pc is None:
+            return None
+        if event.direction is Direction.BULLISH and pc.support_level is not None:
+            dist = abs(pc.support_dist_pct) if pc.support_dist_pct is not None else 999.0
+            if dist <= _ALIGNED_ZONE_MAX_DIST_PCT:
+                return SRZone(
+                    side="BUY",
+                    level=pc.support_level,
+                    score=0.0,
+                    weighted_score=0.0,
+                    status=pc.support_tag or "S_support",
+                    distance_pct=round(dist, 3),
+                    timeframes=[],
+                )
+        if event.direction is Direction.BEARISH and pc.resistance_level is not None:
+            dist = abs(pc.resistance_dist_pct) if pc.resistance_dist_pct is not None else 999.0
+            if dist <= _ALIGNED_ZONE_MAX_DIST_PCT:
+                return SRZone(
+                    side="SELL",
+                    level=pc.resistance_level,
+                    score=0.0,
+                    weighted_score=0.0,
+                    status=pc.resistance_tag or "R_resistance",
+                    distance_pct=round(dist, 3),
+                    timeframes=[],
+                )
+        return None
 
     @staticmethod
     def _confluence(asset: CanonicalAsset, event: StructureEvent) -> float:
@@ -1811,6 +2068,66 @@ class EnrichmentEngine:
         for z in asset.zones[:3]:
             total += z.weighted_score * 0.1
         return round(total, 2)
+
+    # ── GAP 6 FIX: deterministic SL / TP1 / RR ────────────────────────────
+    @staticmethod
+    def _compute_sl_tp_rr(
+        asset: CanonicalAsset,
+        event: StructureEvent,
+        nearest: SRZone | None,
+        tp_zones: list[SRZone],
+    ) -> tuple[float | None, float | None, float | None]:
+        """Compute SL (level ± 1.1 × ATR_H1), TP1 (nearest opposite zone or
+        nearest PC level), and RR = |TP1 - level| / |level - SL|.
+        All computations are defensive and return None on missing data."""
+        level = event.level
+        if level is None or not _is_finite_number(level) or level <= 0:
+            return None, None, None
+        atr_h1 = asset.mtf.atr_h1 if asset.mtf else None
+        if atr_h1 is None or not _is_finite_number(atr_h1) or atr_h1 <= 0:
+            sl_price: float | None = None
+        else:
+            if event.direction is Direction.BULLISH:
+                sl_price = round(level - 1.1 * atr_h1, 5)
+            elif event.direction is Direction.BEARISH:
+                sl_price = round(level + 1.1 * atr_h1, 5)
+            else:
+                sl_price = None
+
+        tp1_price: float | None = None
+        if event.direction is Direction.BULLISH:
+            # TP1 = nearest opposite (SELL) zone level, else PC resistance
+            if tp_zones:
+                tp1_price = tp_zones[0].level
+            elif (
+                asset.price_context is not None
+                and asset.price_context.resistance_level is not None
+            ):
+                tp1_price = asset.price_context.resistance_level
+        elif event.direction is Direction.BEARISH:
+            if tp_zones:
+                tp1_price = tp_zones[0].level
+            elif (
+                asset.price_context is not None
+                and asset.price_context.support_level is not None
+            ):
+                tp1_price = asset.price_context.support_level
+
+        if tp1_price is not None:
+            tp1_price = round(tp1_price, 5)
+
+        rr: float | None = None
+        if (
+            sl_price is not None
+            and tp1_price is not None
+            and _is_finite_number(sl_price)
+            and _is_finite_number(tp1_price)
+        ):
+            risk = abs(level - sl_price)
+            reward = abs(tp1_price - level)
+            if risk > 0:
+                rr = round(reward / risk, 2)
+        return sl_price, tp1_price, rr
 
     @staticmethod
     def _enrichment_quality(asset: CanonicalAsset) -> EnrichmentQuality:
@@ -1844,7 +2161,6 @@ class EnrichmentEngine:
 # ════════════════════════════════════════════════════════════════════════════
 # CORRELATION
 # ════════════════════════════════════════════════════════════════════════════
-
 _QUALITY_RANK: Final[dict[str, int]] = {"A+": 4, "A": 3, "B+": 2, "B": 1}
 
 
@@ -1901,7 +2217,6 @@ class CorrelationEngine:
 # ════════════════════════════════════════════════════════════════════════════
 # PIPELINE
 # ════════════════════════════════════════════════════════════════════════════
-
 @dataclass(slots=True, frozen=True)
 class IngestedFile:
     name: str
@@ -1942,19 +2257,16 @@ class MergePipeline:
     def run(self, files: list[IngestedFile]) -> Result[MergeOutput]:
         t0 = time.perf_counter()
         diags: list[Diagnostic] = []
-
         if not files:
             res: Result[MergeOutput] = Result(value=None)
             res.add(Diagnostic(
                 "pipeline", Severity.ERROR, "no_input", "no files provided"
             ))
             return res
-
         partials, scanners, unknown = self._adapt_phase(files, diags)
         assets = self._merge_phase(partials, diags)
         signals = self._enrich_phase(assets, diags)
         groups, hot, top = self._post_phase(assets, signals)
-
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         out = MergeOutput(
             meta=MergeMeta(
@@ -2088,7 +2400,6 @@ class MergePipeline:
 # ════════════════════════════════════════════════════════════════════════════
 # EXPORT
 # ════════════════════════════════════════════════════════════════════════════
-
 def _json_default(o: Any) -> Any:
     if isinstance(o, datetime):
         return o.isoformat()
@@ -2109,7 +2420,6 @@ def export_json(output: MergeOutput, *, indent: int = 2) -> str:
 # ════════════════════════════════════════════════════════════════════════════
 # STREAMLIT — caching layer (content-addressable, never hashes raw bytes)
 # ════════════════════════════════════════════════════════════════════════════
-
 @dataclass(frozen=True, slots=True)
 class FileEntry:
     """Content-addressed file. Streamlit hashes via `__hash__`/`__eq__`,
@@ -2191,14 +2501,12 @@ def run_pipeline_cached(
     fingerprint: str, entries: tuple[FileEntry, ...]
 ) -> dict[str, Any]:
     """
-    Cached pipeline run. Cache key = ``fingerprint`` (string) +
-    deterministic ``__hash__`` of each ``FileEntry`` (name + sha256).
+    Cached pipeline run. Cache key = `fingerprint` (string) +
+    deterministic `__hash__` of each `FileEntry` (name + sha256).
     Raw bytes are NEVER hashed by Streamlit.
-
-    Returns a serializable dict to avoid keeping pydantic objects in cache,
-    which would be sensitive to schema evolution.
+    Returns a serializable dict to avoid keeping pydantic objects in cache.
     """
-    _ = fingerprint  # explicit cache discriminator
+    _ = fingerprint
     pipeline = get_pipeline()
     ingested: list[IngestedFile] = []
     parse_errors: list[str] = []
@@ -2233,9 +2541,8 @@ def run_pipeline_cached(
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# UI RENDERING
+# UI RENDERING  (visual identity preserved from v3.2)
 # ════════════════════════════════════════════════════════════════════════════
-
 _SEV_ICON: Final[dict[str, str]] = {
     "critical": "🔴", "error": "🔴", "warning": "🟡",
     "info": "🔵", "debug": "⚪",
@@ -2249,7 +2556,7 @@ def _render_header() -> None:
     st.markdown(
         f"""
         <div style="background:linear-gradient(135deg,#1B45B4 0%,#0f2d8a 100%);
-             color:white;padding:18px 24px;border-radius:10px;margin-bottom:18px">
+                    color:white;padding:18px 24px;border-radius:10px;margin-bottom:18px">
           <div style="font-family:monospace;font-size:10px;opacity:.65;letter-spacing:2px">
             BLUESTAR SYSTEM · GENERIC MULTI-SCANNER MERGE
           </div>
@@ -2280,12 +2587,19 @@ def _render_metrics(meta: dict[str, Any], hot_count: int) -> None:
 
 def _zone_text(nz: dict[str, Any] | None) -> str:
     if not nz or not isinstance(nz, dict):
-        return "_no aligned zone_"
+        return "no aligned zone"
     return (
-        f"@ `{nz.get('level')}` "
+        f"@ `{nz.get('level')}`"
         f"(d={safe_float(nz.get('distance_pct')) or 0.0:.2f}%, "
         f"sc={nz.get('score')})"
     )
+
+
+def _fmt_price(v: Any) -> str:
+    f = safe_float(v)
+    if f is None:
+        return "—"
+    return f"{f:.5f}" if f < 10 else f"{f:.2f}"
 
 
 def _render_one_signal(s: dict[str, Any]) -> None:
@@ -2298,11 +2612,25 @@ def _render_one_signal(s: dict[str, Any]) -> None:
     zone_txt = _zone_text(s.get("nearest_aligned_zone"))
     warns = s.get("warnings") or []
     warn_txt = f" ⚡{len(warns)}w" if warns else ""
+
+    # SL / TP1 / RR enrichment line (v3.3) — deterministic, non-LLM
+    sl = s.get("sl_price")
+    tp1 = s.get("tp1_price")
+    rr = s.get("rr_estimated")
+    trade_bits: list[str] = []
+    if sl is not None:
+        trade_bits.append(f"SL={_fmt_price(sl)}")
+    if tp1 is not None:
+        trade_bits.append(f"TP1={_fmt_price(tp1)}")
+    if rr is not None:
+        trade_bits.append(f"RR={rr:.2f}")
+    trade_txt = (" · " + " ".join(trade_bits)) if trade_bits else ""
+
     st.markdown(
-        f"- {badge} `{asset.get('symbol', '?')}` "
-        f"[{ev.get('timeframe', '?')}] **{ev.get('direction', '?')}** · "
-        f"HTF {htf} · {zone_txt} · "
-        f"confluence={s.get('confluence_total', 0)}{warn_txt}"
+        f"- {badge}  `{asset.get('symbol', '?')}` "
+        f"[{ev.get('timeframe', '?')}]  {ev.get('direction', '?')}  ·  "
+        f"HTF {htf} · {zone_txt} ·  "
+        f"confluence={s.get('confluence_total', 0)}{warn_txt}{trade_txt}"
     )
 
 
@@ -2317,8 +2645,8 @@ def _render_signals(signals: list[dict[str, Any]]) -> None:
     if len(signals) > ui_cap:
         extra = len(signals) - ui_cap
         st.caption(
-            f"_({extra} signaux supplémentaires masqués — "
-            f"exporter le JSON pour la liste complète)_"
+            f"({extra} signaux supplémentaires masqués — "
+            f"exporter le JSON pour la liste complète)"
         )
 
 
@@ -2338,14 +2666,14 @@ def _render_top_consensus(top: dict[str, Any]) -> None:
 def _render_consensus_column(label: str, entries: list[dict[str, Any]]) -> None:
     st.markdown(f"**{label}**")
     if not entries:
-        st.markdown("_aucun_")
+        st.markdown("*aucun*")
         return
     for e in entries:
         symbol = e.get("symbol", "?")
         pct = e.get("mtf_pct", "?")
         quality = e.get("quality") or "?"
         nc = e.get("nc")
-        st.markdown(f"- `{symbol}` · {pct}% · Q={quality} · NC={nc}")
+        st.markdown(f"-  `{symbol}`  · {pct}% · Q={quality} · NC={nc}")
 
 
 def _hot_zone_tags(z: dict[str, Any]) -> str:
@@ -2366,10 +2694,10 @@ def _render_hot_zones(hot: list[dict[str, Any]]) -> None:
         for z in hot[:50]:
             dist = safe_float(z.get("distance_pct")) or 0.0
             st.markdown(
-                f"- `{z.get('symbol', '?')}` {z.get('side', '?')} "
-                f"@ `{z.get('level')}` "
-                f"(d={dist:.2f}%, sc={z.get('weighted_score')}, "
-                f"TF={_hot_zone_tags(z)}, {z.get('status')}) "
+                f"-  `{z.get('symbol', '?')}`  {z.get('side', '?')}  "
+                f"@  `{z.get('level')}` "
+                f"(d={dist:.2f}%, sc={z.get('weighted_score')},  "
+                f"TF={_hot_zone_tags(z)}, {z.get('status')})  "
                 f"{z.get('alert') or ''}"
             )
 
@@ -2381,12 +2709,12 @@ def _render_correlations(groups: dict[str, list[dict[str, Any]]]) -> None:
         for leg, entries in groups.items():
             dirs = {e.get("direction") for e in entries}
             flag = "✅" if len(dirs) == 1 else "⚠️"
-            members = " · ".join(
-                f"`{e.get('symbol', '?')}` {e.get('direction', '?')}"
+            members = " ·  ".join(
+                f"`{e.get('symbol', '?')}`  {e.get('direction', '?')}"
                 for e in entries[:20]
             )
-            extra = "" if len(entries) <= 20 else f" _(+{len(entries) - 20})_"
-            st.markdown(f"**{leg}** {flag} · {members}{extra}")
+            extra = "" if len(entries) <= 20 else f"  (+{len(entries) - 20})"
+            st.markdown(f"**{leg}**  {flag} · {members}{extra}")
 
 
 def _diag_context_text(ctx: Any) -> str:
@@ -2407,7 +2735,7 @@ def _render_diagnostics(diags: list[dict[str, Any]]) -> None:
     warn = sum(1 for s in severities if s == "warning")
     info = sum(1 for s in severities if s == "info")
     label = (
-        f"🔧 Diagnostics · {len(diags)} total · "
+        f"🔧 Diagnostics · {len(diags)} total ·  "
         f"{err}🔴 · {warn}🟡 · {info}🔵"
     )
     with st.expander(label):
@@ -2422,12 +2750,12 @@ def _render_diagnostics(diags: list[dict[str, Any]]) -> None:
             icon = _SEV_ICON.get(d.get("severity", "info"), "•")
             ctx_txt = _diag_context_text(d.get("context") or {})
             st.markdown(
-                f"{icon} `[{d.get('stage')}/{d.get('code')}]` "
+                f"{icon}  `[{d.get('stage')}/{d.get('code')}]` "
                 f"{d.get('message')}{ctx_txt}"
             )
         if len(ordered) > ui_cap:
             extra = len(ordered) - ui_cap
-            st.caption(f"_({extra} diagnostics supplémentaires masqués)_")
+            st.caption(f"({extra} diagnostics supplémentaires masqués)")
 
 
 def _render_export(payload_dict: dict[str, Any]) -> None:
@@ -2471,8 +2799,7 @@ def _render_asset_browser(assets: dict[str, Any]) -> None:
             st.json(assets[selected], expanded=False)
 
 
-# ---- Upload handling ------------------------------------------------------
-
+# ──── Upload handling ─────────────────────────────────────────────────────
 def _read_one_upload(f: Any) -> tuple[bytes | None, str | None]:
     """Read a single upload defensively. Returns (data, error)."""
     try:
@@ -2481,7 +2808,7 @@ def _read_one_upload(f: Any) -> tuple[bytes | None, str | None]:
     except Exception as exc:
         name = getattr(f, "name", "?")
         return None, (
-            f"Lecture impossible de `{name}`: {type(exc).__name__}: {exc}"
+            f"Lecture impossible de `{name}` : {type(exc).__name__}: {exc}"
         )
     if not isinstance(data, (bytes, bytearray)):
         try:
@@ -2489,7 +2816,7 @@ def _read_one_upload(f: Any) -> tuple[bytes | None, str | None]:
         except Exception as exc:
             name = getattr(f, "name", "?")
             return None, (
-                f"Encodage impossible de `{name}`: {type(exc).__name__}: {exc}"
+                f"Encodage impossible de `{name}` : {type(exc).__name__}: {exc}"
             )
     return bytes(data), None
 
@@ -2499,21 +2826,18 @@ def _read_uploads(uploads: list[Any]) -> tuple[list[FileEntry], list[str]]:
     files: list[FileEntry] = []
     errors: list[str] = []
     total_size = 0
-
     if len(uploads) > MAX_FILES:
         errors.append(
             f"Trop de fichiers ({len(uploads)} > MAX_FILES={MAX_FILES}); "
             f"seuls les {MAX_FILES} premiers seront traités."
         )
         uploads = uploads[:MAX_FILES]
-
     for f in uploads:
         data, err = _read_one_upload(f)
         if data is None:
             if err:
                 errors.append(err)
             continue
-
         name = getattr(f, "name", "?")
         size = len(data)
         if size == 0:
@@ -2531,7 +2855,6 @@ def _read_uploads(uploads: list[Any]) -> tuple[list[FileEntry], list[str]]:
                 f"({MAX_TOTAL_SIZE_BYTES} octets), ignoré"
             )
             continue
-
         total_size += size
         files.append(_make_file_entry(name, data))
     return files, errors
@@ -2570,15 +2893,12 @@ def _render_results(result: dict[str, Any]) -> None:
             "Fichiers JSON invalides :\n"
             + "\n".join(f"- {e}" for e in parse_errors)
         )
-
     output = result.get("output")
     diagnostics = result.get("diagnostics") or []
-
     if output is None:
         st.error("Pipeline en erreur — aucun résultat exploitable.")
         _render_diagnostics(diagnostics)
         return
-
     meta = output.get("meta") or {}
     hot = output.get("hot_zones") or []
     _render_metrics(meta, len(hot))
@@ -2596,7 +2916,6 @@ def _render_results(result: dict[str, Any]) -> None:
 # ════════════════════════════════════════════════════════════════════════════
 # ENTRY POINT
 # ════════════════════════════════════════════════════════════════════════════
-
 def main() -> None:
     st.set_page_config(
         page_title=f"BLUESTAR MERGE v{SCHEMA_VERSION}",
@@ -2606,7 +2925,6 @@ def main() -> None:
     )
     _render_header()
     _render_sidebar()
-
     uploads = st.file_uploader(
         "Déposez vos scanners JSON (détection automatique)",
         type=["json"],
@@ -2650,10 +2968,8 @@ def main() -> None:
         msg = diag.message if diag else "unknown"
         st.error(f"Erreur fatale du pipeline: {msg}")
         return
-
     _render_results(result)
 
 
 if __name__ == "__main__":
     main()
-
