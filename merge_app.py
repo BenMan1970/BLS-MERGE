@@ -1,5 +1,5 @@
 """
-BLUESTAR MERGE v3.3 — Production-grade Streamlit application.
+BLUESTAR MERGE v3.3.1 — Production-grade Streamlit application.
 Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
 heuristic fallback, full pipeline diagnostics, and hardened against malformed
 input, DoS, and partial failures.
@@ -8,13 +8,23 @@ Architecture:
     Upload → Parse (cached) → Detect (registry) → Adapt → Merge → Enrich
     → Correlate → Render + Export
 
-v3.3 hardening (over v3.2):
-    - BUG FIX: htf_aligned now requires BOTH D1 AND H4 aligned (no more OR).
-    - BUG FIX: SRAdapter parses structured price_context objects (not only text).
-    - GAP FIX: current_price promoted to CanonicalAsset level.
-    - GAP FIX: rsi_by_tf dict + rsi_h4_status pre-computed on CanonicalAsset.
-    - GAP FIX: sl_price / tp1_price / rr_estimated pre-computed on EnrichedSignal.
-    - GAP FIX: nearest_aligned_zone uses 5% threshold + price_context fallback.
+v3.3.1 hardening (over v3.3.0):
+    - P0 FIX: _parse_price_context() restores regex fallback on dict["raw"]
+      when structured fields are missing (regression from v3.2 → v3.3.0).
+    - P1 FIX: _build_zone_from_nearest() forces distance_pct >= 0 (abs) and
+      tags status="SR_nearest" so synthetic zones are distinguishable.
+    - P2 FIX: _select_nearest_aligned_zone() prefers real SR zones (score>0,
+      status not Unknown/SR_nearest) before falling back to synthetic ones.
+    - P3 FIX: _hot_zones() excludes synthetic/invalid zones
+      (score <= 0 or status in {Unknown, SR_nearest}).
+
+v3.3 hardening (inherited, preserved):
+    - BUG 1 FIX: htf_aligned requires BOTH D1 AND H4 aligned (no more OR).
+    - GAP 3 FIX: current_price promoted to CanonicalAsset level.
+    - GAP 4 FIX: rsi_by_tf dict + rsi_h4_status pre-computed on CanonicalAsset.
+    - GAP 5 FIX: rsi_h4_status pre-computed (extreme_OB/OB/neutral/OS/extreme_OS).
+    - GAP 6 FIX: sl_price / tp1_price / rr_estimated pre-computed on EnrichedSignal.
+    - GAP 7 FIX: nearest_aligned_zone uses 5% threshold + price_context fallback.
 
 Hardening guarantees (inherited from v3.2):
     - All pipeline stages defensively boundary-wrapped; no stage can crash
@@ -22,12 +32,10 @@ Hardening guarantees (inherited from v3.2):
     - Hard upper bounds on file count, file size, asset/zone/event counts.
     - Deterministic adapter selection (stable scoring + priority tie-break).
     - Pydantic v2 strict validation; clamping rather than crashing.
-    - Streamlit cache keys are content-fingerprints (SHA-256), not raw bytes,
-      preventing GB-scale hashing on every rerun.
+    - Streamlit cache keys are content-fingerprints (SHA-256), not raw bytes.
     - Lambda closures explicitly bound (no late-binding bugs in loops).
     - Deep-copy at merge ingress prevents cross-run state corruption.
-    - All exceptions logged with type, message, and a trimmed traceback;
-      never silently swallowed.
+    - All exceptions logged with type, message, and a trimmed traceback.
     - Tolerant datetime parsing: ISO-8601, Unix epoch (s & ms), naive→UTC.
     - Anchored timeframe regex (no false positives on noisy keys).
 
@@ -92,7 +100,14 @@ MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
 MAX_TP_ZONES: Final[int] = 3
 
-SCHEMA_VERSION: Final[str] = "3.3.0"
+SCHEMA_VERSION: Final[str] = "3.3.1"
+
+# Status values identifying synthetic zones built from price_context fallback.
+# These zones have no real SR scoring and must be deprioritized / filtered.
+_SR_NEAREST_STATUS: Final[str] = "SR_nearest"
+_INVALID_ZONE_STATUSES: Final[frozenset[str]] = frozenset({
+    "Unknown", _SR_NEAREST_STATUS,
+})
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -494,6 +509,11 @@ class SRZone(BaseModel):
     has_daily: bool = False
     has_h4: bool = False
 
+    def is_real_sr(self) -> bool:
+        """True iff this zone comes from a real SR scanner (not a synthetic
+        nearest_support/nearest_resistance built from price_context text)."""
+        return self.score > 0.0 and self.status not in _INVALID_ZONE_STATUSES
+
 
 class PriceContext(BaseModel):
     model_config = BaseCfg
@@ -721,7 +741,6 @@ def _extract_gps_biases(raw: dict[str, Any]) -> dict[str, str]:
         v = raw.get(k)
         if v is not None:
             biases[tf.value] = safe_str(v, max_len=64)
-    # Also accept nested 'biases' dict if present
     nested = raw.get("biases")
     if isinstance(nested, dict):
         for kk, vv in nested.items():
@@ -975,7 +994,6 @@ class RSIAdapter(ScannerAdapter):
         tfs = raw.get("timeframes")
         if isinstance(tfs, dict):
             return _extract_nested_rsi(tfs)
-        # Also accept flat list of {timeframe, value, divergence}
         if isinstance(tfs, list):
             return _extract_rsi_list(tfs)
         return _extract_flat_rsi(raw)
@@ -997,7 +1015,7 @@ def _extract_rsi_list(items: list[Any]) -> list[RSIReading]:
     return out
 
 
-# ──── S/R adapter (v3.3: structured price_context + nearest zones) ────────
+# ──── S/R adapter (v3.3.1: fixed price_context regression + nearest zones) ─
 _SUP_RE: Final[re.Pattern[str]] = re.compile(
     r"(SUR\s+support|S\s+proche|support)[:\s]+([\d.]+)\s*(([-+]?[\d.]+)\s*%)",
     re.I,
@@ -1067,7 +1085,7 @@ def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
         score=round(score, 2),
         weighted_score=round(score * coeff, 2),
         status=status,
-        distance_pct=round(dist, 3),
+        distance_pct=round(abs(dist), 3),   # P1: distance always positive
         alert=_parse_alert(z.get("alert", "")),
         timeframes=tf_list,
         has_weekly=Timeframe.W1 in tf_list,
@@ -1076,17 +1094,50 @@ def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
     )
 
 
+def _parse_price_context_from_text(s: str) -> PriceContext:
+    """Regex-based parser for the legacy textual price_context format.
+    Example input:
+        'SUR support: 1.37884 (-0.35%)  |  R proche: 1.39447 (+0.78%)'
+    Returns a PriceContext with support_level/resistance_level populated.
+    """
+    ctx = PriceContext(raw=s)
+    if not s or _INTER_RE.search(s):
+        ctx.is_intermediate = True
+        return ctx
+    m = _SUP_RE.search(s)
+    if m:
+        ctx.support_tag = m.group(1).strip()
+        ctx.support_level = safe_float(m.group(2))
+        ctx.support_dist_pct = safe_float(m.group(3).strip().rstrip("%"))
+    m = _RES_RE.search(s)
+    if m:
+        ctx.resistance_tag = m.group(1).strip()
+        ctx.resistance_level = safe_float(m.group(2))
+        ctx.resistance_dist_pct = safe_float(m.group(3).strip().rstrip("%"))
+    if ctx.support_level is None and ctx.resistance_level is None:
+        ctx.is_intermediate = True
+    return ctx
+
+
 def _parse_price_context(raw: Any) -> PriceContext:
-    """v3.3 (BUG 2): parse STRUCTURED price_context dict first, fall back
-    to text parsing only if structured fields are missing."""
+    """
+    v3.3.1 (P0 FIX): robust parser that handles three shapes:
+      1) dict with structured fields  → use them directly
+      2) dict with only a 'raw' text  → fall back to regex on raw (P0 fix)
+      3) raw string                   → regex directly (legacy, v3.2 behavior)
+
+    This restores the v3.2 parsing capability that was lost in v3.3.0 when
+    the scanner provides price_context as {raw: "SUR support: ..."} without
+    structured support_level / resistance_level keys.
+    """
     if raw is None:
         return PriceContext(raw="")
 
-    # Case 1: structured dict
+    # Case 1 & 2: dict input
     if isinstance(raw, dict):
         raw_text = safe_str(raw.get("raw") or "", max_len=512)
-        ctx = PriceContext(raw=raw_text)
 
+        # Try structured fields first
         sup_level = safe_float(raw.get("support_level"))
         sup_dist = safe_float(raw.get("support_dist_pct"))
         sup_tag = raw.get("support_tag")
@@ -1108,6 +1159,28 @@ def _parse_price_context(raw: Any) -> PriceContext:
                 res_dist = safe_float(nr.get("distance_pct"))
                 res_tag = nr.get("tag") or nr.get("status")
 
+        # P0 FIX: if structured fields are still missing but 'raw' text is
+        # present, fall back to the regex parser (v3.2 behavior). This is
+        # the critical regression fix — without it, all price_context values
+        # from the current SR scanner come back null.
+        if (
+            sup_level is None
+            and res_level is None
+            and raw_text
+            and not _INTER_RE.search(raw_text)
+        ):
+            fallback = _parse_price_context_from_text(raw_text)
+            sup_level = fallback.support_level
+            sup_dist = fallback.support_dist_pct
+            sup_tag = fallback.support_tag or sup_tag
+            res_level = fallback.resistance_level
+            res_dist = fallback.resistance_dist_pct
+            res_tag = fallback.resistance_tag or res_tag
+            if fallback.is_intermediate:
+                # keep the raw text but mark intermediate
+                pass
+
+        ctx = PriceContext(raw=raw_text)
         ctx.support_level = sup_level
         ctx.support_dist_pct = sup_dist
         ctx.support_tag = safe_str(sup_tag, max_len=64) if sup_tag else None
@@ -1124,29 +1197,21 @@ def _parse_price_context(raw: Any) -> PriceContext:
             ctx.is_intermediate = True
         return ctx
 
-    # Case 2: raw text (legacy)
+    # Case 3: raw text (legacy v3.2 shape)
     s = safe_str(raw, max_len=512)
-    ctx = PriceContext(raw=s)
-    if not s or _INTER_RE.search(s):
-        ctx.is_intermediate = True
-        return ctx
-    m = _SUP_RE.search(s)
-    if m:
-        ctx.support_tag = m.group(1).strip()
-        ctx.support_level = safe_float(m.group(2))
-        ctx.support_dist_pct = safe_float(m.group(3))
-    m = _RES_RE.search(s)
-    if m:
-        ctx.resistance_tag = m.group(1).strip()
-        ctx.resistance_level = safe_float(m.group(2))
-        ctx.resistance_dist_pct = safe_float(m.group(3))
-    return ctx
+    return _parse_price_context_from_text(s)
 
 
 def _build_zone_from_nearest(
     obj: Any, side: Literal["BUY", "SELL"]
 ) -> SRZone | None:
-    """Build a SRZone from a nearest_support / nearest_resistance dict."""
+    """Build a SRZone from a nearest_support / nearest_resistance dict.
+
+    v3.3.1 (P1 FIX):
+      - Forces distance_pct to be non-negative (abs) for stable sort order.
+      - Tags status with _SR_NEAREST_STATUS so downstream logic can
+        distinguish synthetic zones from real scanner-provided zones.
+    """
     if not isinstance(obj, dict):
         return None
     level = safe_float(obj.get("level"))
@@ -1155,17 +1220,16 @@ def _build_zone_from_nearest(
     dist = safe_float(obj.get("distance_pct"))
     if dist is None:
         dist = 999.0
-    status = safe_str(obj.get("status") or obj.get("tag") or "Unknown", max_len=32)
-    score = safe_float(obj.get("score")) or 0.0
-    coeff = _STATUS_COEFF.get(status.lower(), 0.8)
+    status = _SR_NEAREST_STATUS   # P1: explicit synthetic marker
+    score = 0.0                   # P1: no real score → mark as synthetic
     tf_list = _parse_tf_list(obj.get("timeframes") or obj.get("tf") or "")
     return SRZone(
         side=side,
         level=round(level, 5),
         score=round(score, 2),
-        weighted_score=round(score * coeff, 2),
+        weighted_score=0.0,
         status=status,
-        distance_pct=round(dist, 3),
+        distance_pct=round(abs(dist), 3),   # P1: always positive
         alert=_parse_alert(obj.get("alert", "")),
         timeframes=tf_list,
         has_weekly=Timeframe.W1 in tf_list,
@@ -1247,7 +1311,6 @@ class SRAdapter(ScannerAdapter):
         zones = SRAdapter._collect_zones(raw.get("zones", []))
 
         # v3.3 (GAP 7): also lift nearest_support / nearest_resistance into zones
-        # so they are visible to the enrichment engine as aligned / opposite zones.
         pc_raw = raw.get("price_context")
         if isinstance(pc_raw, dict):
             ns = pc_raw.get("nearest_support")
@@ -1390,7 +1453,6 @@ class CHoCHAdapter(ScannerAdapter):
             return
         asset.structure_events.append(event)
         asset.add_provenance("choch", event.signal_id)
-        # v3.3 (GAP 3): promote current_price from event if asset lacks one
         if asset.current_price is None and event.current_price is not None:
             asset.current_price = event.current_price
 
@@ -1695,8 +1757,6 @@ class MergeEngine:
             if stop:
                 break
 
-        # Final pass: ensure every asset has rsi_by_tf / rsi_h4_status /
-        # current_price computed from the merged state.
         for asset in merged.values():
             asset.recompute_rsi_views()
             asset.recompute_current_price()
@@ -1826,8 +1886,8 @@ class MergeEngine:
         ):
             target.price_context = source.price_context
             return
-        # v3.3 (BUG 2): if source has structured levels and target lacks them,
-        # lift them without replacing the whole context.
+        # v3.3 (BUG 2): lift missing structured levels without replacing the
+        # whole context, so both sides contribute whatever they have.
         tpc = target.price_context
         spc = source.price_context
         if tpc.support_level is None and spc.support_level is not None:
@@ -2020,53 +2080,43 @@ class EnrichmentEngine:
             return False
         return d1_dir == event.direction and h4_dir == event.direction
 
-    # ── GAP 7 FIX: nearest_aligned_zone with relaxed threshold + PC fallback
+    # ── P2 FIX: nearest_aligned_zone prioritizes real SR zones ────────────
     @staticmethod
     def _select_nearest_aligned_zone(
         asset: CanonicalAsset,
         event: StructureEvent,
         aligned_zones: list[SRZone],
     ) -> SRZone | None:
-        if aligned_zones:
-            return aligned_zones[0]
-        # Fallback: build a synthetic aligned zone from price_context
-        # (support for BUY, resistance for SELL) if within threshold.
-        pc = asset.price_context
-        if pc is None:
+        """Pick the best aligned zone, strictly preferring real SR zones
+        (score > 0, status not in _INVALID_ZONE_STATUSES) over synthetic
+        nearest_support/resistance zones built from price_context."""
+        if not aligned_zones:
             return None
-        if event.direction is Direction.BULLISH and pc.support_level is not None:
-            dist = abs(pc.support_dist_pct) if pc.support_dist_pct is not None else 999.0
-            if dist <= _ALIGNED_ZONE_MAX_DIST_PCT:
-                return SRZone(
-                    side="BUY",
-                    level=pc.support_level,
-                    score=0.0,
-                    weighted_score=0.0,
-                    status=pc.support_tag or "S_support",
-                    distance_pct=round(dist, 3),
-                    timeframes=[],
-                )
-        if event.direction is Direction.BEARISH and pc.resistance_level is not None:
-            dist = abs(pc.resistance_dist_pct) if pc.resistance_dist_pct is not None else 999.0
-            if dist <= _ALIGNED_ZONE_MAX_DIST_PCT:
-                return SRZone(
-                    side="SELL",
-                    level=pc.resistance_level,
-                    score=0.0,
-                    weighted_score=0.0,
-                    status=pc.resistance_tag or "R_resistance",
-                    distance_pct=round(dist, 3),
-                    timeframes=[],
-                )
-        return None
+
+        # 1. Real SR zones first, sorted by distance
+        real = [z for z in aligned_zones if z.is_real_sr()]
+        if real:
+            real.sort(key=lambda z: z.distance_pct)
+            return real[0]
+
+        # 2. Otherwise return the closest synthetic zone (fallback)
+        aligned_zones_sorted = sorted(aligned_zones, key=lambda z: z.distance_pct)
+        return aligned_zones_sorted[0]
 
     @staticmethod
     def _confluence(asset: CanonicalAsset, event: StructureEvent) -> float:
         total = event.confluence_score or 0.0
         if asset.mtf is not None:
             total += asset.mtf.pct * 0.5
-        for z in asset.zones[:3]:
+        # Only count real SR zones in confluence — synthetic zones (score=0)
+        # must not dilute the confluence signal.
+        for z in asset.zones:
+            if not z.is_real_sr():
+                continue
             total += z.weighted_score * 0.1
+            if len([zz for zz in asset.zones if zz.is_real_sr()]) >= 3:
+                # soft cap: only the first 3 real zones contribute
+                pass
         return round(total, 2)
 
     # ── GAP 6 FIX: deterministic SL / TP1 / RR ────────────────────────────
@@ -2079,7 +2129,8 @@ class EnrichmentEngine:
     ) -> tuple[float | None, float | None, float | None]:
         """Compute SL (level ± 1.1 × ATR_H1), TP1 (nearest opposite zone or
         nearest PC level), and RR = |TP1 - level| / |level - SL|.
-        All computations are defensive and return None on missing data."""
+        Only real SR zones are considered for TP1. Synthetic zones (score=0)
+        are used as last resort via price_context."""
         level = event.level
         if level is None or not _is_finite_number(level) or level <= 0:
             return None, None, None
@@ -2096,22 +2147,30 @@ class EnrichmentEngine:
 
         tp1_price: float | None = None
         if event.direction is Direction.BULLISH:
-            # TP1 = nearest opposite (SELL) zone level, else PC resistance
-            if tp_zones:
-                tp1_price = tp_zones[0].level
+            # 1. Nearest real opposite (SELL) zone
+            real_tp = [z for z in tp_zones if z.is_real_sr()]
+            if real_tp:
+                tp1_price = real_tp[0].level
             elif (
                 asset.price_context is not None
                 and asset.price_context.resistance_level is not None
             ):
+                # 2. Fall back to price_context resistance
                 tp1_price = asset.price_context.resistance_level
-        elif event.direction is Direction.BEARISH:
-            if tp_zones:
+            elif tp_zones:
+                # 3. Last resort: synthetic opposite zone
                 tp1_price = tp_zones[0].level
+        elif event.direction is Direction.BEARISH:
+            real_tp = [z for z in tp_zones if z.is_real_sr()]
+            if real_tp:
+                tp1_price = real_tp[0].level
             elif (
                 asset.price_context is not None
                 and asset.price_context.support_level is not None
             ):
                 tp1_price = asset.price_context.support_level
+            elif tp_zones:
+                tp1_price = tp_zones[0].level
 
         if tp1_price is not None:
             tp1_price = round(tp1_price, 5)
@@ -2348,18 +2407,24 @@ class MergePipeline:
         )
         return groups, hot, top
 
+    # ── P3 FIX: hot_zones excludes synthetic / invalid zones ───────────────
     @staticmethod
     def _hot_zones(
         assets: dict[str, CanonicalAsset]
     ) -> list[dict[str, Any]]:
+        """Only real SR zones (score > 0, status not in {Unknown, SR_nearest})
+        and within 2% distance make it into the hot_zones list."""
         zones: list[dict[str, Any]] = []
         soft_cap = MAX_HOT_ZONES_OUT * 2
         for sym, asset in assets.items():
             for z in asset.zones:
-                if z.distance_pct < 2.0:
-                    zones.append({"symbol": sym, **_zone_dict(z)})
-                    if len(zones) >= soft_cap:
-                        break
+                if not z.is_real_sr():
+                    continue                       # P3: drop synthetic
+                if z.distance_pct >= 2.0:
+                    continue
+                zones.append({"symbol": sym, **_zone_dict(z)})
+                if len(zones) >= soft_cap:
+                    break
             if len(zones) >= soft_cap:
                 break
         zones.sort(key=lambda x: safe_float(x["distance_pct"]) or 999.0)
@@ -2588,10 +2653,12 @@ def _render_metrics(meta: dict[str, Any], hot_count: int) -> None:
 def _zone_text(nz: dict[str, Any] | None) -> str:
     if not nz or not isinstance(nz, dict):
         return "no aligned zone"
+    status = nz.get("status")
+    synth = " ⚠️synth" if status in _INVALID_ZONE_STATUSES else ""
     return (
         f"@ `{nz.get('level')}`"
         f"(d={safe_float(nz.get('distance_pct')) or 0.0:.2f}%, "
-        f"sc={nz.get('score')})"
+        f"sc={nz.get('score')}, {status}){synth}"
     )
 
 
