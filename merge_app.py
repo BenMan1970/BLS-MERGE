@@ -3062,7 +3062,7 @@ def _render_export(payload_dict: dict[str, Any]) -> None:
         st.error(f"Export JSON impossible: {msg}")
         return
     fname = (
-        f"bluestar_merged_"
+        f"merged_pipeline_"
         f"{datetime.now(timezone.utc):%Y%m%d_%H%M}UTC.json"
     )
     st.download_button(
