@@ -1243,17 +1243,24 @@ def _parse_tf_list(tf_raw: Any) -> list[Timeframe]:
 
 
 def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
-    level = safe_float(z.get("level"))
+    # Clé principale snake_case (formats tiers génériques) puis alias
+    # PascalCase/FR produits par le scanner BLUESTAR natif.
+    # Ordre : clé standard d'abord → rétrocompatibilité garantie.
+    level = safe_float(z.get("level") or z.get("Niveau"))
     if level is None or level <= 0:
         return None
-    score = safe_float(z.get("score")) or 0.0
-    dist = safe_float(z.get("distance_pct"))
+    score = safe_float(z.get("score") or z.get("Score")) or 0.0
+    dist = safe_float(z.get("distance_pct") or z.get("Distance %"))
     if dist is None:
         dist = 999.0
-    status = safe_str(z.get("status", "Unknown"), max_len=32)
+    status = safe_str(
+        z.get("status") or z.get("Statut") or "Unknown", max_len=32
+    )
     coeff = _STATUS_COEFF.get(status.lower(), 0.8)
-    tf_list = _parse_tf_list(z.get("timeframes", ""))
-    side_src = z.get("signal") or z.get("side")
+    tf_list = _parse_tf_list(
+        z.get("timeframes") or z.get("Timeframes") or ""
+    )
+    side_src = z.get("signal") or z.get("Signal") or z.get("side")
     return SRZone(
         side=_parse_side(side_src),
         level=round(level, 5),
@@ -1261,7 +1268,7 @@ def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
         weighted_score=round(score * coeff, 2),
         status=status,
         distance_pct=round(abs(dist), 3),
-        alert=_parse_alert(z.get("alert", "")),
+        alert=_parse_alert(z.get("alert") or z.get("Alerte") or ""),
         timeframes=tf_list,
         has_weekly=Timeframe.W1 in tf_list,
         has_daily=Timeframe.D1 in tf_list,
@@ -3270,3 +3277,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
