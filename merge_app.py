@@ -843,11 +843,25 @@ def _select_nearest_aligned_for_asset(
 ) -> SRZone | None:
     """Pick the closest aligned zone for the asset's MTF direction.
     Mirrors the enrichment-stage selector but operates at asset level so the
-    LLM sees a pre-computed `asset.nearest_aligned_zone`."""
+    LLM sees a pre-computed `asset.nearest_aligned_zone`.
+    v3.4.1: inclut les zones UNKNOWN dont la position relative au prix
+    est cohérente avec la direction (aligné avec _select_hot_zone_primary)."""
     if direction is Direction.NEUTRAL:
         return None
     wanted = "BUY" if direction is Direction.BULLISH else "SELL"
-    aligned = [z for z in asset.zones if z.side == wanted]
+
+    def _is_aligned(z: SRZone) -> bool:
+        if z.side == wanted:
+            return True
+        if z.side == "UNKNOWN" and z.level > 0:
+            cp = asset.current_price
+            if cp is not None and _is_finite_number(cp) and cp > 0:
+                if direction is Direction.BULLISH:
+                    return z.level <= cp  # Support = sous le prix
+                return z.level >= cp      # Résistance = au-dessus du prix
+        return False
+
+    aligned = [z for z in asset.zones if _is_aligned(z)]
     if not aligned:
         return None
     real = [z for z in aligned if z.is_real_sr()]
@@ -1260,8 +1274,23 @@ def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
     tf_list = _parse_tf_list(
         z.get("timeframes") or z.get("Timeframes") or ""
     )
-    side_src = z.get("signal") or z.get("Signal") or z.get("side")
-    return SRZone(
+    side_src = (
+        z.get("signal")
+        or z.get("Signal")
+        or z.get("side")
+        or z.get("Side")
+        or z.get("direction")
+        or z.get("Direction")
+        or z.get("type")
+        or z.get("Type")
+        or z.get("sens")
+        or z.get("Sens")
+        or z.get("position")
+        or z.get("Position")
+        or z.get("role")
+        or z.get("Role")
+    )
+    zone = SRZone(
         side=_parse_side(side_src),
         level=round(level, 5),
         score=round(score, 2),
@@ -1274,6 +1303,21 @@ def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
         has_daily=Timeframe.D1 in tf_list,
         has_h4=Timeframe.H4 in tf_list,
     )
+
+    # ── v3.4.1: inférence directionnelle défensive ──────────────────────
+    # Si le side reste UNKNOWN après parsing des clés, on infère depuis
+    # la position relative au prix courant (memory id=5: S/R directionnel).
+    # Support = niveau sous le prix, Résistance = niveau au-dessus.
+    if zone.side == "UNKNOWN" and zone.level > 0:
+        price_hint = safe_float(z.get("current_price") or z.get("price"))
+        if price_hint is not None and price_hint > 0:
+            if zone.level < price_hint:
+                zone.side = "BUY"   # Support: prix au-dessus du niveau
+            elif zone.level > price_hint:
+                zone.side = "SELL"  # Résistance: prix sous le niveau
+            # Si level == price, on garde UNKNOWN (zone touchée)
+
+    return zone
 
 
 def _parse_price_context_from_text(s: str) -> PriceContext:
@@ -3277,4 +3321,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
