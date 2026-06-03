@@ -1,8 +1,17 @@
 """
-BLUESTAR MERGE v3.4.0 — Production-grade Streamlit application.
+BLUESTAR MERGE v3.4.1 — Production-grade Streamlit application.
 Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
 heuristic fallback, full pipeline diagnostics, and hardened against malformed
 input, DoS, and partial failures.
+
+v3.4.1 — Directional inference patch (S/R side fix):
+    When the scanner SR produces zones with side="UNKNOWN" (e.g. pivot zones
+    without explicit BUY/SELL signal), the merger now infers the direction
+    from the relative position of the level vs current_price:
+      • level < current_price → BUY  (Support)
+      • level > current_price → SELL (Resistance)
+      • level == current_price → UNKNOWN (zone touched, ambiguous)
+    This fixes 9+ assets that had unusable UNKNOWN zones in production.
 
 v3.4.0 — Pre-computation layer for prompt v9.0 (BLUESTAR DIRECT):
     The LLM downstream now receives ALL deterministic arithmetic pre-computed,
@@ -110,7 +119,7 @@ MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
 MAX_TP_ZONES: Final[int] = 3
 
-SCHEMA_VERSION: Final[str] = "3.4.0"
+SCHEMA_VERSION: Final[str] = "3.4.1"
 
 # Status values identifying synthetic zones built from price_context fallback.
 _SR_NEAREST_STATUS: Final[str] = "SR_nearest"
