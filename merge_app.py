@@ -1,10 +1,10 @@
 """
-BLUESTAR MERGE v3.4.1 — Production-grade Streamlit application.
+BLUESTAR MERGE v3.4.2 — Production-grade Streamlit application.
 Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
 heuristic fallback, full pipeline diagnostics, and hardened against malformed
 input, DoS, and partial failures.
 
-v3.4.1 — Directional inference patch (S/R side fix):
+v3.4.2 — Directional inference patch (fixed: current_price from asset) (S/R side fix):
     When the scanner SR produces zones with side="UNKNOWN" (e.g. pivot zones
     without explicit BUY/SELL signal), the merger now infers the direction
     from the relative position of the level vs current_price:
@@ -119,7 +119,7 @@ MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
 MAX_TP_ZONES: Final[int] = 3
 
-SCHEMA_VERSION: Final[str] = "3.4.1"
+SCHEMA_VERSION: Final[str] = "3.4.2"
 
 # Status values identifying synthetic zones built from price_context fallback.
 _SR_NEAREST_STATUS: Final[str] = "SR_nearest"
@@ -1265,7 +1265,7 @@ def _parse_tf_list(tf_raw: Any) -> list[Timeframe]:
     return tf_list
 
 
-def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
+def _build_zone_from_raw(z: dict[str, Any], current_price: float | None = None) -> SRZone | None:
     # Clé principale snake_case (formats tiers génériques) puis alias
     # PascalCase/FR produits par le scanner BLUESTAR natif.
     # Ordre : clé standard d'abord → rétrocompatibilité garantie.
@@ -1313,18 +1313,17 @@ def _build_zone_from_raw(z: dict[str, Any]) -> SRZone | None:
         has_h4=Timeframe.H4 in tf_list,
     )
 
-    # ── v3.4.1: inférence directionnelle défensive ──────────────────────
+    # ── v3.4.2: inférence directionnelle défensive ──────────────────────
     # Si le side reste UNKNOWN après parsing des clés, on infère depuis
-    # la position relative au prix courant (memory id=5: S/R directionnel).
-    # Support = niveau sous le prix, Résistance = niveau au-dessus.
-    if zone.side == "UNKNOWN" and zone.level > 0:
-        price_hint = safe_float(z.get("current_price") or z.get("price"))
-        if price_hint is not None and price_hint > 0:
-            if zone.level < price_hint:
+    # la position relative au prix courant passé depuis l'asset parent.
+    # Support = niveau sous le prix (BUY), Résistance = niveau au-dessus (SELL).
+    if zone.side == "UNKNOWN" and zone.level > 0 and current_price is not None:
+        if current_price > 0:
+            if zone.level < current_price:
                 zone.side = "BUY"   # Support: prix au-dessus du niveau
-            elif zone.level > price_hint:
+            elif zone.level > current_price:
                 zone.side = "SELL"  # Résistance: prix sous le niveau
-            # Si level == price, on garde UNKNOWN (zone touchée)
+            # Si level == price, on garde UNKNOWN (zone touchée, ambigu)
 
     return zone
 
@@ -1503,7 +1502,7 @@ class SRAdapter(ScannerAdapter):
         if cp is not None:
             asset.current_price = cp
         asset.price_context = _parse_price_context(raw.get("price_context", ""))
-        zones = SRAdapter._collect_zones(raw.get("zones", []))
+        zones = SRAdapter._collect_zones(raw.get("zones", []), asset.current_price)
         pc_raw = raw.get("price_context")
         if isinstance(pc_raw, dict):
             ns = pc_raw.get("nearest_support")
@@ -1531,7 +1530,7 @@ class SRAdapter(ScannerAdapter):
         return asset
 
     @staticmethod
-    def _collect_zones(zones_raw: Any) -> list[SRZone]:
+    def _collect_zones(zones_raw: Any, current_price: float | None = None) -> list[SRZone]:
         zones: list[SRZone] = []
         if not isinstance(zones_raw, list):
             return zones
@@ -1540,7 +1539,7 @@ class SRAdapter(ScannerAdapter):
                 break
             if not isinstance(z, dict):
                 continue
-            parsed = _build_zone_from_raw(z)
+            parsed = _build_zone_from_raw(z, current_price)
             if parsed is not None:
                 zones.append(parsed)
         zones.sort(key=lambda z: z.distance_pct)
