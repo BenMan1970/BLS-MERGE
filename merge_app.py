@@ -1,4 +1,5 @@
 ```python
+
 # -*- coding: utf-8 -*-
 """
 BLUESTAR MERGE v3.4.2 — Production-grade Streamlit application.
@@ -1551,8 +1552,7 @@ class SRAdapter(ScannerAdapter):
             parsed = _build_zone_from_raw(z, current_price)
             if parsed is not None:
                 zones.append(parsed)
-        # Tri initial conservé lors de la collecte brute si requis, sans altérer le dédoublonnage aval
-        zones.sort(key=lambda z: z.distance_pct)
+        # Bug #1 fix: Ne pas trier. L'ordre d'insertion du scanner source est préservé.
         return zones
 
 
@@ -2145,8 +2145,8 @@ class MergeEngine:
             if key not in existing:
                 target.zones.append(z)
                 existing.add(key)
-        # Tri d'affichage ou de filtrage conservé si nécessaire, mais l'ordre sémantique primaire de l'asset est stocké
-        target.zones.sort(key=lambda z: z.distance_pct)
+        # Bug #1 fix: Ne pas trier après fusion. L'ordre sémantique (adapter prioritaire en tête) est préservé.
+        # Si un tri est nécessaire à l'affichage, l'appliquer côté rendu uniquement.
 
     @staticmethod
     def _fold_events(target: CanonicalAsset, source: CanonicalAsset) -> None:
@@ -3340,4 +3340,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 ```
