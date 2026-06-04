@@ -3294,11 +3294,6 @@ def main() -> None:
         "Déposez vos scanners JSON (détection automatique)",
         type=["json"],
         accept_multiple_files=True,
-        help=(
-            f"Aucun mapping manuel — chaque fichier est identifié par "
-            f"introspection. Limite: {MAX_FILES} fichiers, "
-            f"{MAX_FILE_SIZE_BYTES // (1024 * 1024)} MB par fichier."
-        ),
     )
     if not uploads:
         st.info("⬆️ Déposez 1 à N fichiers JSON pour démarrer.")
