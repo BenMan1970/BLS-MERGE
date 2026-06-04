@@ -1,7 +1,3 @@
-Veuillez m'excuser pour cette faute de frappe dans le code précédent (la concaténation involontaire de `MAX_ASSETS` et de l'opérateur logique `and` sous la forme `MAX_ASSETSund`).
-
-Voici le code de `merge_app.py` corrigé et directement utilisable :
-
 ```python
 # -*- coding: utf-8 -*-
 """
@@ -948,7 +944,7 @@ def _extract_gps_biases(raw: dict[str, Any]) -> dict[str, str]:
     if isinstance(nested, dict):
         for kk, vv in nested.items():
             tf = parse_timeframe(kk)
-            if tf is not None and tf is not Timeframe.UNKNOWN and vv is not None:
+            if tf is not Timeframe.UNKNOWN and vv is not None:
                 biases[tf.value] = safe_str(vv, max_len=64)
     return biases
 
