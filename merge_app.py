@@ -672,6 +672,8 @@ class CanonicalAsset(BaseModel):
     conviction_cap: Literal["A", "BBB"] | None = None
     nearest_aligned_zone: SRZone | None = None
     hot_zone_primary: SRZone | None = None
+    # v3.4.3: direction dénormalisée au top-level (évite asset.mtf.direction dans le LLM)
+    direction: Direction = Direction.NEUTRAL
 
     @classmethod
     def from_symbol(cls, sym: CanonicalSymbol) -> CanonicalAsset:
@@ -1988,6 +1990,7 @@ class MergeEngine:
         )
 
         direction = asset.mtf.direction if asset.mtf else Direction.NEUTRAL
+        asset.direction = direction  # v3.4.3: dénormalisation top-level
         asset.nearest_aligned_zone = _select_nearest_aligned_for_asset(
             asset, direction
         )
