@@ -774,9 +774,9 @@ class MergeOutput(BaseModel):
     assets: dict[str, CanonicalAsset]
     signals: list[EnrichedSignal]
     correlation_groups: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
-    hot_zones: list[dict[str, Any]] = Field(default_factory=list)
+    hot_zones: list[dict[str, Any]] = Field(default_factory=dict)
     top_consensus: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
-    diagnostics: list[dict[str, Any]] = Field(default_factory=list)
+    diagnostics: list[dict[str, Any]] = Field(default_factory=dict)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -818,7 +818,7 @@ def _select_hot_zone_primary(
     wanted = "BUY" if direction is Direction.BULLISH else "SELL"
 
     def _alignment_ok(z: SRZone) -> bool:
-        if z.alert != "ZONE CHAUDE":
+        if z.alert != "ZONE CHAUDE" and "ZONE CHAUDE" not in z.alert.upper():
             return False
         if z.side == wanted:
             return True
@@ -942,7 +942,7 @@ def _extract_gps_biases(raw: dict[str, Any]) -> dict[str, str]:
     if isinstance(nested, dict):
         for kk, vv in nested.items():
             tf = parse_timeframe(kk)
-            if tf is not Timeframe.UNKNOWN and vv is not None:
+            if tf is not None and tf is not Timeframe.UNKNOWN and vv is not None:
                 biases[tf.value] = safe_str(vv, max_len=64)
     return biases
 
@@ -1243,11 +1243,15 @@ def _parse_side(raw: Any) -> Literal["BUY", "SELL", "UNKNOWN"]:
 
 
 def _parse_alert(raw: Any) -> str:
-    alert = str(raw or "").upper()
-    if "CHAUDE" in alert or "HOT" in alert:
-        return "ZONE CHAUDE"
-    if "PROCHE" in alert or "NEAR" in alert:
-        return "Proche"
+    """Conserves the original raw string to preserve visual emojis if found."""
+    s = str(raw or "").strip()
+    if not s:
+        return ""
+    upper_s = s.upper()
+    if "CHAUDE" in upper_s or "HOT" in upper_s:
+        return s
+    if "PROCHE" in upper_s or "NEAR" in upper_s:
+        return s
     return ""
 
 
@@ -1312,11 +1316,15 @@ def _build_zone_from_raw(z: dict[str, Any], current_price: float | None = None) 
         has_h4=Timeframe.H4 in tf_list,
     )
 
-    # ── v3.4.2: inférence directionnelle défensive ──────────────────────
+    # Détection des pivots pour préserver leur nature bidirectionnelle
+    original_signal = str(z.get("Signal") or z.get("signal") or "")
+    is_pivot = "PIVOT" in original_signal.upper()
+
+    # ── v3.4.2: inférence directionnelle défensive (non-pivots uniquement) ──
     # Si le side reste UNKNOWN après parsing des clés, on infère depuis
     # la position relative au prix courant passé depuis l'asset parent.
     # Support = niveau sous le prix (BUY), Résistance = niveau au-dessus (SELL).
-    if zone.side == "UNKNOWN" and zone.level > 0 and current_price is not None:
+    if not is_pivot and zone.side == "UNKNOWN" and zone.level > 0 and current_price is not None:
         if current_price > 0:
             if zone.level < current_price:
                 zone.side = "BUY"   # Support: prix au-dessus du niveau
@@ -1523,7 +1531,7 @@ class SRAdapter(ScannerAdapter):
                 continue
             seen.add(key)
             dedup.append(z)
-        dedup.sort(key=lambda z: z.distance_pct)
+        # Correction minimale : On supprime le tri par distance_pct pour préserver l'ordre d'origine
         asset.zones = dedup[:MAX_ZONES_PER_ASSET]
         asset.add_provenance("sr", f"{len(asset.zones)}zones")
         return asset
@@ -1541,6 +1549,7 @@ class SRAdapter(ScannerAdapter):
             parsed = _build_zone_from_raw(z, current_price)
             if parsed is not None:
                 zones.append(parsed)
+        # Tri initial conservé lors de la collecte brute si requis, sans altérer le dédoublonnage aval
         zones.sort(key=lambda z: z.distance_pct)
         return zones
 
@@ -2005,7 +2014,7 @@ class MergeEngine:
         res: Result[dict[str, CanonicalAsset]],
     ) -> bool:
         for asset in group:
-            if len(merged) >= MAX_ASSETS and asset.symbol not in merged:
+            if len(merged) >= MAX_ASSETSund asset.symbol not in merged:
                 res.add(Diagnostic(
                     "merge", Severity.WARNING, "cap_reached",
                     f"MAX_ASSETS={MAX_ASSETS}",
@@ -2134,6 +2143,7 @@ class MergeEngine:
             if key not in existing:
                 target.zones.append(z)
                 existing.add(key)
+        # Tri d'affichage ou de filtrage conservé si nécessaire, mais l'ordre sémantique primaire de l'asset est stocké
         target.zones.sort(key=lambda z: z.distance_pct)
 
     @staticmethod
@@ -3328,3 +3338,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+```
