@@ -67,6 +67,7 @@ import hashlib
 import json
 import logging
 import os
+import math
 import re
 import sys
 import time
@@ -235,7 +236,7 @@ def _is_finite_number(value: Any) -> bool:
         f = float(value)
     except (TypeError, ValueError):
         return False
-    return f == f and f not in (float("inf"), float("-inf"))
+    return math.isfinite(f)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -2146,8 +2147,8 @@ class MergeEngine:
             if key not in existing:
                 target.zones.append(z)
                 existing.add(key)
-        # Bug #1 fix: Ne pas trier après fusion. L'ordre sémantique (adapter prioritaire en tête) est préservé.
-        # Si un tri est nécessaire à l'affichage, l'appliquer côté rendu uniquement.
+        # Bug #1 fix: Ne pas trier après fusion — ordre sémantique préservé.
+        # Tri d'affichage uniquement côté rendu.
 
     @staticmethod
     def _fold_events(target: CanonicalAsset, source: CanonicalAsset) -> None:
@@ -2314,7 +2315,7 @@ class EnrichmentEngine:
         asset: CanonicalAsset,
         event: StructureEvent,
         htf_aligned: bool,
-        sl_mult: float,
+        _sl_mult: float,  # BB-regime mult pre-computed by caller; kept for API symmetry
     ) -> SignalPrecomputed:
         bb_mult = _BB_REGIME_SL_MULT.get(
             event.bb_regime or "", _SL_RAW_DEFAULT_MULT
@@ -2374,8 +2375,8 @@ class EnrichmentEngine:
 
     @staticmethod
     def _select_nearest_aligned_zone(
-        asset: CanonicalAsset,
-        event: StructureEvent,
+        _asset: CanonicalAsset,  # reserved for future alignment filtering
+        _event: StructureEvent,  # reserved for future timeframe filtering
         aligned_zones: list[SRZone],
     ) -> SRZone | None:
         if not aligned_zones:
@@ -2403,7 +2404,7 @@ class EnrichmentEngine:
     def _compute_sl_tp_rr(
         asset: CanonicalAsset,
         event: StructureEvent,
-        nearest: SRZone | None,
+        _nearest: SRZone | None,  # reserved — TP1 currently derived from tp_zones
         tp_zones: list[SRZone],
     ) -> tuple[float | None, float | None, float | None, float]:
         """Compute SL / TP1 / RR. v3.4 uses asset.atr_effective (cascade).
