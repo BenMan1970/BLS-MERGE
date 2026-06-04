@@ -1,5 +1,3 @@
-```python
-
 # -*- coding: utf-8 -*-
 """
 BLUESTAR MERGE v3.4.2 — Production-grade Streamlit application.
@@ -3340,5 +3338,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-```
