@@ -1,3 +1,9 @@
+Veuillez m'excuser pour cette faute de frappe dans le code précédent (la concaténation involontaire de `MAX_ASSETS` et de l'opérateur logique `and` sous la forme `MAX_ASSETSund`).
+
+Voici le code de `merge_app.py` corrigé et directement utilisable :
+
+```python
+# -*- coding: utf-8 -*-
 """
 BLUESTAR MERGE v3.4.2 — Production-grade Streamlit application.
 Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
@@ -2014,7 +2020,7 @@ class MergeEngine:
         res: Result[dict[str, CanonicalAsset]],
     ) -> bool:
         for asset in group:
-            if len(merged) >= MAX_ASSETSund asset.symbol not in merged:
+            if len(merged) >= MAX_ASSETS and asset.symbol not in merged:
                 res.add(Diagnostic(
                     "merge", Severity.WARNING, "cap_reached",
                     f"MAX_ASSETS={MAX_ASSETS}",
