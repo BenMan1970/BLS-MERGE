@@ -441,15 +441,14 @@ def _parse_iso_datetime(raw: Any) -> datetime | None:
     s = str(raw).strip()
     if not s:
         return None
+    # Normalise trailing Z to +00:00 for fromisoformat compatibility.
     if s.endswith("Z"):
         s = s[:-1] + "+00:00"
     try:
         dt = datetime.fromisoformat(s)
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
     except (ValueError, TypeError):
         return None
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -694,7 +693,12 @@ class CanonicalAsset(BaseModel):
         )
 
     def add_provenance(self, source: str, tag: str) -> None:
-        bucket = self.provenance.setdefault(source, [])
+        # cast: provenance is dict[str, list[str]] at runtime; Pydantic's
+        # FieldInfo annotation misleads pylint into thinking it has no
+        # .setdefault(). The cast silences the false E1101 without any
+        # runtime cost.
+        prov: dict[str, list[str]] = cast(dict[str, list[str]], self.provenance)
+        bucket = prov.setdefault(source, [])
         if len(bucket) < MAX_PROVENANCE_ENTRIES:
             bucket.append(tag)
 
@@ -1159,7 +1163,7 @@ class RSIAdapter(ScannerAdapter):
             return AdapterMatch(0.0, "non-dict")
         keys_lc = {k.lower() for k in sample.keys() if isinstance(k, str)}
         symbol_keys = {"pair", "devises", "symbol", "instrument", "paire"}
-        if not (symbol_keys & keys_lc):
+        if not symbol_keys & keys_lc:
             return AdapterMatch(0.0, "no symbol key")
         if "timeframes" in keys_lc and isinstance(sample.get("timeframes"), dict):
             return AdapterMatch(0.9, "nested timeframes")
@@ -1308,6 +1312,43 @@ def _parse_tf_list(tf_raw: Any) -> list[Timeframe]:
     return tf_list
 
 
+def _resolve_zone_side(
+    z: dict[str, Any],
+    current_price: float | None,
+    level: float,
+) -> Literal["BUY", "SELL", "UNKNOWN"]:
+    """Determine the side of an SR zone in two steps:
+    1. Parse explicit side/direction keys in order of priority.
+    2. If still UNKNOWN (and not a pivot), infer from price position.
+    """
+    side_src = (
+        z.get("signal") or z.get("Signal")
+        or z.get("side") or z.get("Side")
+        or z.get("direction") or z.get("Direction")
+        or z.get("type") or z.get("Type")
+        or z.get("sens") or z.get("Sens")
+        or z.get("position") or z.get("Position")
+        or z.get("role") or z.get("Role")
+    )
+    side = _parse_side(side_src)
+    if side != "UNKNOWN":
+        return side
+
+    # Pivots are bidirectional by nature — never infer their side.
+    original_signal = str(z.get("Signal") or z.get("signal") or "")
+    if "PIVOT" in original_signal.upper():
+        return "UNKNOWN"
+
+    # v3.4.2: infer from price position when unambiguous.
+    if level > 0 and current_price is not None and current_price > 0:
+        if level < current_price:
+            return "BUY"   # Support: price is above the level
+        if level > current_price:
+            return "SELL"  # Resistance: price is below the level
+        # level == current_price → zone is touched, ambiguous
+    return "UNKNOWN"
+
+
 def _build_zone_from_raw(z: dict[str, Any], current_price: float | None = None) -> SRZone | None:
     # Clé principale snake_case (formats tiers génériques) puis alias
     # PascalCase/FR produits par le scanner BLUESTAR natif.
@@ -1326,24 +1367,10 @@ def _build_zone_from_raw(z: dict[str, Any], current_price: float | None = None) 
     tf_list = _parse_tf_list(
         z.get("timeframes") or z.get("Timeframes") or ""
     )
-    side_src = (
-        z.get("signal")
-        or z.get("Signal")
-        or z.get("side")
-        or z.get("Side")
-        or z.get("direction")
-        or z.get("Direction")
-        or z.get("type")
-        or z.get("Type")
-        or z.get("sens")
-        or z.get("Sens")
-        or z.get("position")
-        or z.get("Position")
-        or z.get("role")
-        or z.get("Role")
-    )
-    zone = SRZone(
-        side=_parse_side(side_src),
+    # Side resolution: explicit keys first, then positional inference.
+    side = _resolve_zone_side(z, current_price, level)
+    return SRZone(
+        side=side,
         level=round(level, 5),
         score=round(score, 2),
         weighted_score=round(score * coeff, 2),
@@ -1355,24 +1382,6 @@ def _build_zone_from_raw(z: dict[str, Any], current_price: float | None = None) 
         has_daily=Timeframe.D1 in tf_list,
         has_h4=Timeframe.H4 in tf_list,
     )
-
-    # Détection des pivots pour préserver leur nature bidirectionnelle
-    original_signal = str(z.get("Signal") or z.get("signal") or "")
-    is_pivot = "PIVOT" in original_signal.upper()
-
-    # ── v3.4.2: inférence directionnelle défensive (non-pivots uniquement) ──
-    # Si le side reste UNKNOWN après parsing des clés, on infère depuis
-    # la position relative au prix courant passé depuis l'asset parent.
-    # Support = niveau sous le prix (BUY), Résistance = niveau au-dessus (SELL).
-    if not is_pivot and zone.side == "UNKNOWN" and zone.level > 0 and current_price is not None:
-        if current_price > 0:
-            if zone.level < current_price:
-                zone.side = "BUY"   # Support: prix au-dessus du niveau
-            elif zone.level > current_price:
-                zone.side = "SELL"  # Résistance: prix sous le niveau
-            # Si level == price, on garde UNKNOWN (zone touchée, ambigu)
-
-    return zone
 
 
 def _parse_price_context_from_text(s: str) -> PriceContext:
@@ -1396,6 +1405,28 @@ def _parse_price_context_from_text(s: str) -> PriceContext:
     return ctx
 
 
+def _apply_nearest_fallback(
+    raw: dict[str, Any],
+) -> tuple[float | None, float | None, Any, float | None, float | None, Any]:
+    """Extract support/resistance from nearest_support/nearest_resistance
+    sub-objects inside a price_context dict. Returns a 6-tuple:
+    (sup_level, sup_dist, sup_tag, res_level, res_dist, res_tag).
+    Extracted from _parse_price_context to reduce cyclomatic complexity."""
+    ns = raw.get("nearest_support")
+    nr = raw.get("nearest_resistance")
+    sup_level = sup_dist = sup_tag = None
+    res_level = res_dist = res_tag = None
+    if isinstance(ns, dict):
+        sup_level = safe_float(ns.get("level"))
+        sup_dist = safe_float(ns.get("distance_pct"))
+        sup_tag = ns.get("tag") or ns.get("status")
+    if isinstance(nr, dict):
+        res_level = safe_float(nr.get("level"))
+        res_dist = safe_float(nr.get("distance_pct"))
+        res_tag = nr.get("tag") or nr.get("status")
+    return sup_level, sup_dist, sup_tag, res_level, res_dist, res_tag
+
+
 def _parse_price_context(raw: Any) -> PriceContext:
     """v3.3.1 (P0 FIX): robust parser; falls back to regex on dict['raw']."""
     if raw is None:
@@ -1408,18 +1439,13 @@ def _parse_price_context(raw: Any) -> PriceContext:
         res_level = safe_float(raw.get("resistance_level"))
         res_dist = safe_float(raw.get("resistance_dist_pct"))
         res_tag = raw.get("resistance_tag")
-        if sup_level is None:
-            ns = raw.get("nearest_support")
-            if isinstance(ns, dict):
-                sup_level = safe_float(ns.get("level"))
-                sup_dist = safe_float(ns.get("distance_pct"))
-                sup_tag = ns.get("tag") or ns.get("status")
-        if res_level is None:
-            nr = raw.get("nearest_resistance")
-            if isinstance(nr, dict):
-                res_level = safe_float(nr.get("level"))
-                res_dist = safe_float(nr.get("distance_pct"))
-                res_tag = nr.get("tag") or nr.get("status")
+        # Fill missing levels from nearest_support / nearest_resistance sub-objects.
+        if sup_level is None or res_level is None:
+            ns_l, ns_d, ns_t, nr_l, nr_d, nr_t = _apply_nearest_fallback(raw)
+            if sup_level is None:
+                sup_level, sup_dist, sup_tag = ns_l, ns_d, ns_t
+            if res_level is None:
+                res_level, res_dist, res_tag = nr_l, nr_d, nr_t
         if (
             sup_level is None
             and res_level is None
@@ -2435,6 +2461,27 @@ class EnrichmentEngine:
             total += z.weighted_score * 0.1
         return round(total, 2)
 
+    @staticmethod
+    def _resolve_tp1_from_zones(
+        direction: Direction,
+        tp_zones: list[SRZone],
+        price_context: PriceContext | None,
+    ) -> float | None:
+        """Resolve TP1 price: real SR zones first, price_context fallback,
+        then any synthetic zone. Extracted from _compute_sl_tp_rr to
+        reduce cyclomatic complexity."""
+        real_tp = [z for z in tp_zones if z.is_real_sr()]
+        if real_tp:
+            return real_tp[0].level
+        if price_context is not None:
+            if direction is Direction.BULLISH and price_context.resistance_level is not None:
+                return price_context.resistance_level
+            if direction is Direction.BEARISH and price_context.support_level is not None:
+                return price_context.support_level
+        if tp_zones:
+            return tp_zones[0].level
+        return None
+
     # ── GAP 6 + v3.4: SL / TP1 / RR using atr_effective ───────────────────
     @staticmethod
     def _compute_sl_tp_rr(
@@ -2466,31 +2513,12 @@ class EnrichmentEngine:
                 sl_price = None
 
         tp1_price: float | None = None
-        if event.direction is Direction.BULLISH:
-            real_tp = [z for z in tp_zones if z.is_real_sr()]
-            if real_tp:
-                tp1_price = real_tp[0].level
-            elif (
-                asset.price_context is not None
-                and asset.price_context.resistance_level is not None
-            ):
-                tp1_price = asset.price_context.resistance_level
-            elif tp_zones:
-                tp1_price = tp_zones[0].level
-        elif event.direction is Direction.BEARISH:
-            real_tp = [z for z in tp_zones if z.is_real_sr()]
-            if real_tp:
-                tp1_price = real_tp[0].level
-            elif (
-                asset.price_context is not None
-                and asset.price_context.support_level is not None
-            ):
-                tp1_price = asset.price_context.support_level
-            elif tp_zones:
-                tp1_price = tp_zones[0].level
-
-        if tp1_price is not None:
-            tp1_price = round(tp1_price, 5)
+        if event.direction in (Direction.BULLISH, Direction.BEARISH):
+            raw_tp1 = EnrichmentEngine._resolve_tp1_from_zones(
+                event.direction, tp_zones, asset.price_context
+            )
+            if raw_tp1 is not None:
+                tp1_price = round(raw_tp1, 5)
 
         rr: float | None = None
         if (
@@ -2806,8 +2834,15 @@ def export_json(output: MergeOutput, *, indent: int = 2) -> str:
 # ════════════════════════════════════════════════════════════════════════════
 @dataclass(frozen=True, slots=True)
 class FileEntry:
-    """Content-addressed file. Streamlit hashes via `__hash__`/`__eq__`,
-    which use only the SHA-256 fingerprint — never the raw bytes."""
+    """Content-addressed file. Streamlit hashes via ``__hash__``/``__eq__``,
+    which use only the SHA-256 fingerprint — never the raw bytes.
+    ``__hash__`` and ``__eq__`` are intentional overrides: frozen dataclasses
+    generate an ``__eq__`` that compares all fields (including ``data``),
+    which would be prohibitively slow and would break Streamlit's cache key.
+    The ``type: ignore[override]`` annotations below suppress the mypy false
+    positive that arises because frozen dataclasses generate a ``__hash__``
+    whose signature is technically identical — not a real conflict.
+    """
     name: str
     sha256: str
     data: bytes = field(repr=False)
@@ -2989,42 +3024,49 @@ def _fmt_price(v: Any) -> str:
     return f"{f:.5f}" if f < 10 else f"{f:.2f}"
 
 
+def _build_trade_txt(s: dict[str, Any]) -> str:
+    """Format SL / TP1 / RR inline badges for a signal row."""
+    parts: list[str] = []
+    sl = s.get("sl_price")
+    tp1 = s.get("tp1_price")
+    rr = s.get("rr_estimated")
+    if sl is not None:
+        parts.append(f"SL={_fmt_price(sl)}")
+    if tp1 is not None:
+        parts.append(f"TP1={_fmt_price(tp1)}")
+    if rr is not None:
+        parts.append(f"RR={rr:.2f}")
+    return (" · " + " ".join(parts)) if parts else ""
+
+
+def _build_extra_txt(s: dict[str, Any]) -> str:
+    """Format v3.4 pre-computed badges (ATR source, fresh, conviction cap)."""
+    pre = s.get("precomputed") or {}
+    asset = s.get("asset") or {}
+    parts: list[str] = []
+    atr_src = pre.get("atr_source") or asset.get("atr_source")
+    if atr_src:
+        parts.append(_ATR_SRC_BADGE.get(atr_src, atr_src))
+    if pre.get("sig_fresh_aligned"):
+        parts.append("🔥FRESH")
+    cap = pre.get("conviction_cap") or asset.get("conviction_cap")
+    if cap:
+        parts.append(f"cap≤{cap}")
+    return (" · " + " ".join(parts)) if parts else ""
+
+
 def _render_one_signal(s: dict[str, Any]) -> None:
     ev = s.get("event") or {}
     asset = s.get("asset") or {}
     enr = s.get("enrichment") or {}
-    pre = s.get("precomputed") or {}
     status = str(enr.get("status", "empty"))
     badge = _STATUS_BADGE.get(status, "⚪")
     htf = "✅" if s.get("htf_aligned") else "⚠️"
     zone_txt = _zone_text(s.get("nearest_aligned_zone"))
     warns = s.get("warnings") or []
     warn_txt = f" ⚡{len(warns)}w" if warns else ""
-
-    sl = s.get("sl_price")
-    tp1 = s.get("tp1_price")
-    rr = s.get("rr_estimated")
-    trade_bits: list[str] = []
-    if sl is not None:
-        trade_bits.append(f"SL={_fmt_price(sl)}")
-    if tp1 is not None:
-        trade_bits.append(f"TP1={_fmt_price(tp1)}")
-    if rr is not None:
-        trade_bits.append(f"RR={rr:.2f}")
-    trade_txt = (" · " + " ".join(trade_bits)) if trade_bits else ""
-
-    # v3.4 pre-computed badges
-    extra_bits: list[str] = []
-    atr_src = pre.get("atr_source") or asset.get("atr_source")
-    if atr_src:
-        extra_bits.append(_ATR_SRC_BADGE.get(atr_src, atr_src))
-    if pre.get("sig_fresh_aligned"):
-        extra_bits.append("🔥FRESH")
-    cap = pre.get("conviction_cap") or asset.get("conviction_cap")
-    if cap:
-        extra_bits.append(f"cap≤{cap}")
-    extra_txt = (" · " + " ".join(extra_bits)) if extra_bits else ""
-
+    trade_txt = _build_trade_txt(s)
+    extra_txt = _build_extra_txt(s)
     st.markdown(
         f"- {badge}  `{asset.get('symbol', '?')}` "
         f"[{ev.get('timeframe', '?')}]  {ev.get('direction', '?')}  ·  "
@@ -3203,7 +3245,7 @@ def _read_one_upload(f: Any) -> tuple[bytes | None, str | None]:
     try:
         f.seek(0)
         data = f.read()
-    except Exception as exc:
+    except (OSError, IOError, AttributeError) as exc:
         name = getattr(f, "name", "?")
         return None, (
             f"Lecture impossible de `{name}` : {type(exc).__name__}: {exc}"
@@ -3211,7 +3253,7 @@ def _read_one_upload(f: Any) -> tuple[bytes | None, str | None]:
     if not isinstance(data, (bytes, bytearray)):
         try:
             data = str(data).encode("utf-8")
-        except Exception as exc:
+        except (UnicodeEncodeError, TypeError) as exc:
             name = getattr(f, "name", "?")
             return None, (
                 f"Encodage impossible de `{name}` : {type(exc).__name__}: {exc}"
