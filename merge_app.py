@@ -371,13 +371,11 @@ _TF_ALIAS: Final[dict[str, Timeframe]] = {
     "1mn": Timeframe.MN,
 }
 
-_TF_EXTRACT_RE: Final[re.Pattern[str]] = re.compile(
-    r"(?:^|[^a-z0-9])"
-    r"(1m|5m|15m|30m|1h|4h|1d|1w|h1|h4|d1|w1|mn|"
-    r"daily|weekly|monthly|hourly)"
-    r"(?:[^a-z0-9]|$)",
-    re.I,
-)
+# FIX-001: _TF_EXTRACT_RE supprimé — regex ReDoS remplacé par split+set (CWE-1333)
+_TF_SET: Final[frozenset[str]] = frozenset({
+    "1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w",
+    "h1", "h4", "d1", "w1", "mn", "daily", "weekly", "monthly", "hourly",
+})
 
 
 def parse_timeframe(raw: Any) -> Timeframe:
@@ -386,11 +384,13 @@ def parse_timeframe(raw: Any) -> Timeframe:
     s = str(raw).strip().lower()
     if not s:
         return Timeframe.UNKNOWN
+    # 1. Direct lookup O(1)
     if s in _TF_ALIAS:
         return _TF_ALIAS[s]
-    m = _TF_EXTRACT_RE.search(s)
-    if m:
-        return _TF_ALIAS.get(m.group(1).lower(), Timeframe.UNKNOWN)
+    # 2. Token split — linéaire, sans backtracking (FIX-001)
+    for part in re.split(r'[^a-z0-9]+', s):
+        if part in _TF_SET:
+            return _TF_ALIAS.get(part, Timeframe.UNKNOWN)
     return Timeframe.UNKNOWN
 
 
@@ -1339,13 +1339,16 @@ def _resolve_zone_side(
     if "PIVOT" in original_signal.upper():
         return "UNKNOWN"
 
-    # v3.4.2: infer from price position when unambiguous.
+    # v3.4.4 (FIX-003): robust float inference with isfinite + isclose
     if level > 0 and current_price is not None and current_price > 0:
+        if not math.isfinite(level) or not math.isfinite(current_price):
+            return "UNKNOWN"
+        if math.isclose(level, current_price, rel_tol=1e-9, abs_tol=1e-12):
+            return "UNKNOWN"  # zone touched, ambiguous
         if level < current_price:
             return "BUY"   # Support: price is above the level
         if level > current_price:
             return "SELL"  # Resistance: price is below the level
-        # level == current_price → zone is touched, ambiguous
     return "UNKNOWN"
 
 
@@ -1405,30 +1408,9 @@ def _parse_price_context_from_text(s: str) -> PriceContext:
     return ctx
 
 
-def _apply_nearest_fallback(
-    raw: dict[str, Any],
-) -> tuple[float | None, float | None, Any, float | None, float | None, Any]:
-    """Extract support/resistance from nearest_support/nearest_resistance
-    sub-objects inside a price_context dict. Returns a 6-tuple:
-    (sup_level, sup_dist, sup_tag, res_level, res_dist, res_tag).
-    Extracted from _parse_price_context to reduce cyclomatic complexity."""
-    ns = raw.get("nearest_support")
-    nr = raw.get("nearest_resistance")
-    sup_level = sup_dist = sup_tag = None
-    res_level = res_dist = res_tag = None
-    if isinstance(ns, dict):
-        sup_level = safe_float(ns.get("level"))
-        sup_dist = safe_float(ns.get("distance_pct"))
-        sup_tag = ns.get("tag") or ns.get("status")
-    if isinstance(nr, dict):
-        res_level = safe_float(nr.get("level"))
-        res_dist = safe_float(nr.get("distance_pct"))
-        res_tag = nr.get("tag") or nr.get("status")
-    return sup_level, sup_dist, sup_tag, res_level, res_dist, res_tag
-
-
 def _parse_price_context(raw: Any) -> PriceContext:
-    """v3.3.1 (P0 FIX): robust parser; falls back to regex on dict['raw']."""
+    """v3.4.4 (FIX-002): _apply_nearest_fallback fusionné inline.
+    Robust parser; falls back to regex on dict['raw']."""
     if raw is None:
         return PriceContext(raw="")
     if isinstance(raw, dict):
@@ -1439,13 +1421,18 @@ def _parse_price_context(raw: Any) -> PriceContext:
         res_level = safe_float(raw.get("resistance_level"))
         res_dist = safe_float(raw.get("resistance_dist_pct"))
         res_tag = raw.get("resistance_tag")
-        # Fill missing levels from nearest_support / nearest_resistance sub-objects.
+        # FIX-002: inline nearest_support / nearest_resistance (was _apply_nearest_fallback)
         if sup_level is None or res_level is None:
-            ns_l, ns_d, ns_t, nr_l, nr_d, nr_t = _apply_nearest_fallback(raw)
-            if sup_level is None:
-                sup_level, sup_dist, sup_tag = ns_l, ns_d, ns_t
-            if res_level is None:
-                res_level, res_dist, res_tag = nr_l, nr_d, nr_t
+            ns = raw.get("nearest_support")
+            nr = raw.get("nearest_resistance")
+            if isinstance(ns, dict) and sup_level is None:
+                sup_level = safe_float(ns.get("level"))
+                sup_dist = safe_float(ns.get("distance_pct"))
+                sup_tag = ns.get("tag") or ns.get("status")
+            if isinstance(nr, dict) and res_level is None:
+                res_level = safe_float(nr.get("level"))
+                res_dist = safe_float(nr.get("distance_pct"))
+                res_tag = nr.get("tag") or nr.get("status")
         if (
             sup_level is None
             and res_level is None
@@ -2201,11 +2188,12 @@ class MergeEngine:
 
     @staticmethod
     def _fold_zones(target: CanonicalAsset, source: CanonicalAsset) -> None:
-        existing = {(z.side, round(z.level, 5)) for z in target.zones}
+        # FIX-004: clé enrichie round(6)+status pour éviter collisions sur niveaux très proches
+        existing = {(z.side, round(z.level, 6), z.status) for z in target.zones}
         for z in source.zones:
             if len(target.zones) >= MAX_ZONES_PER_ASSET:
                 break
-            key = (z.side, round(z.level, 5))
+            key = (z.side, round(z.level, 6), z.status)
             if key not in existing:
                 target.zones.append(z)
                 existing.add(key)
@@ -2769,6 +2757,9 @@ class MergePipeline:
                     continue
                 if z.distance_pct >= 2.0:
                     continue
+                # FIX-006: log discret si zone UNKNOWN devient hot (aide debug)
+                if z.side == "UNKNOWN" and z.alert == "🔥 ZONE CHAUDE":
+                    _LOG.debug("hot_zone_primary UNKNOWN pour %s (niveau %s)", sym, z.level)
                 zones.append({"symbol": sym, **_zone_dict(z)})
                 if len(zones) >= soft_cap:
                     break
@@ -2873,7 +2864,7 @@ def get_pipeline() -> MergePipeline:
     return MergePipeline(registry=registry)
 
 
-@st.cache_data(show_spinner=False, max_entries=128, ttl=3600, persist=False)
+@st.cache_data(show_spinner=False, max_entries=64, ttl=3600, persist=False)  # FIX-005: 128→64
 def parse_json_bytes(entry: FileEntry) -> tuple[Any | None, str | None]:
     """Cache-friendly JSON parsing — keyed on (name, sha256), not raw bytes."""
     data = entry.data
