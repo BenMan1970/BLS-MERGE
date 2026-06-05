@@ -120,7 +120,7 @@ MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
 MAX_TP_ZONES: Final[int] = 3
 
-SCHEMA_VERSION: Final[str] = "3.4.2"
+SCHEMA_VERSION: Final[str] = "3.4.3"
 
 # Status values identifying synthetic zones built from price_context fallback.
 _SR_NEAREST_STATUS: Final[str] = "SR_nearest"
@@ -542,6 +542,14 @@ class RSIReading(BaseModel):
     timeframe: Timeframe
     value: float | None = None
     divergence: DivergenceKind = DivergenceKind.NONE
+    # v3.4.3 — Option A: enrichissement des métadonnées de divergence RSI.
+    # Capturés depuis le scanner RSI natif (champs strength_score,
+    # confidence_score, div_kind, confirmed). Tous optionnels pour
+    # rétrocompatibilité avec les sources qui ne les produisent pas.
+    div_strength_score: float | None = None    # force du signal [0..1]
+    div_confidence_score: float | None = None  # confiance confirmation [0..1]
+    div_kind: str | None = None                # "REGULAR" | "HIDDEN" | None
+    div_confirmed: bool = False                # True = pivot confirmé
 
     @field_validator("value")
     @classmethod
@@ -701,6 +709,12 @@ class CanonicalAsset(BaseModel):
                 "value": r.value,
                 "divergence": r.divergence.value,
                 "status": _rsi_status_from_value(r.value),
+                # v3.4.3 — Option A: métadonnées de divergence enrichies.
+                # None si la source ne les fournit pas (rétrocompat totale).
+                "div_strength_score": r.div_strength_score,
+                "div_confidence_score": r.div_confidence_score,
+                "div_kind": r.div_kind,
+                "div_confirmed": r.div_confirmed,
             }
         self.rsi_by_tf = by_tf
         h4 = by_tf.get(Timeframe.H4.value)
@@ -1069,10 +1083,32 @@ def _extract_nested_rsi(tfs: dict[str, Any]) -> list[RSIReading]:
         tf = parse_timeframe(k)
         if tf is Timeframe.UNKNOWN or not isinstance(v, dict):
             continue
+        # Champ div simple (label court : "BULL", "BEAR", "NONE", "STALE"…)
+        div_raw = v.get("div") or v.get("divergence")
+        # Sous-objet divergence structuré (format scanner RSI natif v3+)
+        div_obj = v.get("divergence") if isinstance(v.get("divergence"), dict) else {}
+        # strength_score : présent à la racine du TF ET dans le sous-objet
+        strength = safe_float(
+            v.get("strength_score")
+            or div_obj.get("strength_score")
+        )
+        confidence = safe_float(div_obj.get("confidence_score"))
+        kind = safe_str(div_obj.get("kind") or div_obj.get("div_kind"), max_len=16) or None
+        confirmed = bool(div_obj.get("confirmed", False))
+        # Normaliser la divergence : si div_raw est un dict (champ "divergence"
+        # était le sous-objet), on extrait le label textuel depuis div_obj.
+        if isinstance(div_raw, dict):
+            div_label = div_raw.get("label") or div_raw.get("code") or ""
+        else:
+            div_label = div_raw
         readings.append(RSIReading(
             timeframe=tf,
             value=safe_float(v.get("rsi") or v.get("value")),
-            divergence=_norm_div(v.get("div") or v.get("divergence")),
+            divergence=_norm_div(div_label),
+            div_strength_score=strength,
+            div_confidence_score=confidence,
+            div_kind=kind if kind else None,
+            div_confirmed=confirmed,
         ))
     return readings
 
