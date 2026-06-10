@@ -1,8785 +1,3556 @@
-{
-  "meta": {
-    "generated_at": "2026-06-10T22:43:56.057646Z",
-    "version": "3.4.3",
-    "scanners_detected": [
-      "gps:gps",
-      "rsi:rsi",
-      "choch:choch",
-      "sr:sr"
-    ],
-    "scanners_unknown": 0,
-    "assets_count": 33,
-    "signals_count": 3,
-    "elapsed_ms": 37.13
-  },
-  "assets": {
-    "USD/JPY": {
-      "symbol": "USD/JPY",
-      "base": "USD",
-      "quote": "JPY",
-      "asset_class": "forex",
-      "current_price": 160.51,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 59.56,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 60.75,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 65.96,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 63.72,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 60.69,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 59.56,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 60.75,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 65.96,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 63.72,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 60.69,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        }
-      ],
-      "mtf": {
-        "pct": 100,
-        "direction": "Bullish",
-        "quality": "A+",
-        "nc": 4,
-        "age_d1": 18,
-        "atr_h1": 0.083,
-        "atr_h4": 0.1832,
-        "atr_daily": 0.6679,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bullish",
-          "H4": "Bullish",
-          "H1": "Bullish",
-          "M15": "Bullish"
-        },
-        "htf": true,
-        "score": 6,
-        "grade": "A+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": null
-      },
-      "zones": [],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "0zones"
-        ]
-      },
-      "atr_effective": 0.1832,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "EUR/JPY": {
-      "symbol": "EUR/JPY",
-      "base": "EUR",
-      "quote": "JPY",
-      "asset_class": "forex",
-      "current_price": 185.4315,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 57.2,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 55.32,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 51.58,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 48.77,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 56.04,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 57.2,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 55.32,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 51.58,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 48.77,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 56.04,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        }
-      ],
-      "mtf": {
-        "pct": 100,
-        "direction": "Bullish",
-        "quality": "A+",
-        "nc": 4,
-        "age_d1": 0,
-        "atr_h1": 0.1741,
-        "atr_h4": 0.3222,
-        "atr_daily": 0.9042,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bullish",
-          "H4": "Bullish",
-          "H1": "Bullish",
-          "M15": "Bullish"
-        },
-        "htf": true,
-        "score": 6,
-        "grade": "A+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 183.20699,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 1.2
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 183.20699,
-          "score": 120.1,
-          "weighted_score": 72.06,
-          "status": "Role Reverse",
-          "distance_pct": 1.2,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 22.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.3222,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "BUY",
-        "level": 183.20699,
-        "score": 120.1,
-        "weighted_score": 72.06,
-        "status": "Role Reverse",
-        "distance_pct": 1.2,
-        "alert": "⚠️ Proche",
-        "timeframes": [
-          "D1",
-          "H4",
-          "W1"
-        ],
-        "has_weekly": true,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Support",
-        "strength": 22.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "GBP/JPY": {
-      "symbol": "GBP/JPY",
-      "base": "GBP",
-      "quote": "JPY",
-      "asset_class": "forex",
-      "current_price": 214.9,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 50.66,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 57.23,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 58.28,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 53.79,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 58.65,
-          "divergence": "Bearish",
-          "div_strength_score": 0.4225,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 50.66,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 57.23,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 58.28,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 53.79,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 58.65,
-          "divergence": "Bearish",
-          "status": "favorable",
-          "div_strength_score": 0.4225,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 99,
-        "direction": "Bullish",
-        "quality": "A+",
-        "nc": 4,
-        "age_d1": 16,
-        "atr_h1": 0.2383,
-        "atr_h4": 0.4044,
-        "atr_daily": 1.176,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bullish",
-          "H4": "Bullish",
-          "H1": "Bullish",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 5,
-        "grade": "A+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": null
-      },
-      "zones": [],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "0zones"
-        ]
-      },
-      "atr_effective": 0.4044,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "GBP/CAD": {
-      "symbol": "GBP/CAD",
-      "base": "GBP",
-      "quote": "CAD",
-      "asset_class": "forex",
-      "current_price": 1.865085,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 45.67,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 47.63,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 56.66,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 58.24,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 53.59,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 45.67,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 47.63,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 56.66,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 58.24,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 53.59,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        }
-      ],
-      "mtf": {
-        "pct": 88,
-        "direction": "Bullish",
-        "quality": "A+",
-        "nc": 4,
-        "age_d1": 13,
-        "atr_h1": 0.0017,
-        "atr_h4": 0.003,
-        "atr_daily": 0.0086,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bullish",
-          "H4": "Bullish",
-          "H1": "Bearish",
-          "M15": "Bearish"
-        },
-        "htf": true,
-        "score": 4,
-        "grade": "A+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 1.85122,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 0.743
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 1.85122,
-          "score": 95.3,
-          "weighted_score": 57.18,
-          "status": "Role Reverse",
-          "distance_pct": 0.743,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 20.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.003,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "BUY",
-        "level": 1.85122,
-        "score": 95.3,
-        "weighted_score": 57.18,
-        "status": "Role Reverse",
-        "distance_pct": 0.743,
-        "alert": "⚠️ Proche",
-        "timeframes": [
-          "D1",
-          "H4",
-          "W1"
-        ],
-        "has_weekly": true,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Support",
-        "strength": 20.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "CAD/JPY": {
-      "symbol": "CAD/JPY",
-      "base": "CAD",
-      "quote": "JPY",
-      "asset_class": "forex",
-      "current_price": 115.22149999999999,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 56.33,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 63.7,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 54.37,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 43.93,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 54.95,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 56.33,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 63.7,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 54.37,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 43.93,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 54.95,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 68,
-        "direction": "Bullish",
-        "quality": "A",
-        "nc": 3,
-        "age_d1": 4,
-        "atr_h1": 0.0966,
-        "atr_h4": 0.1729,
-        "atr_daily": 0.524,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Range",
-          "H4": "Bullish",
-          "H1": "Bullish",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 4,
-        "grade": "A"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": {
-          "level": 117.41441,
-          "type": "Resistance",
-          "side": "SELL",
-          "distance_pct": 1.903
-        }
-      },
-      "zones": [
-        {
-          "side": "SELL",
-          "level": 117.41441,
-          "score": 51.6,
-          "weighted_score": 51.6,
-          "status": "Vierge",
-          "distance_pct": 1.903,
-          "alert": "",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Resistance",
-          "strength": 6.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.1729,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "GBP/AUD": {
-      "symbol": "GBP/AUD",
-      "base": "GBP",
-      "quote": "AUD",
-      "asset_class": "forex",
-      "current_price": 1.90759,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 42.96,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 55.36,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 77.74,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 64.23,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 40.47,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 42.96,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 55.36,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 77.74,
-          "divergence": "None",
-          "status": "overbought",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 64.23,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 40.47,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "overbought",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 65,
-        "direction": "Bullish",
-        "quality": "A",
-        "nc": 3,
-        "age_d1": 2,
-        "atr_h1": 0.0023,
-        "atr_h4": 0.0041,
-        "atr_daily": 0.0104,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Range",
-          "H4": "Bullish",
-          "H1": "Range",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "A"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": null
-      },
-      "zones": [],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "0zones"
-        ]
-      },
-      "atr_effective": 0.0041,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "AUD/JPY": {
-      "symbol": "AUD/JPY",
-      "base": "AUD",
-      "quote": "JPY",
-      "asset_class": "forex",
-      "current_price": 112.655,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 54.89,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 50.41,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 33.73,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 40.85,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 65.0,
-          "divergence": "None",
-          "div_strength_score": 0.441,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 54.89,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 50.41,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 33.73,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 40.85,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 65.0,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.441,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        }
-      ],
-      "mtf": {
-        "pct": 76,
-        "direction": "Bullish",
-        "quality": "A",
-        "nc": 2,
-        "age_d1": 2,
-        "atr_h1": 0.1854,
-        "atr_h4": 0.3308,
-        "atr_daily": 0.8538,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bullish",
-          "H4": "Bearish",
-          "H1": "Bullish",
-          "M15": "Bullish"
-        },
-        "htf": true,
-        "score": 5,
-        "grade": "A"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 114.00852,
-          "type": "Resistance",
-          "side": "SELL",
-          "distance_pct": 1.201
-        }
-      },
-      "zones": [
-        {
-          "side": "SELL",
-          "level": 114.00852,
-          "score": 37.4,
-          "weighted_score": 29.92,
-          "status": "Testee",
-          "distance_pct": 1.201,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Resistance",
-          "strength": 13.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.3308,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "EUR/CAD": {
-      "symbol": "EUR/CAD",
-      "base": "EUR",
-      "quote": "CAD",
-      "asset_class": "forex",
-      "current_price": 1.60933,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 53.02,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 43.86,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 47.29,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 54.88,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 50.47,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 53.02,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 43.86,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 47.29,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 54.88,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 50.47,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Retracement Bull",
-          "direction": "Bullish"
-        }
-      ],
-      "mtf": {
-        "pct": 67,
-        "direction": "Bullish",
-        "quality": "A",
-        "nc": 2,
-        "age_d1": 12,
-        "atr_h1": 0.0014,
-        "atr_h4": 0.0024,
-        "atr_daily": 0.0064,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bullish",
-          "H4": "Bearish",
-          "H1": "Bearish",
-          "M15": "Retracement Bull"
-        },
-        "htf": true,
-        "score": 4,
-        "grade": "A"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 1.61045,
-          "type": "Pivot",
-          "side": "PIVOT",
-          "distance_pct": 0.069
-        }
-      },
-      "zones": [
-        {
-          "side": "PIVOT",
-          "level": 1.61045,
-          "score": 71.2,
-          "weighted_score": 42.72,
-          "status": "Role Reverse",
-          "distance_pct": 0.069,
-          "alert": "🔥 ZONE CHAUDE",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Pivot",
-          "strength": 17.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0024,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "USD/CAD": {
-      "symbol": "USD/CAD",
-      "base": "USD",
-      "quote": "CAD",
-      "asset_class": "forex",
-      "current_price": 1.393095,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 50.54,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 43.69,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 54.48,
-          "divergence": "Bearish",
-          "div_strength_score": 0.3876,
-          "div_confidence_score": 0.8,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        {
-          "timeframe": "D1",
-          "value": 72.71,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 57.58,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 50.54,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 43.69,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 54.48,
-          "divergence": "Bearish",
-          "status": "favorable",
-          "div_strength_score": 0.3876,
-          "div_confidence_score": 0.8,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        "D1": {
-          "value": 72.71,
-          "divergence": "None",
-          "status": "overbought",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 57.58,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Retracement Bull",
-          "direction": "Bullish"
-        }
-      ],
-      "mtf": {
-        "pct": 64,
-        "direction": "Bullish",
-        "quality": "A",
-        "nc": 2,
-        "age_d1": 18,
-        "atr_h1": 0.0012,
-        "atr_h4": 0.0019,
-        "atr_daily": 0.0053,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bullish",
-          "H4": "Bearish",
-          "H1": "Bearish",
-          "M15": "Retracement Bull"
-        },
-        "htf": true,
-        "score": 4,
-        "grade": "A"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 1.36557,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 1.976
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 1.36557,
-          "score": 112.5,
-          "weighted_score": 67.5,
-          "status": "Role Reverse",
-          "distance_pct": 1.976,
-          "alert": "",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 28.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0019,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "BUY",
-        "level": 1.36557,
-        "score": 112.5,
-        "weighted_score": 67.5,
-        "status": "Role Reverse",
-        "distance_pct": 1.976,
-        "alert": "",
-        "timeframes": [
-          "D1",
-          "H4",
-          "W1"
-        ],
-        "has_weekly": true,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Support",
-        "strength": 28.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "EUR/AUD": {
-      "symbol": "EUR/AUD",
-      "base": "EUR",
-      "quote": "AUD",
-      "asset_class": "forex",
-      "current_price": 1.64601,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 48.67,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 53.97,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 70.78,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 61.73,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 34.72,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 48.67,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 53.97,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 70.78,
-          "divergence": "None",
-          "status": "grey_high",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 61.73,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 34.72,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "grey_high",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Retracement Bear",
-          "direction": "Bearish"
-        }
-      ],
-      "mtf": {
-        "pct": 63,
-        "direction": "Bullish",
-        "quality": "A",
-        "nc": 2,
-        "age_d1": 1,
-        "atr_h1": 0.0019,
-        "atr_h4": 0.0036,
-        "atr_daily": 0.0088,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Range",
-          "H4": "Bullish",
-          "H1": "Range",
-          "M15": "Retracement Bear"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "A"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": {
-          "level": 1.63294,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 0.794
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 1.63294,
-          "score": 96.2,
-          "weighted_score": 57.72,
-          "status": "Role Reverse",
-          "distance_pct": 0.794,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 23.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0036,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "BUY",
-        "level": 1.63294,
-        "score": 96.2,
-        "weighted_score": 57.72,
-        "status": "Role Reverse",
-        "distance_pct": 0.794,
-        "alert": "⚠️ Proche",
-        "timeframes": [
-          "D1",
-          "H4",
-          "W1"
-        ],
-        "has_weekly": true,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Support",
-        "strength": 23.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "AUD/CHF": {
-      "symbol": "AUD/CHF",
-      "base": "AUD",
-      "quote": "CHF",
-      "asset_class": "forex",
-      "current_price": 0.5605150000000001,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 55.39,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 48.71,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 36.85,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 46.93,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 66.33,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 55.39,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 48.71,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 36.85,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 46.93,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 66.33,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 58,
-        "direction": "Bearish",
-        "quality": "A",
-        "nc": 2,
-        "age_d1": 120,
-        "atr_h1": 0.0007,
-        "atr_h4": 0.0013,
-        "atr_daily": 0.0033,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bearish",
-          "D1": "Bullish",
-          "H4": "Bearish",
-          "H1": "Range",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "A"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 0.5637,
-          "type": "Resistance",
-          "side": "SELL",
-          "distance_pct": 0.569
-        }
-      },
-      "zones": [
-        {
-          "side": "SELL",
-          "level": 0.5637,
-          "score": 48.9,
-          "weighted_score": 39.12,
-          "status": "Testee",
-          "distance_pct": 0.569,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Resistance",
-          "strength": 17.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0013,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "SELL",
-        "level": 0.5637,
-        "score": 48.9,
-        "weighted_score": 39.12,
-        "status": "Testee",
-        "distance_pct": 0.569,
-        "alert": "⚠️ Proche",
-        "timeframes": [
-          "D1",
-          "H4"
-        ],
-        "has_weekly": false,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Resistance",
-        "strength": 17.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "EUR/NZD": {
-      "symbol": "EUR/NZD",
-      "base": "EUR",
-      "quote": "NZD",
-      "asset_class": "forex",
-      "current_price": 1.984915,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 47.89,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 44.98,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 58.67,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 52.81,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 50.05,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 47.89,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 44.98,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 58.67,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 52.81,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 50.05,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 56,
-        "direction": "Bullish",
-        "quality": "A",
-        "nc": 2,
-        "age_d1": 2,
-        "atr_h1": 0.0023,
-        "atr_h4": 0.0044,
-        "atr_daily": 0.0128,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bearish",
-          "H4": "Bullish",
-          "H1": "Bearish",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "A"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bearish",
-        "near_zone": {
-          "level": 1.9951,
-          "type": "Resistance",
-          "side": "SELL",
-          "distance_pct": 0.513
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 1.94837,
-          "score": 73.1,
-          "weighted_score": 58.48,
-          "status": "Testee",
-          "distance_pct": 1.841,
-          "alert": "",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 8.0
-        },
-        {
-          "side": "SELL",
-          "level": 1.9951,
-          "score": 31.3,
-          "weighted_score": 25.04,
-          "status": "Testee",
-          "distance_pct": 0.513,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Resistance",
-          "strength": 14.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "2zones"
-        ]
-      },
-      "atr_effective": 0.0044,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "BUY",
-        "level": 1.94837,
-        "score": 73.1,
-        "weighted_score": 58.48,
-        "status": "Testee",
-        "distance_pct": 1.841,
-        "alert": "",
-        "timeframes": [
-          "D1",
-          "H4",
-          "W1"
-        ],
-        "has_weekly": true,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Support",
-        "strength": 8.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "AUD/USD": {
-      "symbol": "AUD/USD",
-      "base": "AUD",
-      "quote": "USD",
-      "asset_class": "forex",
-      "current_price": 0.70187,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 52.0,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 47.76,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 31.2,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 36.04,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 54.17,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 52.0,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 47.76,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 31.2,
-          "divergence": "None",
-          "status": "grey_low",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 36.04,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 54.17,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "grey_low",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Retracement Bull",
-          "direction": "Bullish"
-        }
-      ],
-      "mtf": {
-        "pct": 55,
-        "direction": "Bearish",
-        "quality": "A",
-        "nc": 1,
-        "age_d1": 2,
-        "atr_h1": 0.0013,
-        "atr_h4": 0.0023,
-        "atr_daily": 0.006,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bullish",
-          "D1": "Bearish",
-          "H4": "Bearish",
-          "H1": "Range",
-          "M15": "Retracement Bull"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "A"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bearish",
-        "near_zone": null
-      },
-      "zones": [],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "0zones"
-        ]
-      },
-      "atr_effective": 0.0023,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "NZD/USD": {
-      "symbol": "NZD/USD",
-      "base": "NZD",
-      "quote": "USD",
-      "asset_class": "forex",
-      "current_price": 0.58202,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 52.56,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 53.27,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 40.88,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 43.04,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 46.69,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 52.56,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 53.27,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 40.88,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 43.04,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 46.69,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 53,
-        "direction": "Bearish",
-        "quality": "B+",
-        "nc": 3,
-        "age_d1": 4,
-        "atr_h1": 0.0011,
-        "atr_h4": 0.002,
-        "atr_daily": 0.0057,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bearish",
-          "D1": "Bullish",
-          "H4": "Bearish",
-          "H1": "Bullish",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 0.57137,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 1.829
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 0.57137,
-          "score": 46.1,
-          "weighted_score": 36.88,
-          "status": "Testee",
-          "distance_pct": 1.829,
-          "alert": "",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 16.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.002,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "GBP/NZD": {
-      "symbol": "GBP/NZD",
-      "base": "GBP",
-      "quote": "NZD",
-      "asset_class": "forex",
-      "current_price": 2.300395,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 42.45,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 47.59,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 64.89,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 55.48,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 52.47,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 42.45,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 47.59,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 64.89,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 55.48,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 52.47,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        }
-      ],
-      "mtf": {
-        "pct": 54,
-        "direction": "Bullish",
-        "quality": "B+",
-        "nc": 2,
-        "age_d1": 4,
-        "atr_h1": 0.0028,
-        "atr_h4": 0.0052,
-        "atr_daily": 0.0155,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bearish",
-          "H4": "Bullish",
-          "H1": "Bearish",
-          "M15": "Bearish"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bearish",
-        "near_zone": {
-          "level": 2.32835,
-          "type": "Resistance",
-          "side": "SELL",
-          "distance_pct": 1.215
-        }
-      },
-      "zones": [
-        {
-          "side": "SELL",
-          "level": 2.32835,
-          "score": 124.4,
-          "weighted_score": 99.52,
-          "status": "Testee",
-          "distance_pct": 1.215,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Resistance",
-          "strength": 27.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0052,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "NZD/CAD": {
-      "symbol": "NZD/CAD",
-      "base": "NZD",
-      "quote": "CAD",
-      "asset_class": "forex",
-      "current_price": 0.810785,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 53.47,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 50.29,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 40.36,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 49.8,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 50.2,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 53.47,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 50.29,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 40.36,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 49.8,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 50.2,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        }
-      ],
-      "mtf": {
-        "pct": 54,
-        "direction": "Bearish",
-        "quality": "B+",
-        "nc": 2,
-        "age_d1": 1,
-        "atr_h1": 0.0012,
-        "atr_h4": 0.0023,
-        "atr_daily": 0.0065,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bearish",
-          "D1": "Bullish",
-          "H4": "Bearish",
-          "H1": "Bullish",
-          "M15": "Bullish"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": null
-      },
-      "zones": [],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "0zones"
-        ]
-      },
-      "atr_effective": 0.0023,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "EUR/USD": {
-      "symbol": "EUR/USD",
-      "base": "EUR",
-      "quote": "USD",
-      "asset_class": "forex",
-      "current_price": 1.1552850000000001,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 51.8,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 50.23,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 44.99,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 37.52,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 44.07,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 51.8,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 50.23,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 44.99,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 37.52,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 44.07,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 48,
-        "direction": "Bearish",
-        "quality": "B+",
-        "nc": 2,
-        "age_d1": 18,
-        "atr_h1": 0.0014,
-        "atr_h4": 0.0023,
-        "atr_daily": 0.006,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bullish",
-          "D1": "Bearish",
-          "H4": "Bearish",
-          "H1": "Bullish",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bearish",
-        "near_zone": {
-          "level": 1.16631,
-          "type": "Resistance",
-          "side": "SELL",
-          "distance_pct": 0.954
-        }
-      },
-      "zones": [
-        {
-          "side": "SELL",
-          "level": 1.16631,
-          "score": 68.8,
-          "weighted_score": 55.04,
-          "status": "Testee",
-          "distance_pct": 0.954,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Resistance",
-          "strength": 25.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0023,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "SELL",
-        "level": 1.16631,
-        "score": 68.8,
-        "weighted_score": 55.04,
-        "status": "Testee",
-        "distance_pct": 0.954,
-        "alert": "⚠️ Proche",
-        "timeframes": [
-          "D1",
-          "H4"
-        ],
-        "has_weekly": false,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Resistance",
-        "strength": 25.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "NZD/JPY": {
-      "symbol": "NZD/JPY",
-      "base": "NZD",
-      "quote": "JPY",
-      "asset_class": "forex",
-      "current_price": 93.4175,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 55.47,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 56.8,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 44.3,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 47.32,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 53.04,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 55.47,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 56.8,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 44.3,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 47.32,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 53.04,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 53,
-        "direction": "Bullish",
-        "quality": "B+",
-        "nc": 1,
-        "age_d1": 2,
-        "atr_h1": 0.1611,
-        "atr_h4": 0.2936,
-        "atr_daily": 0.8083,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Range",
-          "H4": "Bearish",
-          "H1": "Bullish",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": {
-          "level": 91.7637,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 1.77
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 91.7637,
-          "score": 110.3,
-          "weighted_score": 88.24,
-          "status": "Testee",
-          "distance_pct": 1.77,
-          "alert": "",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 25.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.2936,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "BUY",
-        "level": 91.7637,
-        "score": 110.3,
-        "weighted_score": 88.24,
-        "status": "Testee",
-        "distance_pct": 1.77,
-        "alert": "",
-        "timeframes": [
-          "D1",
-          "H4",
-          "W1"
-        ],
-        "has_weekly": true,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Support",
-        "strength": 25.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "AUD/NZD": {
-      "symbol": "AUD/NZD",
-      "base": "AUD",
-      "quote": "NZD",
-      "asset_class": "forex",
-      "current_price": 1.2058849999999999,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 48.5,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 38.37,
-          "divergence": "Bullish",
-          "div_strength_score": 0.4722,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        {
-          "timeframe": "H4",
-          "value": 30.2,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 43.83,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 62.54,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 48.5,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 38.37,
-          "divergence": "Bullish",
-          "status": "favorable",
-          "div_strength_score": 0.4722,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        "H4": {
-          "value": 30.2,
-          "divergence": "None",
-          "status": "grey_low",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 43.83,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 62.54,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "grey_low",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 48,
-        "direction": "Bullish",
-        "quality": "B+",
-        "nc": 1,
-        "age_d1": 0,
-        "atr_h1": 0.001,
-        "atr_h4": 0.002,
-        "atr_daily": 0.0061,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Range",
-          "H4": "Bearish",
-          "H1": "Range",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 2,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": null
-      },
-      "zones": [],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "0zones"
-        ]
-      },
-      "atr_effective": 0.002,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "CAD/CHF": {
-      "symbol": "CAD/CHF",
-      "base": "CAD",
-      "quote": "CHF",
-      "asset_class": "forex",
-      "current_price": 0.573305,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 52.42,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 57.67,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 64.29,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 54.58,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 48.43,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 52.42,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 57.67,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 64.29,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 54.58,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 48.43,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Retracement Bear",
-          "direction": "Bearish"
-        }
-      ],
-      "mtf": {
-        "pct": 47,
-        "direction": "Bearish",
-        "quality": "B+",
-        "nc": 1,
-        "age_d1": 2,
-        "atr_h1": 0.0006,
-        "atr_h4": 0.0011,
-        "atr_daily": 0.0029,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bearish",
-          "D1": "Range",
-          "H4": "Bullish",
-          "H1": "Bullish",
-          "M15": "Retracement Bear"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": {
-          "level": 0.57468,
-          "type": "Pivot",
-          "side": "PIVOT",
-          "distance_pct": 0.241
-        }
-      },
-      "zones": [
-        {
-          "side": "PIVOT",
-          "level": 0.57468,
-          "score": 57.6,
-          "weighted_score": 34.56,
-          "status": "Role Reverse",
-          "distance_pct": 0.241,
-          "alert": "🔥 ZONE CHAUDE",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Pivot",
-          "strength": 14.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0011,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "SPX500/USD": {
-      "symbol": "SPX500/USD",
-      "base": "SPX500",
-      "quote": "USD",
-      "asset_class": "index",
-      "current_price": 7321.3,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 42.91,
-          "divergence": "None",
-          "div_strength_score": 0.3723,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 43.14,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 39.88,
-          "divergence": "Bullish",
-          "div_strength_score": 0.6127,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        {
-          "timeframe": "D1",
-          "value": 48.13,
-          "divergence": "Bearish",
-          "div_strength_score": 0.3784,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        {
-          "timeframe": "W1",
-          "value": 62.56,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 42.91,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.3723,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 43.14,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 39.88,
-          "divergence": "Bullish",
-          "status": "favorable",
-          "div_strength_score": 0.6127,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        "D1": {
-          "value": 48.13,
-          "divergence": "Bearish",
-          "status": "favorable",
-          "div_strength_score": 0.3784,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        "W1": {
-          "value": 62.56,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        }
-      ],
-      "mtf": {
-        "pct": 44,
-        "direction": "Bullish",
-        "quality": "B+",
-        "nc": 1,
-        "age_d1": 44,
-        "atr_h1": 34.6,
-        "atr_h4": 53.82,
-        "atr_daily": 100.66,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Range",
-          "H4": "Bearish",
-          "H1": "Bearish",
-          "M15": "Bearish"
-        },
-        "htf": true,
-        "score": 2,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": {
-          "level": 7377.73275,
-          "type": "Resistance",
-          "side": "SELL",
-          "distance_pct": 0.771
-        }
-      },
-      "zones": [
-        {
-          "side": "SELL",
-          "level": 7377.73275,
-          "score": 40.2,
-          "weighted_score": 24.12,
-          "status": "Role Reverse",
-          "distance_pct": 0.771,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Resistance",
-          "strength": 15.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 53.82,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "NAS100/USD": {
-      "symbol": "NAS100/USD",
-      "base": "NAS100",
-      "quote": "USD",
-      "asset_class": "index",
-      "current_price": 28705.35,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 44.06,
-          "divergence": "None",
-          "div_strength_score": 0.3536,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 44.12,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 39.18,
-          "divergence": "Bullish",
-          "div_strength_score": 0.5592,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        {
-          "timeframe": "D1",
-          "value": 49.32,
-          "divergence": "Bearish",
-          "div_strength_score": 0.5899,
-          "div_confidence_score": 0.7,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        {
-          "timeframe": "W1",
-          "value": 63.94,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 44.06,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.3536,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 44.12,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 39.18,
-          "divergence": "Bullish",
-          "status": "favorable",
-          "div_strength_score": 0.5592,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        "D1": {
-          "value": 49.32,
-          "divergence": "Bearish",
-          "status": "favorable",
-          "div_strength_score": 0.5899,
-          "div_confidence_score": 0.7,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        "W1": {
-          "value": 63.94,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        }
-      ],
-      "mtf": {
-        "pct": 44,
-        "direction": "Bullish",
-        "quality": "B+",
-        "nc": 1,
-        "age_d1": 44,
-        "atr_h1": 223.06,
-        "atr_h4": 357.2,
-        "atr_daily": 642.53,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Range",
-          "H4": "Bearish",
-          "H1": "Bearish",
-          "M15": "Bearish"
-        },
-        "htf": true,
-        "score": 2,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": {
-          "level": 28564.71195,
-          "type": "Pivot",
-          "side": "PIVOT",
-          "distance_pct": 0.49
-        }
-      },
-      "zones": [
-        {
-          "side": "PIVOT",
-          "level": 28564.71195,
-          "score": 79.8,
-          "weighted_score": 63.84,
-          "status": "Testee",
-          "distance_pct": 0.49,
-          "alert": "🔥 ZONE CHAUDE",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Pivot",
-          "strength": 24.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 357.2,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "CHF/JPY": {
-      "symbol": "CHF/JPY",
-      "base": "CHF",
-      "quote": "JPY",
-      "asset_class": "forex",
-      "current_price": 200.988,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 50.91,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 52.24,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 41.9,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 41.69,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 55.94,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 50.91,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 52.24,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 41.9,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 41.69,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 55.94,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 46,
-        "direction": "Bullish",
-        "quality": "B+",
-        "nc": 0,
-        "age_d1": 2,
-        "atr_h1": 0.2352,
-        "atr_h4": 0.4361,
-        "atr_daily": 1.189,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bearish",
-          "H4": "Bearish",
-          "H1": "Bullish",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bearish",
-        "near_zone": {
-          "level": 199.28642,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 0.844
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 199.28642,
-          "score": 50.8,
-          "weighted_score": 30.48,
-          "status": "Role Reverse",
-          "distance_pct": 0.844,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 12.0
-        }
-      ],
-      "structure_events": [
-        {
-          "signal_id": "CHF_JPY__H1__20260610T1300__066219629c20",
-          "kind": "CHoCH",
-          "direction": "Bullish",
-          "timeframe": "H1",
-          "level": 201.092,
-          "close_price": 201.148,
-          "current_price": 200.988,
-          "confluence_score": 85.0,
-          "status": "Fresh",
-          "signal_time": "2026-06-10T13:00:00Z",
-          "distance_pct": 0.0278,
-          "distance_atr_multiple": 0.24,
-          "volatility": "Haute",
-          "force": "Moyen",
-          "bb_regime": "Normal",
-          "session": "London_NY_Overlap",
-          "candles_elapsed": 2
-        }
-      ],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "choch": [
-          "CHF_JPY__H1__20260610T1300__066219629c20"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.4361,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "BUY",
-        "level": 199.28642,
-        "score": 50.8,
-        "weighted_score": 30.48,
-        "status": "Role Reverse",
-        "distance_pct": 0.844,
-        "alert": "⚠️ Proche",
-        "timeframes": [
-          "D1",
-          "H4",
-          "W1"
-        ],
-        "has_weekly": true,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Support",
-        "strength": 12.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "USD/CHF": {
-      "symbol": "USD/CHF",
-      "base": "USD",
-      "quote": "CHF",
-      "asset_class": "forex",
-      "current_price": 0.79844,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 52.12,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 52.03,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 62.37,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 64.33,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 54.03,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 52.12,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 52.03,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 62.37,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 64.33,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 54.03,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Retracement Bear",
-          "direction": "Bearish"
-        }
-      ],
-      "mtf": {
-        "pct": 43,
-        "direction": "Bearish",
-        "quality": "B+",
-        "nc": 0,
-        "age_d1": 6,
-        "atr_h1": 0.0011,
-        "atr_h4": 0.002,
-        "atr_daily": 0.0052,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bearish",
-          "D1": "Bullish",
-          "H4": "Bullish",
-          "H1": "Range",
-          "M15": "Retracement Bear"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 0.80406,
-          "type": "Resistance",
-          "side": "SELL",
-          "distance_pct": 0.68
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 0.78674,
-          "score": 34.2,
-          "weighted_score": 20.52,
-          "status": "Role Reverse",
-          "distance_pct": 1.489,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 16.0
-        },
-        {
-          "side": "SELL",
-          "level": 0.80406,
-          "score": 48.2,
-          "weighted_score": 48.2,
-          "status": "Vierge",
-          "distance_pct": 0.68,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Resistance",
-          "strength": 11.0
-        }
-      ],
-      "structure_events": [
-        {
-          "signal_id": "USD_CHF__H1__20260610T1300__dc422f7e934e",
-          "kind": "CHoCH",
-          "direction": "Bearish",
-          "timeframe": "H1",
-          "level": 0.79746,
-          "close_price": 0.79736,
-          "current_price": 0.79844,
-          "confluence_score": 85.0,
-          "status": "Fresh",
-          "signal_time": "2026-06-10T13:00:00Z",
-          "distance_pct": 0.0125,
-          "distance_atr_multiple": 0.09,
-          "volatility": "Haute",
-          "force": "Moyen",
-          "bb_regime": "Squeeze",
-          "session": "London_NY_Overlap",
-          "candles_elapsed": 2
-        }
-      ],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "choch": [
-          "USD_CHF__H1__20260610T1300__dc422f7e934e"
-        ],
-        "sr": [
-          "2zones"
-        ]
-      },
-      "atr_effective": 0.002,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "SELL",
-        "level": 0.80406,
-        "score": 48.2,
-        "weighted_score": 48.2,
-        "status": "Vierge",
-        "distance_pct": 0.68,
-        "alert": "⚠️ Proche",
-        "timeframes": [
-          "D1",
-          "H4"
-        ],
-        "has_weekly": false,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Resistance",
-        "strength": 11.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "GBP/CHF": {
-      "symbol": "GBP/CHF",
-      "base": "GBP",
-      "quote": "CHF",
-      "asset_class": "forex",
-      "current_price": 1.069245,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 49.13,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 57.79,
-          "divergence": "Bearish",
-          "div_strength_score": 0.2551,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        {
-          "timeframe": "H4",
-          "value": 75.42,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 63.71,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 52.13,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 49.13,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 57.79,
-          "divergence": "Bearish",
-          "status": "favorable",
-          "div_strength_score": 0.2551,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        "H4": {
-          "value": 75.42,
-          "divergence": "None",
-          "status": "overbought",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 63.71,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 52.13,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "overbought",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Retracement Bear",
-          "direction": "Bearish"
-        }
-      ],
-      "mtf": {
-        "pct": 43,
-        "direction": "Bearish",
-        "quality": "B+",
-        "nc": 0,
-        "age_d1": 6,
-        "atr_h1": 0.0009,
-        "atr_h4": 0.0017,
-        "atr_daily": 0.0047,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bearish",
-          "D1": "Bullish",
-          "H4": "Bullish",
-          "H1": "Range",
-          "M15": "Retracement Bear"
-        },
-        "htf": true,
-        "score": 3,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 1.04874,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 1.918
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 1.04874,
-          "score": 94.4,
-          "weighted_score": 75.52,
-          "status": "Testee",
-          "distance_pct": 1.918,
-          "alert": "",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 19.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0017,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "EUR/GBP": {
-      "symbol": "EUR/GBP",
-      "base": "EUR",
-      "quote": "GBP",
-      "asset_class": "forex",
-      "current_price": 0.862885,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 60.26,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 44.68,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 35.24,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 42.13,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 45.41,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 60.26,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 44.68,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 35.24,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 42.13,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 45.41,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 42,
-        "direction": "Bullish",
-        "quality": "B+",
-        "nc": 0,
-        "age_d1": 16,
-        "atr_h1": 0.0005,
-        "atr_h4": 0.0008,
-        "atr_daily": 0.0025,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Bearish",
-          "H4": "Bearish",
-          "H1": "Range",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 2,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bearish",
-        "near_zone": {
-          "level": 0.86907,
-          "type": "Resistance",
-          "side": "SELL",
-          "distance_pct": 0.717
-        }
-      },
-      "zones": [
-        {
-          "side": "SELL",
-          "level": 0.86907,
-          "score": 160.6,
-          "weighted_score": 128.48,
-          "status": "Testee",
-          "distance_pct": 0.717,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Resistance",
-          "strength": 33.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0008,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "EUR/CHF": {
-      "symbol": "EUR/CHF",
-      "base": "EUR",
-      "quote": "CHF",
-      "asset_class": "forex",
-      "current_price": 0.92144,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 58.41,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 54.8,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 65.11,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 61.59,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 48.37,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 58.41,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 54.8,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 65.11,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 61.59,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 48.37,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 42,
-        "direction": "Bearish",
-        "quality": "B+",
-        "nc": 0,
-        "age_d1": 4,
-        "atr_h1": 0.0006,
-        "atr_h4": 0.0012,
-        "atr_daily": 0.0031,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bearish",
-          "D1": "Bullish",
-          "H4": "Bullish",
-          "H1": "Range",
-          "M15": "Range"
-        },
-        "htf": true,
-        "score": 2,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 0.92526,
-          "type": "Pivot",
-          "side": "PIVOT",
-          "distance_pct": 0.287
-        }
-      },
-      "zones": [
-        {
-          "side": "PIVOT",
-          "level": 0.92526,
-          "score": 72.4,
-          "weighted_score": 43.44,
-          "status": "Role Reverse",
-          "distance_pct": 0.287,
-          "alert": "🔥 ZONE CHAUDE",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Pivot",
-          "strength": 11.0
-        }
-      ],
-      "structure_events": [
-        {
-          "signal_id": "EUR_CHF__D1__20260602T2100__4ebfe8feefc4",
-          "kind": "CHoCH",
-          "direction": "Bullish",
-          "timeframe": "D1",
-          "level": 0.91702,
-          "close_price": 0.91872,
-          "current_price": 0.92144,
-          "confluence_score": 65.0,
-          "status": "Aged",
-          "signal_time": "2026-06-02T21:00:00Z",
-          "distance_pct": 0.1854,
-          "distance_atr_multiple": 0.54,
-          "volatility": "Moyenne",
-          "force": "Fort",
-          "bb_regime": "Squeeze",
-          "session": "Off",
-          "candles_elapsed": 4
-        }
-      ],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "choch": [
-          "EUR_CHF__D1__20260602T2100__4ebfe8feefc4"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0012,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "US30/USD": {
-      "symbol": "US30/USD",
-      "base": "US30",
-      "quote": "USD",
-      "asset_class": "index",
-      "current_price": 50267.15,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 32.17,
-          "divergence": "None",
-          "div_strength_score": 0.4412,
-          "div_confidence_score": 1.0,
-          "div_kind": "HIDDEN",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 36.4,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 44.12,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 55.54,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 62.87,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 32.17,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.4412,
-          "div_confidence_score": 1.0,
-          "div_kind": "HIDDEN",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 36.4,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 44.12,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 55.54,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 62.87,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        }
-      ],
-      "mtf": {
-        "pct": 44,
-        "direction": "Bullish",
-        "quality": "B+",
-        "nc": 0,
-        "age_d1": 44,
-        "atr_h1": 199.93,
-        "atr_h4": 305.85,
-        "atr_daily": 688.39,
-        "biases": {
-          "MN": "Bullish",
-          "W1": "Bullish",
-          "D1": "Range",
-          "H4": "Bearish",
-          "H1": "Bearish",
-          "M15": "Bearish"
-        },
-        "htf": true,
-        "score": 2,
-        "grade": "B+"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": {
-          "level": 50258.58341,
-          "type": "Pivot",
-          "side": "PIVOT",
-          "distance_pct": 0.017
-        }
-      },
-      "zones": [
-        {
-          "side": "PIVOT",
-          "level": 50258.58341,
-          "score": 247.3,
-          "weighted_score": 148.38,
-          "status": "Role Reverse",
-          "distance_pct": 0.017,
-          "alert": "🔥 ZONE CHAUDE",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Pivot",
-          "strength": 40.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 305.85,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "GBP/USD": {
-      "symbol": "GBP/USD",
-      "base": "GBP",
-      "quote": "USD",
-      "asset_class": "forex",
-      "current_price": 1.338865,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 47.14,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 52.16,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 50.71,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 43.76,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 46.7,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 47.14,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 52.16,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 50.71,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 43.76,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 46.7,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 21,
-        "direction": "Bullish",
-        "quality": "B",
-        "nc": 1,
-        "age_d1": 4,
-        "atr_h1": 0.0018,
-        "atr_h4": 0.0028,
-        "atr_daily": 0.008,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bullish",
-          "D1": "Range",
-          "H4": "Bullish",
-          "H1": "Bullish",
-          "M15": "Range"
-        },
-        "htf": false,
-        "score": 3,
-        "grade": "B"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": {
-          "level": 1.33067,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 0.612
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 1.33067,
-          "score": 135.5,
-          "weighted_score": 108.4,
-          "status": "Testee",
-          "distance_pct": 0.612,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 31.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0028,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": {
-        "side": "BUY",
-        "level": 1.33067,
-        "score": 135.5,
-        "weighted_score": 108.4,
-        "status": "Testee",
-        "distance_pct": 0.612,
-        "alert": "⚠️ Proche",
-        "timeframes": [
-          "D1",
-          "H4",
-          "W1"
-        ],
-        "has_weekly": true,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Support",
-        "strength": 31.0
-      },
-      "hot_zone_primary": null,
-      "direction": "Bullish"
-    },
-    "NZD/CHF": {
-      "symbol": "NZD/CHF",
-      "base": "NZD",
-      "quote": "CHF",
-      "asset_class": "forex",
-      "current_price": 0.464815,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 56.66,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 58.31,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 50.21,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 53.37,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 48.9,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 56.66,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 58.31,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 50.21,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 53.37,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 48.9,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        }
-      ],
-      "mtf": {
-        "pct": 38,
-        "direction": "Bearish",
-        "quality": "B",
-        "nc": 0,
-        "age_d1": 1,
-        "atr_h1": 0.0005,
-        "atr_h4": 0.0011,
-        "atr_daily": 0.003,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bearish",
-          "D1": "Bullish",
-          "H4": "Bullish",
-          "H1": "Bullish",
-          "M15": "Bullish"
-        },
-        "htf": true,
-        "score": 2,
-        "grade": "B"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Bullish",
-        "near_zone": {
-          "level": 0.46311,
-          "type": "Pivot",
-          "side": "PIVOT",
-          "distance_pct": 0.368
-        }
-      },
-      "zones": [
-        {
-          "side": "PIVOT",
-          "level": 0.46311,
-          "score": 90.2,
-          "weighted_score": 72.16,
-          "status": "Testee",
-          "distance_pct": 0.368,
-          "alert": "🔥 ZONE CHAUDE",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Pivot",
-          "strength": 19.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 0.0011,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "AUD/CAD": {
-      "symbol": "AUD/CAD",
-      "base": "AUD",
-      "quote": "CAD",
-      "asset_class": "forex",
-      "current_price": 0.977715,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 53.3,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 43.31,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 28.7,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 43.98,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 62.34,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 53.3,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 43.31,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 28.7,
-          "divergence": "None",
-          "status": "grey_low",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 43.98,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 62.34,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "grey_low",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Bullish",
-          "direction": "Bullish"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Bearish",
-          "direction": "Bearish"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Retracement Bull",
-          "direction": "Bullish"
-        }
-      ],
-      "mtf": {
-        "pct": 25,
-        "direction": "Bearish",
-        "quality": "B",
-        "nc": 0,
-        "age_d1": 0,
-        "atr_h1": 0.0014,
-        "atr_h4": 0.0026,
-        "atr_daily": 0.0065,
-        "biases": {
-          "MN": "Bearish",
-          "W1": "Bullish",
-          "D1": "Range",
-          "H4": "Bearish",
-          "H1": "Range",
-          "M15": "Retracement Bull"
-        },
-        "htf": false,
-        "score": 2,
-        "grade": "B"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": null
-      },
-      "zones": [],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "0zones"
-        ]
-      },
-      "atr_effective": 0.0026,
-      "atr_source": "h4",
-      "conviction_cap": null,
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Bearish"
-    },
-    "DE30/EUR": {
-      "symbol": "DE30/EUR",
-      "base": "DE30",
-      "quote": "EUR",
-      "asset_class": "index",
-      "current_price": 24164.699999999997,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 36.6,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H1",
-          "value": 34.96,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 37.28,
-          "divergence": "Bullish",
-          "div_strength_score": 0.3998,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        {
-          "timeframe": "D1",
-          "value": 47.74,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 53.44,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 36.6,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H1": {
-          "value": 34.96,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 37.28,
-          "divergence": "Bullish",
-          "status": "favorable",
-          "div_strength_score": 0.3998,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        "D1": {
-          "value": 47.74,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 53.44,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "favorable",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 0,
-        "direction": "Neutral",
-        "quality": "B",
-        "nc": 0,
-        "age_d1": null,
-        "atr_h1": null,
-        "atr_h4": null,
-        "atr_daily": null,
-        "biases": {
-          "MN": "Range",
-          "W1": "Range",
-          "D1": "Range",
-          "H4": "Range",
-          "H1": "Range",
-          "M15": "Range"
-        },
-        "htf": false,
-        "score": 0,
-        "grade": "B"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": {
-          "level": 23926.27694,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 0.987
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 23926.27694,
-          "score": 166.7,
-          "weighted_score": 166.7,
-          "status": "Vierge",
-          "distance_pct": 0.987,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 51.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 120.8235,
-      "atr_source": "synthetic",
-      "conviction_cap": "BBB",
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Neutral"
-    },
-    "XAU/USD": {
-      "symbol": "XAU/USD",
-      "base": "XAU",
-      "quote": "USD",
-      "asset_class": "metal",
-      "current_price": 4120.435,
-      "rsi": [
-        {
-          "timeframe": "M15",
-          "value": 34.42,
-          "divergence": "Bullish",
-          "div_strength_score": 0.4595,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        {
-          "timeframe": "H1",
-          "value": 30.59,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "H4",
-          "value": 22.66,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "D1",
-          "value": 31.01,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        {
-          "timeframe": "W1",
-          "value": 43.33,
-          "divergence": "None",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      ],
-      "rsi_by_tf": {
-        "M15": {
-          "value": 34.42,
-          "divergence": "Bullish",
-          "status": "favorable",
-          "div_strength_score": 0.4595,
-          "div_confidence_score": 1.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": true
-        },
-        "H1": {
-          "value": 30.59,
-          "divergence": "None",
-          "status": "grey_low",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "H4": {
-          "value": 22.66,
-          "divergence": "None",
-          "status": "oversold",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "D1": {
-          "value": 31.01,
-          "divergence": "None",
-          "status": "grey_low",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        },
-        "W1": {
-          "value": 43.33,
-          "divergence": "None",
-          "status": "favorable",
-          "div_strength_score": 0.0,
-          "div_confidence_score": 0.0,
-          "div_kind": "REGULAR",
-          "div_confirmed": false
-        }
-      },
-      "rsi_h4_status": "oversold",
-      "biases": [
-        {
-          "timeframe": "MN",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "W1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "D1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H4",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "H1",
-          "bias": "Range",
-          "direction": "Neutral"
-        },
-        {
-          "timeframe": "M15",
-          "bias": "Range",
-          "direction": "Neutral"
-        }
-      ],
-      "mtf": {
-        "pct": 0,
-        "direction": "Neutral",
-        "quality": "B",
-        "nc": 0,
-        "age_d1": null,
-        "atr_h1": null,
-        "atr_h4": null,
-        "atr_daily": null,
-        "biases": {
-          "MN": "Range",
-          "W1": "Range",
-          "D1": "Range",
-          "H4": "Range",
-          "H1": "Range",
-          "M15": "Range"
-        },
-        "htf": false,
-        "score": 0,
-        "grade": "B"
-      },
-      "price_context": {
-        "raw": "",
-        "support_level": null,
-        "support_dist_pct": null,
-        "support_tag": null,
-        "resistance_level": null,
-        "resistance_dist_pct": null,
-        "resistance_tag": null,
-        "is_intermediate": true,
-        "trend": "Range",
-        "near_zone": {
-          "level": 4084.15185,
-          "type": "Support",
-          "side": "BUY",
-          "distance_pct": 0.881
-        }
-      },
-      "zones": [
-        {
-          "side": "BUY",
-          "level": 4084.15185,
-          "score": 943.2,
-          "weighted_score": 565.92,
-          "status": "Role Reverse",
-          "distance_pct": 0.881,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 83.0
-        }
-      ],
-      "structure_events": [],
-      "provenance": {
-        "gps": [
-          "mtf"
-        ],
-        "rsi": [
-          "5tf"
-        ],
-        "sr": [
-          "1zones"
-        ]
-      },
-      "atr_effective": 20.602175,
-      "atr_source": "synthetic",
-      "conviction_cap": "BBB",
-      "nearest_aligned_zone": null,
-      "hot_zone_primary": null,
-      "direction": "Neutral"
-    }
-  },
-  "signals": [
-    {
-      "event": {
-        "signal_id": "CHF_JPY__H1__20260610T1300__066219629c20",
-        "kind": "CHoCH",
-        "direction": "Bullish",
-        "timeframe": "H1",
-        "level": 201.092,
-        "close_price": 201.148,
-        "current_price": 200.988,
-        "confluence_score": 85.0,
-        "status": "Fresh",
-        "signal_time": "2026-06-10T13:00:00Z",
-        "distance_pct": 0.0278,
-        "distance_atr_multiple": 0.24,
-        "volatility": "Haute",
-        "force": "Moyen",
-        "bb_regime": "Normal",
-        "session": "London_NY_Overlap",
-        "candles_elapsed": 2
-      },
-      "asset": {
-        "symbol": "CHF/JPY",
-        "base": "CHF",
-        "quote": "JPY",
-        "asset_class": "forex",
-        "current_price": 200.988,
-        "rsi": [
-          {
-            "timeframe": "M15",
-            "value": 50.91,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "H1",
-            "value": 52.24,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "H4",
-            "value": 41.9,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "D1",
-            "value": 41.69,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "W1",
-            "value": 55.94,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          }
-        ],
-        "rsi_by_tf": {
-          "M15": {
-            "value": 50.91,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "H1": {
-            "value": 52.24,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "H4": {
-            "value": 41.9,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "D1": {
-            "value": 41.69,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "W1": {
-            "value": 55.94,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          }
-        },
-        "rsi_h4_status": "favorable",
-        "biases": [
-          {
-            "timeframe": "MN",
-            "bias": "Bullish",
-            "direction": "Bullish"
-          },
-          {
-            "timeframe": "W1",
-            "bias": "Bullish",
-            "direction": "Bullish"
-          },
-          {
-            "timeframe": "D1",
-            "bias": "Bearish",
-            "direction": "Bearish"
-          },
-          {
-            "timeframe": "H4",
-            "bias": "Bearish",
-            "direction": "Bearish"
-          },
-          {
-            "timeframe": "H1",
-            "bias": "Bullish",
-            "direction": "Bullish"
-          },
-          {
-            "timeframe": "M15",
-            "bias": "Range",
-            "direction": "Neutral"
-          }
-        ],
-        "mtf": {
-          "pct": 46,
-          "direction": "Bullish",
-          "quality": "B+",
-          "nc": 0,
-          "age_d1": 2,
-          "atr_h1": 0.2352,
-          "atr_h4": 0.4361,
-          "atr_daily": 1.189,
-          "biases": {
-            "MN": "Bullish",
-            "W1": "Bullish",
-            "D1": "Bearish",
-            "H4": "Bearish",
-            "H1": "Bullish",
-            "M15": "Range"
-          },
-          "htf": true,
-          "score": 3,
-          "grade": "B+"
-        },
-        "price_context": {
-          "raw": "",
-          "support_level": null,
-          "support_dist_pct": null,
-          "support_tag": null,
-          "resistance_level": null,
-          "resistance_dist_pct": null,
-          "resistance_tag": null,
-          "is_intermediate": true,
-          "trend": "Bearish",
-          "near_zone": {
-            "level": 199.28642,
-            "type": "Support",
-            "side": "BUY",
-            "distance_pct": 0.844
-          }
-        },
-        "zones": [
-          {
-            "side": "BUY",
-            "level": 199.28642,
-            "score": 50.8,
-            "weighted_score": 30.48,
-            "status": "Role Reverse",
-            "distance_pct": 0.844,
-            "alert": "⚠️ Proche",
-            "timeframes": [
-              "D1",
-              "H4",
-              "W1"
-            ],
-            "has_weekly": true,
-            "has_daily": true,
-            "has_h4": true,
-            "type": "Support",
-            "strength": 12.0
-          }
-        ],
-        "structure_events": [
-          {
-            "signal_id": "CHF_JPY__H1__20260610T1300__066219629c20",
-            "kind": "CHoCH",
-            "direction": "Bullish",
-            "timeframe": "H1",
-            "level": 201.092,
-            "close_price": 201.148,
-            "current_price": 200.988,
-            "confluence_score": 85.0,
-            "status": "Fresh",
-            "signal_time": "2026-06-10T13:00:00Z",
-            "distance_pct": 0.0278,
-            "distance_atr_multiple": 0.24,
-            "volatility": "Haute",
-            "force": "Moyen",
-            "bb_regime": "Normal",
-            "session": "London_NY_Overlap",
-            "candles_elapsed": 2
-          }
-        ],
-        "provenance": {
-          "gps": [
-            "mtf"
-          ],
-          "rsi": [
-            "5tf"
-          ],
-          "choch": [
-            "CHF_JPY__H1__20260610T1300__066219629c20"
-          ],
-          "sr": [
-            "1zones"
-          ]
-        },
-        "atr_effective": 0.4361,
-        "atr_source": "h4",
-        "conviction_cap": null,
-        "nearest_aligned_zone": {
-          "side": "BUY",
-          "level": 199.28642,
-          "score": 50.8,
-          "weighted_score": 30.48,
-          "status": "Role Reverse",
-          "distance_pct": 0.844,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4",
-            "W1"
-          ],
-          "has_weekly": true,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 12.0
-        },
-        "hot_zone_primary": null,
-        "direction": "Bullish"
-      },
-      "htf_aligned": false,
-      "nearest_aligned_zone": {
-        "side": "BUY",
-        "level": 199.28642,
-        "score": 50.8,
-        "weighted_score": 30.48,
-        "status": "Role Reverse",
-        "distance_pct": 0.844,
-        "alert": "⚠️ Proche",
-        "timeframes": [
-          "D1",
-          "H4",
-          "W1"
-        ],
-        "has_weekly": true,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Support",
-        "strength": 12.0
-      },
-      "tp_zones": [],
-      "confluence_total": 111.05,
-      "sl_price": 200.43785,
-      "sl_atr_multiple": 1.5,
-      "tp1_price": null,
-      "tp1_atr_multiple": null,
-      "rr_estimated": null,
-      "enrichment": {
-        "status": "complete",
-        "scanners_matched": 4,
-        "scanners_total": 4
-      },
-      "warnings": [],
-      "precomputed": {
-        "atr_effective": 0.4361,
-        "atr_source": "h4",
-        "bb_mult": 1.5,
-        "sl_distance_min": 0.34888,
-        "sl_distance_raw": 0.65415,
-        "rsi_h4_value": 41.9,
-        "rsi_h4_status": "favorable",
-        "candles_elapsed": 2,
-        "sig_fresh_aligned": true,
-        "htf_aligned": false,
-        "conviction_cap": null
-      }
-    },
-    {
-      "event": {
-        "signal_id": "USD_CHF__H1__20260610T1300__dc422f7e934e",
-        "kind": "CHoCH",
-        "direction": "Bearish",
-        "timeframe": "H1",
-        "level": 0.79746,
-        "close_price": 0.79736,
-        "current_price": 0.79844,
-        "confluence_score": 85.0,
-        "status": "Fresh",
-        "signal_time": "2026-06-10T13:00:00Z",
-        "distance_pct": 0.0125,
-        "distance_atr_multiple": 0.09,
-        "volatility": "Haute",
-        "force": "Moyen",
-        "bb_regime": "Squeeze",
-        "session": "London_NY_Overlap",
-        "candles_elapsed": 2
-      },
-      "asset": {
-        "symbol": "USD/CHF",
-        "base": "USD",
-        "quote": "CHF",
-        "asset_class": "forex",
-        "current_price": 0.79844,
-        "rsi": [
-          {
-            "timeframe": "M15",
-            "value": 52.12,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "H1",
-            "value": 52.03,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "H4",
-            "value": 62.37,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "D1",
-            "value": 64.33,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "W1",
-            "value": 54.03,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          }
-        ],
-        "rsi_by_tf": {
-          "M15": {
-            "value": 52.12,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "H1": {
-            "value": 52.03,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "H4": {
-            "value": 62.37,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "D1": {
-            "value": 64.33,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "W1": {
-            "value": 54.03,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          }
-        },
-        "rsi_h4_status": "favorable",
-        "biases": [
-          {
-            "timeframe": "MN",
-            "bias": "Bearish",
-            "direction": "Bearish"
-          },
-          {
-            "timeframe": "W1",
-            "bias": "Bearish",
-            "direction": "Bearish"
-          },
-          {
-            "timeframe": "D1",
-            "bias": "Bullish",
-            "direction": "Bullish"
-          },
-          {
-            "timeframe": "H4",
-            "bias": "Bullish",
-            "direction": "Bullish"
-          },
-          {
-            "timeframe": "H1",
-            "bias": "Range",
-            "direction": "Neutral"
-          },
-          {
-            "timeframe": "M15",
-            "bias": "Retracement Bear",
-            "direction": "Bearish"
-          }
-        ],
-        "mtf": {
-          "pct": 43,
-          "direction": "Bearish",
-          "quality": "B+",
-          "nc": 0,
-          "age_d1": 6,
-          "atr_h1": 0.0011,
-          "atr_h4": 0.002,
-          "atr_daily": 0.0052,
-          "biases": {
-            "MN": "Bearish",
-            "W1": "Bearish",
-            "D1": "Bullish",
-            "H4": "Bullish",
-            "H1": "Range",
-            "M15": "Retracement Bear"
-          },
-          "htf": true,
-          "score": 3,
-          "grade": "B+"
-        },
-        "price_context": {
-          "raw": "",
-          "support_level": null,
-          "support_dist_pct": null,
-          "support_tag": null,
-          "resistance_level": null,
-          "resistance_dist_pct": null,
-          "resistance_tag": null,
-          "is_intermediate": true,
-          "trend": "Bullish",
-          "near_zone": {
-            "level": 0.80406,
-            "type": "Resistance",
-            "side": "SELL",
-            "distance_pct": 0.68
-          }
-        },
-        "zones": [
-          {
-            "side": "BUY",
-            "level": 0.78674,
-            "score": 34.2,
-            "weighted_score": 20.52,
-            "status": "Role Reverse",
-            "distance_pct": 1.489,
-            "alert": "⚠️ Proche",
-            "timeframes": [
-              "D1",
-              "H4"
-            ],
-            "has_weekly": false,
-            "has_daily": true,
-            "has_h4": true,
-            "type": "Support",
-            "strength": 16.0
-          },
-          {
-            "side": "SELL",
-            "level": 0.80406,
-            "score": 48.2,
-            "weighted_score": 48.2,
-            "status": "Vierge",
-            "distance_pct": 0.68,
-            "alert": "⚠️ Proche",
-            "timeframes": [
-              "D1",
-              "H4"
-            ],
-            "has_weekly": false,
-            "has_daily": true,
-            "has_h4": true,
-            "type": "Resistance",
-            "strength": 11.0
-          }
-        ],
-        "structure_events": [
-          {
-            "signal_id": "USD_CHF__H1__20260610T1300__dc422f7e934e",
-            "kind": "CHoCH",
-            "direction": "Bearish",
-            "timeframe": "H1",
-            "level": 0.79746,
-            "close_price": 0.79736,
-            "current_price": 0.79844,
-            "confluence_score": 85.0,
-            "status": "Fresh",
-            "signal_time": "2026-06-10T13:00:00Z",
-            "distance_pct": 0.0125,
-            "distance_atr_multiple": 0.09,
-            "volatility": "Haute",
-            "force": "Moyen",
-            "bb_regime": "Squeeze",
-            "session": "London_NY_Overlap",
-            "candles_elapsed": 2
-          }
-        ],
-        "provenance": {
-          "gps": [
-            "mtf"
-          ],
-          "rsi": [
-            "5tf"
-          ],
-          "choch": [
-            "USD_CHF__H1__20260610T1300__dc422f7e934e"
-          ],
-          "sr": [
-            "2zones"
-          ]
-        },
-        "atr_effective": 0.002,
-        "atr_source": "h4",
-        "conviction_cap": null,
-        "nearest_aligned_zone": {
-          "side": "SELL",
-          "level": 0.80406,
-          "score": 48.2,
-          "weighted_score": 48.2,
-          "status": "Vierge",
-          "distance_pct": 0.68,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Resistance",
-          "strength": 11.0
-        },
-        "hot_zone_primary": null,
-        "direction": "Bearish"
-      },
-      "htf_aligned": false,
-      "nearest_aligned_zone": {
-        "side": "SELL",
-        "level": 0.80406,
-        "score": 48.2,
-        "weighted_score": 48.2,
-        "status": "Vierge",
-        "distance_pct": 0.68,
-        "alert": "⚠️ Proche",
-        "timeframes": [
-          "D1",
-          "H4"
-        ],
-        "has_weekly": false,
-        "has_daily": true,
-        "has_h4": true,
-        "type": "Resistance",
-        "strength": 11.0
-      },
-      "tp_zones": [
-        {
-          "side": "BUY",
-          "level": 0.78674,
-          "score": 34.2,
-          "weighted_score": 20.52,
-          "status": "Role Reverse",
-          "distance_pct": 1.489,
-          "alert": "⚠️ Proche",
-          "timeframes": [
-            "D1",
-            "H4"
-          ],
-          "has_weekly": false,
-          "has_daily": true,
-          "has_h4": true,
-          "type": "Support",
-          "strength": 16.0
-        }
-      ],
-      "confluence_total": 113.37,
-      "sl_price": 0.79946,
-      "sl_atr_multiple": 1.0,
-      "tp1_price": 0.78674,
-      "tp1_atr_multiple": 5.36,
-      "rr_estimated": 5.36,
-      "enrichment": {
-        "status": "complete",
-        "scanners_matched": 4,
-        "scanners_total": 4
-      },
-      "warnings": [],
-      "precomputed": {
-        "atr_effective": 0.002,
-        "atr_source": "h4",
-        "bb_mult": 1.0,
-        "sl_distance_min": 0.0016,
-        "sl_distance_raw": 0.002,
-        "rsi_h4_value": 62.37,
-        "rsi_h4_status": "favorable",
-        "candles_elapsed": 2,
-        "sig_fresh_aligned": true,
-        "htf_aligned": false,
-        "conviction_cap": null
-      }
-    },
-    {
-      "event": {
-        "signal_id": "EUR_CHF__D1__20260602T2100__4ebfe8feefc4",
-        "kind": "CHoCH",
-        "direction": "Bullish",
-        "timeframe": "D1",
-        "level": 0.91702,
-        "close_price": 0.91872,
-        "current_price": 0.92144,
-        "confluence_score": 65.0,
-        "status": "Aged",
-        "signal_time": "2026-06-02T21:00:00Z",
-        "distance_pct": 0.1854,
-        "distance_atr_multiple": 0.54,
-        "volatility": "Moyenne",
-        "force": "Fort",
-        "bb_regime": "Squeeze",
-        "session": "Off",
-        "candles_elapsed": 4
-      },
-      "asset": {
-        "symbol": "EUR/CHF",
-        "base": "EUR",
-        "quote": "CHF",
-        "asset_class": "forex",
-        "current_price": 0.92144,
-        "rsi": [
-          {
-            "timeframe": "M15",
-            "value": 58.41,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "H1",
-            "value": 54.8,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "H4",
-            "value": 65.11,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "D1",
-            "value": 61.59,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          {
-            "timeframe": "W1",
-            "value": 48.37,
-            "divergence": "None",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          }
-        ],
-        "rsi_by_tf": {
-          "M15": {
-            "value": 58.41,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "H1": {
-            "value": 54.8,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "H4": {
-            "value": 65.11,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "D1": {
-            "value": 61.59,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          },
-          "W1": {
-            "value": 48.37,
-            "divergence": "None",
-            "status": "favorable",
-            "div_strength_score": 0.0,
-            "div_confidence_score": 0.0,
-            "div_kind": "REGULAR",
-            "div_confirmed": false
-          }
-        },
-        "rsi_h4_status": "favorable",
-        "biases": [
-          {
-            "timeframe": "MN",
-            "bias": "Bearish",
-            "direction": "Bearish"
-          },
-          {
-            "timeframe": "W1",
-            "bias": "Bearish",
-            "direction": "Bearish"
-          },
-          {
-            "timeframe": "D1",
-            "bias": "Bullish",
-            "direction": "Bullish"
-          },
-          {
-            "timeframe": "H4",
-            "bias": "Bullish",
-            "direction": "Bullish"
-          },
-          {
-            "timeframe": "H1",
-            "bias": "Range",
-            "direction": "Neutral"
-          },
-          {
-            "timeframe": "M15",
-            "bias": "Range",
-            "direction": "Neutral"
-          }
-        ],
-        "mtf": {
-          "pct": 42,
-          "direction": "Bearish",
-          "quality": "B+",
-          "nc": 0,
-          "age_d1": 4,
-          "atr_h1": 0.0006,
-          "atr_h4": 0.0012,
-          "atr_daily": 0.0031,
-          "biases": {
-            "MN": "Bearish",
-            "W1": "Bearish",
-            "D1": "Bullish",
-            "H4": "Bullish",
-            "H1": "Range",
-            "M15": "Range"
-          },
-          "htf": true,
-          "score": 2,
-          "grade": "B+"
-        },
-        "price_context": {
-          "raw": "",
-          "support_level": null,
-          "support_dist_pct": null,
-          "support_tag": null,
-          "resistance_level": null,
-          "resistance_dist_pct": null,
-          "resistance_tag": null,
-          "is_intermediate": true,
-          "trend": "Bullish",
-          "near_zone": {
-            "level": 0.92526,
-            "type": "Pivot",
-            "side": "PIVOT",
-            "distance_pct": 0.287
-          }
-        },
-        "zones": [
-          {
-            "side": "PIVOT",
-            "level": 0.92526,
-            "score": 72.4,
-            "weighted_score": 43.44,
-            "status": "Role Reverse",
-            "distance_pct": 0.287,
-            "alert": "🔥 ZONE CHAUDE",
-            "timeframes": [
-              "D1",
-              "H4",
-              "W1"
-            ],
-            "has_weekly": true,
-            "has_daily": true,
-            "has_h4": true,
-            "type": "Pivot",
-            "strength": 11.0
-          }
-        ],
-        "structure_events": [
-          {
-            "signal_id": "EUR_CHF__D1__20260602T2100__4ebfe8feefc4",
-            "kind": "CHoCH",
-            "direction": "Bullish",
-            "timeframe": "D1",
-            "level": 0.91702,
-            "close_price": 0.91872,
-            "current_price": 0.92144,
-            "confluence_score": 65.0,
-            "status": "Aged",
-            "signal_time": "2026-06-02T21:00:00Z",
-            "distance_pct": 0.1854,
-            "distance_atr_multiple": 0.54,
-            "volatility": "Moyenne",
-            "force": "Fort",
-            "bb_regime": "Squeeze",
-            "session": "Off",
-            "candles_elapsed": 4
-          }
-        ],
-        "provenance": {
-          "gps": [
-            "mtf"
-          ],
-          "rsi": [
-            "5tf"
-          ],
-          "choch": [
-            "EUR_CHF__D1__20260602T2100__4ebfe8feefc4"
-          ],
-          "sr": [
-            "1zones"
-          ]
-        },
-        "atr_effective": 0.0012,
-        "atr_source": "h4",
-        "conviction_cap": null,
-        "nearest_aligned_zone": null,
-        "hot_zone_primary": null,
-        "direction": "Bearish"
-      },
-      "htf_aligned": true,
-      "nearest_aligned_zone": null,
-      "tp_zones": [],
-      "confluence_total": 90.34,
-      "sl_price": 0.91582,
-      "sl_atr_multiple": 1.0,
-      "tp1_price": null,
-      "tp1_atr_multiple": null,
-      "rr_estimated": null,
-      "enrichment": {
-        "status": "complete",
-        "scanners_matched": 4,
-        "scanners_total": 4
-      },
-      "warnings": [],
-      "precomputed": {
-        "atr_effective": 0.0012,
-        "atr_source": "h4",
-        "bb_mult": 1.0,
-        "sl_distance_min": 0.00096,
-        "sl_distance_raw": 0.0012,
-        "rsi_h4_value": 65.11,
-        "rsi_h4_status": "favorable",
-        "candles_elapsed": 4,
-        "sig_fresh_aligned": false,
-        "htf_aligned": true,
-        "conviction_cap": null
-      }
-    }
-  ],
-  "correlation_groups": {
-    "CHF": [
-      {
-        "symbol": "USD/CHF",
-        "direction": "Bearish",
-        "kind": "CHoCH",
-        "timeframe": "H1",
-        "mtf_pct": 43,
-        "quality": "B+",
-        "confluence": 113.37
-      },
-      {
-        "symbol": "CHF/JPY",
-        "direction": "Bullish",
-        "kind": "CHoCH",
-        "timeframe": "H1",
-        "mtf_pct": 46,
-        "quality": "B+",
-        "confluence": 111.05
-      },
-      {
-        "symbol": "EUR/CHF",
-        "direction": "Bullish",
-        "kind": "CHoCH",
-        "timeframe": "D1",
-        "mtf_pct": 42,
-        "quality": "B+",
-        "confluence": 90.34
-      }
-    ]
-  },
-  "hot_zones": [
-    {
-      "symbol": "US30/USD",
-      "side": "PIVOT",
-      "level": 50258.58341,
-      "score": 247.3,
-      "weighted_score": 148.38,
-      "status": "Role Reverse",
-      "distance_pct": 0.017,
-      "alert": "🔥 ZONE CHAUDE",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Pivot",
-      "strength": 40.0
-    },
-    {
-      "symbol": "EUR/CAD",
-      "side": "PIVOT",
-      "level": 1.61045,
-      "score": 71.2,
-      "weighted_score": 42.72,
-      "status": "Role Reverse",
-      "distance_pct": 0.069,
-      "alert": "🔥 ZONE CHAUDE",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Pivot",
-      "strength": 17.0
-    },
-    {
-      "symbol": "CAD/CHF",
-      "side": "PIVOT",
-      "level": 0.57468,
-      "score": 57.6,
-      "weighted_score": 34.56,
-      "status": "Role Reverse",
-      "distance_pct": 0.241,
-      "alert": "🔥 ZONE CHAUDE",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Pivot",
-      "strength": 14.0
-    },
-    {
-      "symbol": "EUR/CHF",
-      "side": "PIVOT",
-      "level": 0.92526,
-      "score": 72.4,
-      "weighted_score": 43.44,
-      "status": "Role Reverse",
-      "distance_pct": 0.287,
-      "alert": "🔥 ZONE CHAUDE",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Pivot",
-      "strength": 11.0
-    },
-    {
-      "symbol": "NZD/CHF",
-      "side": "PIVOT",
-      "level": 0.46311,
-      "score": 90.2,
-      "weighted_score": 72.16,
-      "status": "Testee",
-      "distance_pct": 0.368,
-      "alert": "🔥 ZONE CHAUDE",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Pivot",
-      "strength": 19.0
-    },
-    {
-      "symbol": "NAS100/USD",
-      "side": "PIVOT",
-      "level": 28564.71195,
-      "score": 79.8,
-      "weighted_score": 63.84,
-      "status": "Testee",
-      "distance_pct": 0.49,
-      "alert": "🔥 ZONE CHAUDE",
-      "timeframes": [
-        "D1",
-        "H4"
-      ],
-      "has_weekly": false,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Pivot",
-      "strength": 24.0
-    },
-    {
-      "symbol": "EUR/NZD",
-      "side": "SELL",
-      "level": 1.9951,
-      "score": 31.3,
-      "weighted_score": 25.04,
-      "status": "Testee",
-      "distance_pct": 0.513,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4"
-      ],
-      "has_weekly": false,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Resistance",
-      "strength": 14.0
-    },
-    {
-      "symbol": "AUD/CHF",
-      "side": "SELL",
-      "level": 0.5637,
-      "score": 48.9,
-      "weighted_score": 39.12,
-      "status": "Testee",
-      "distance_pct": 0.569,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4"
-      ],
-      "has_weekly": false,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Resistance",
-      "strength": 17.0
-    },
-    {
-      "symbol": "GBP/USD",
-      "side": "BUY",
-      "level": 1.33067,
-      "score": 135.5,
-      "weighted_score": 108.4,
-      "status": "Testee",
-      "distance_pct": 0.612,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 31.0
-    },
-    {
-      "symbol": "USD/CHF",
-      "side": "SELL",
-      "level": 0.80406,
-      "score": 48.2,
-      "weighted_score": 48.2,
-      "status": "Vierge",
-      "distance_pct": 0.68,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4"
-      ],
-      "has_weekly": false,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Resistance",
-      "strength": 11.0
-    },
-    {
-      "symbol": "EUR/GBP",
-      "side": "SELL",
-      "level": 0.86907,
-      "score": 160.6,
-      "weighted_score": 128.48,
-      "status": "Testee",
-      "distance_pct": 0.717,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Resistance",
-      "strength": 33.0
-    },
-    {
-      "symbol": "GBP/CAD",
-      "side": "BUY",
-      "level": 1.85122,
-      "score": 95.3,
-      "weighted_score": 57.18,
-      "status": "Role Reverse",
-      "distance_pct": 0.743,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 20.0
-    },
-    {
-      "symbol": "SPX500/USD",
-      "side": "SELL",
-      "level": 7377.73275,
-      "score": 40.2,
-      "weighted_score": 24.12,
-      "status": "Role Reverse",
-      "distance_pct": 0.771,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4"
-      ],
-      "has_weekly": false,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Resistance",
-      "strength": 15.0
-    },
-    {
-      "symbol": "EUR/AUD",
-      "side": "BUY",
-      "level": 1.63294,
-      "score": 96.2,
-      "weighted_score": 57.72,
-      "status": "Role Reverse",
-      "distance_pct": 0.794,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 23.0
-    },
-    {
-      "symbol": "CHF/JPY",
-      "side": "BUY",
-      "level": 199.28642,
-      "score": 50.8,
-      "weighted_score": 30.48,
-      "status": "Role Reverse",
-      "distance_pct": 0.844,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 12.0
-    },
-    {
-      "symbol": "XAU/USD",
-      "side": "BUY",
-      "level": 4084.15185,
-      "score": 943.2,
-      "weighted_score": 565.92,
-      "status": "Role Reverse",
-      "distance_pct": 0.881,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 83.0
-    },
-    {
-      "symbol": "EUR/USD",
-      "side": "SELL",
-      "level": 1.16631,
-      "score": 68.8,
-      "weighted_score": 55.04,
-      "status": "Testee",
-      "distance_pct": 0.954,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4"
-      ],
-      "has_weekly": false,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Resistance",
-      "strength": 25.0
-    },
-    {
-      "symbol": "DE30/EUR",
-      "side": "BUY",
-      "level": 23926.27694,
-      "score": 166.7,
-      "weighted_score": 166.7,
-      "status": "Vierge",
-      "distance_pct": 0.987,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4"
-      ],
-      "has_weekly": false,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 51.0
-    },
-    {
-      "symbol": "EUR/JPY",
-      "side": "BUY",
-      "level": 183.20699,
-      "score": 120.1,
-      "weighted_score": 72.06,
-      "status": "Role Reverse",
-      "distance_pct": 1.2,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 22.0
-    },
-    {
-      "symbol": "AUD/JPY",
-      "side": "SELL",
-      "level": 114.00852,
-      "score": 37.4,
-      "weighted_score": 29.92,
-      "status": "Testee",
-      "distance_pct": 1.201,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4"
-      ],
-      "has_weekly": false,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Resistance",
-      "strength": 13.0
-    },
-    {
-      "symbol": "GBP/NZD",
-      "side": "SELL",
-      "level": 2.32835,
-      "score": 124.4,
-      "weighted_score": 99.52,
-      "status": "Testee",
-      "distance_pct": 1.215,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Resistance",
-      "strength": 27.0
-    },
-    {
-      "symbol": "USD/CHF",
-      "side": "BUY",
-      "level": 0.78674,
-      "score": 34.2,
-      "weighted_score": 20.52,
-      "status": "Role Reverse",
-      "distance_pct": 1.489,
-      "alert": "⚠️ Proche",
-      "timeframes": [
-        "D1",
-        "H4"
-      ],
-      "has_weekly": false,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 16.0
-    },
-    {
-      "symbol": "NZD/JPY",
-      "side": "BUY",
-      "level": 91.7637,
-      "score": 110.3,
-      "weighted_score": 88.24,
-      "status": "Testee",
-      "distance_pct": 1.77,
-      "alert": "",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 25.0
-    },
-    {
-      "symbol": "NZD/USD",
-      "side": "BUY",
-      "level": 0.57137,
-      "score": 46.1,
-      "weighted_score": 36.88,
-      "status": "Testee",
-      "distance_pct": 1.829,
-      "alert": "",
-      "timeframes": [
-        "D1",
-        "H4"
-      ],
-      "has_weekly": false,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 16.0
-    },
-    {
-      "symbol": "EUR/NZD",
-      "side": "BUY",
-      "level": 1.94837,
-      "score": 73.1,
-      "weighted_score": 58.48,
-      "status": "Testee",
-      "distance_pct": 1.841,
-      "alert": "",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 8.0
-    },
-    {
-      "symbol": "CAD/JPY",
-      "side": "SELL",
-      "level": 117.41441,
-      "score": 51.6,
-      "weighted_score": 51.6,
-      "status": "Vierge",
-      "distance_pct": 1.903,
-      "alert": "",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Resistance",
-      "strength": 6.0
-    },
-    {
-      "symbol": "GBP/CHF",
-      "side": "BUY",
-      "level": 1.04874,
-      "score": 94.4,
-      "weighted_score": 75.52,
-      "status": "Testee",
-      "distance_pct": 1.918,
-      "alert": "",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 19.0
-    },
-    {
-      "symbol": "USD/CAD",
-      "side": "BUY",
-      "level": 1.36557,
-      "score": 112.5,
-      "weighted_score": 67.5,
-      "status": "Role Reverse",
-      "distance_pct": 1.976,
-      "alert": "",
-      "timeframes": [
-        "D1",
-        "H4",
-        "W1"
-      ],
-      "has_weekly": true,
-      "has_daily": true,
-      "has_h4": true,
-      "type": "Support",
-      "strength": 28.0
-    }
-  ],
-  "top_consensus": {
-    "top_bullish": [
-      {
-        "symbol": "USD/JPY",
-        "mtf_pct": 100,
-        "quality": "A+",
-        "nc": 4,
-        "age_d1": 18
-      },
-      {
-        "symbol": "EUR/JPY",
-        "mtf_pct": 100,
-        "quality": "A+",
-        "nc": 4,
-        "age_d1": 0
-      },
-      {
-        "symbol": "GBP/JPY",
-        "mtf_pct": 99,
-        "quality": "A+",
-        "nc": 4,
-        "age_d1": 16
-      },
-      {
-        "symbol": "GBP/CAD",
-        "mtf_pct": 88,
-        "quality": "A+",
-        "nc": 4,
-        "age_d1": 13
-      }
-    ],
-    "top_bearish": [
-      {
-        "symbol": "AUD/CHF",
-        "mtf_pct": 58,
-        "quality": "A",
-        "nc": 2,
-        "age_d1": 120
-      },
-      {
-        "symbol": "AUD/USD",
-        "mtf_pct": 55,
-        "quality": "A",
-        "nc": 1,
-        "age_d1": 2
-      },
-      {
-        "symbol": "NZD/USD",
-        "mtf_pct": 53,
-        "quality": "B+",
-        "nc": 3,
-        "age_d1": 4
-      },
-      {
-        "symbol": "NZD/CAD",
-        "mtf_pct": 54,
-        "quality": "B+",
-        "nc": 2,
-        "age_d1": 1
-      }
-    ]
-  },
-  "diagnostics": [
-    {
-      "stage": "registry",
-      "severity": "info",
-      "code": "selected",
-      "message": "gps (score=1.05)",
-      "context": {
-        "reason": "signature 3/3"
-      }
-    },
-    {
-      "stage": "registry",
-      "severity": "info",
-      "code": "selected",
-      "message": "rsi (score=0.90)",
-      "context": {
-        "reason": "nested timeframes"
-      }
-    },
-    {
-      "stage": "registry",
-      "severity": "info",
-      "code": "selected",
-      "message": "choch (score=1.00)",
-      "context": {
-        "reason": "choch signature"
-      }
-    },
-    {
-      "stage": "registry",
-      "severity": "info",
-      "code": "selected",
-      "message": "sr (score=0.75)",
-      "context": {
-        "reason": "sr signature"
-      }
-    },
-    {
-      "stage": "merge.precompute",
-      "severity": "info",
-      "code": "atr_fallback",
-      "message": "using synthetic (cap=BBB)",
-      "context": {
-        "sym": "DE30/EUR",
-        "atr_effective": 120.8235
-      }
-    },
-    {
-      "stage": "merge.precompute",
-      "severity": "info",
-      "code": "atr_fallback",
-      "message": "using synthetic (cap=BBB)",
-      "context": {
-        "sym": "XAU/USD",
-        "atr_effective": 20.602175
-      }
-    },
-    {
-      "stage": "merge",
-      "severity": "info",
-      "code": "summary",
-      "message": "merged 33 assets",
-      "context": {
-        "collisions_top": {
-          "USD/CHF": 3,
-          "CHF/JPY": 3,
-          "EUR/CHF": 3,
-          "EUR/USD": 2,
-          "GBP/USD": 2,
-          "USD/JPY": 2,
-          "AUD/USD": 2,
-          "USD/CAD": 2,
-          "NZD/USD": 2,
-          "EUR/GBP": 2
-        }
-      }
-    },
-    {
-      "stage": "enrich",
-      "severity": "info",
-      "code": "summary",
-      "message": "enriched 3 signals from 33 assets",
-      "context": {}
-    }
-  ]
+# -*- coding: utf-8 -*-
+"""
+BLUESTAR MERGE v3.4.2 — Production-grade Streamlit application.
+Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
+heuristic fallback, full pipeline diagnostics, and hardened against malformed
+input, DoS, and partial failures.
+
+v3.4.2 — Directional inference patch (fixed: current_price from asset) (S/R side fix):
+    When the scanner SR produces zones with side="UNKNOWN" (e.g. pivot zones
+    without explicit BUY/SELL signal), the merger now infers the direction
+    from the relative position of the level vs current_price:
+      • level < current_price → BUY  (Support)
+      • level > current_price → SELL (Resistance)
+      • level == current_price → UNKNOWN (zone touched, ambiguous)
+    This fixes 9+ assets that had unusable UNKNOWN zones in production.
+
+v3.4.0 — Pre-computation layer for prompt v9.0 (BLUESTAR DIRECT):
+    The LLM downstream now receives ALL deterministic arithmetic pre-computed,
+    eliminating ~40% of arithmetic ops on the model side and stabilising
+    cross-model behaviour. Specifically:
+
+      • CanonicalAsset gains:
+          - atr_effective   : float | None  (ATR cascade output)
+          - atr_source      : Literal[h4, h1_proxy, d1_proxy, synthetic]
+          - conviction_cap  : Literal[A, BBB] | None
+          - nearest_aligned_zone : SRZone | None  (real SR preferred)
+          - hot_zone_primary     : SRZone | None  (incl. UNKNOWN pivots)
+
+      • CanonicalAsset.rsi_h4_status now uses the 7-level v9.0 scale:
+            extreme_overbought | overbought | grey_high | favorable |
+            grey_low | oversold | extreme_oversold
+        (previously: 5-level). Same scale applied per-TF in rsi_by_tf.
+
+      • EnrichedSignal.precomputed gains a typed sub-model carrying:
+          - atr_effective, atr_source
+          - bb_mult            (Squeeze=1.0 / Normal=1.5 / Expansion=2.0)
+          - sl_distance_min    (= atr_effective × 0.8 — SL floor)
+          - sl_distance_raw    (= atr_effective × bb_mult)
+          - rsi_h4_value, rsi_h4_status
+          - candles_elapsed
+          - sig_fresh_aligned  (Fresh + direction match + ≤2 candles)
+
+      • SL / TP1 / RR now use atr_effective (with cascade fallback) instead of
+        the raw atr_h1, so signals on assets missing atr_h4 still get usable
+        levels with a conviction_cap flagged.
+
+      • meta.version bumped to "3.4.0".
+
+v3.3.1 fixes inherited and preserved:
+    - P0: _parse_price_context() regex fallback restored on dict["raw"]
+    - P1: synthetic nearest zones tagged "SR_nearest" + abs(distance)
+    - P2: _select_nearest_aligned_zone() prefers real SR over synthetic
+    - P3: _hot_zones() excludes synthetic/invalid zones
+
+v3.3 fixes inherited and preserved:
+    - BUG 1: htf_aligned requires BOTH D1 AND H4 aligned
+    - GAP 3: current_price promoted to CanonicalAsset level
+    - GAP 4: rsi_by_tf dict + rsi_h4_status pre-computed on CanonicalAsset
+    - GAP 6: sl_price / tp1_price / rr_estimated pre-computed on EnrichedSignal
+    - GAP 7: nearest_aligned_zone uses 5% threshold + price_context fallback
+
+Deploy: place this file as `app.py` and run `streamlit run app.py`.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import logging
+import os
+import math
+import re
+import sys
+import time
+import traceback
+from abc import ABC, abstractmethod
+from collections import defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
+from typing import (
+    Any,
+    Callable,
+    Final,
+    Generic,
+    Iterable,
+    Literal,
+    Sequence,
+    TypeVar,
+    cast,
+)
+
+import streamlit as st
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+try:
+    from rapidfuzz import fuzz as _rf_fuzz
+    _HAS_RAPIDFUZZ: Final[bool] = True
+except ImportError:  # pragma: no cover - optional dep
+    _rf_fuzz = None
+    _HAS_RAPIDFUZZ = False
+
+T = TypeVar("T")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# PRODUCTION LIMITS — hard caps to prevent DoS and runaway memory
+# ════════════════════════════════════════════════════════════════════════════
+MAX_FILES: Final[int] = 32
+MAX_FILE_SIZE_BYTES: Final[int] = 25 * 1024 * 1024          # 25 MB / file
+MAX_TOTAL_SIZE_BYTES: Final[int] = 100 * 1024 * 1024        # 100 MB combined
+MAX_ASSETS: Final[int] = 5_000
+MAX_ZONES_PER_ASSET: Final[int] = 64
+MAX_EVENTS_PER_ASSET: Final[int] = 128
+MAX_RSI_READINGS_PER_ASSET: Final[int] = 16
+MAX_BIASES_PER_ASSET: Final[int] = 16
+MAX_SIGNALS_OUT: Final[int] = 10_000
+MAX_HOT_ZONES_OUT: Final[int] = 500
+MAX_CORRELATION_GROUP_SIZE: Final[int] = 50
+MAX_PROVENANCE_ENTRIES: Final[int] = 32
+MAX_DIAGNOSTICS: Final[int] = 5_000
+MAX_TP_ZONES: Final[int] = 3
+
+SCHEMA_VERSION: Final[str] = "3.4.3"
+
+# ── MERGE-2: HTF alignment thresholds (configurable via these constants) ──
+# Timeframes considered "high timeframe" for bias alignment.
+_HTF_BIAS_TFS: Final[frozenset[str]] = frozenset({"MN", "W1", "D1"})
+# Minimum number of HTF timeframes that must agree to declare htf=True.
+_HTF_MIN_AGREEMENT: Final[int] = 2
+
+# ── MERGE-6: top_consensus minimum MTF % per direction ────────────────────
+# Bullish setups require strong consensus (typically 85%+).
+_TOP_CONSENSUS_MIN_PCT_BULL: Final[int] = 85
+# Bearish setups in a USD-driven market fragment consensus — lower threshold.
+_TOP_CONSENSUS_MIN_PCT_BEAR: Final[int] = 50
+
+# Status values identifying synthetic zones built from price_context fallback.
+_SR_NEAREST_STATUS: Final[str] = "SR_nearest"
+_INVALID_ZONE_STATUSES: Final[frozenset[str]] = frozenset({
+    "Unknown", _SR_NEAREST_STATUS,
+})
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# LOGGING — structured, production-ready
+# ════════════════════════════════════════════════════════════════════════════
+_LOG = logging.getLogger("bluestar_merge")
+if not _LOG.handlers:
+    _handler = logging.StreamHandler(sys.stderr)
+    _handler.setFormatter(
+        logging.Formatter(
+            fmt="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
+            datefmt="%Y-%m-%dT%H:%M:%S%z",
+        )
+    )
+    _LOG.addHandler(_handler)
+    _LOG.setLevel(os.environ.get("BLUESTAR_LOG_LEVEL", "INFO").upper())
+    _LOG.propagate = False
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# DIAGNOSTICS — Result[T] carrier; never raise from pipeline stages
+# ════════════════════════════════════════════════════════════════════════════
+class Severity(str, Enum):
+    DEBUG = "debug"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+
+@dataclass(frozen=True, slots=True)
+class Diagnostic:
+    stage: str
+    severity: Severity
+    code: str
+    message: str
+    context: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "stage": self.stage,
+            "severity": self.severity.value,
+            "code": self.code,
+            "message": self.message,
+            "context": self.context,
+        }
+
+
+@dataclass(slots=True)
+class Result(Generic[T]):
+    value: T | None
+    diagnostics: list[Diagnostic] = field(default_factory=list)
+
+    @property
+    def ok(self) -> bool:
+        return self.value is not None and not self.has(
+            Severity.ERROR, Severity.CRITICAL
+        )
+
+    def has(self, *sev: Severity) -> bool:
+        s = set(sev)
+        return any(d.severity in s for d in self.diagnostics)
+
+    def add(self, d: Diagnostic) -> None:
+        if len(self.diagnostics) < MAX_DIAGNOSTICS:
+            self.diagnostics.append(d)
+
+    def extend(self, diags: Iterable[Diagnostic]) -> None:
+        room = MAX_DIAGNOSTICS - len(self.diagnostics)
+        if room <= 0:
+            return
+        self.diagnostics.extend(list(diags)[:room])
+
+
+def _safe_call(
+    stage: str,
+    code: str,
+    fn: Callable[[], T],
+    default: T,
+    severity: Severity = Severity.ERROR,
+) -> tuple[T, Diagnostic | None]:
+    """Defensive wrapper — converts ANY exception into a structured diagnostic."""
+    try:
+        return fn(), None
+    except Exception as exc:
+        tb_lines = traceback.format_exc(limit=4).splitlines()
+        _LOG.warning(
+            "safe_call boundary: %s in %s/%s: %s",
+            type(exc).__name__, stage, code, exc,
+        )
+        diag = Diagnostic(
+            stage=stage,
+            severity=severity,
+            code=code,
+            message=f"{type(exc).__name__}: {exc}",
+            context={
+                "exception_type": type(exc).__name__,
+                "trace_tail": tb_lines[-4:],
+            },
+        )
+        return default, diag
+
+
+def _is_finite_number(value: Any) -> bool:
+    """True iff value is a finite (non-NaN, non-inf) real number."""
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return False
+    return math.isfinite(f)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# SYMBOL NORMALIZATION
+# ════════════════════════════════════════════════════════════════════════════
+class AssetClass(str, Enum):
+    FOREX = "forex"
+    METAL = "metal"
+    INDEX = "index"
+    CRYPTO = "crypto"
+    COMMODITY = "commodity"
+    UNKNOWN = "unknown"
+
+
+_FIAT_ISO: Final[frozenset[str]] = frozenset({
+    "USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD",
+    "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "TRY", "ZAR",
+    "MXN", "SGD", "HKD", "CNH", "CNY", "INR", "BRL", "RUB",
+    "ILS", "KRW",
+})
+_STABLE_QUOTES: Final[frozenset[str]] = frozenset({
+    "USDT", "USDC", "BUSD", "DAI", "TUSD",
+})
+_METAL_HINT: Final[re.Pattern[str]] = re.compile(
+    r"^(XAU|XAG|XPT|XPD|GOLD|SILVER|PLAT)", re.I
+)
+_INDEX_HINT: Final[re.Pattern[str]] = re.compile(
+    r"^(US\d+|SPX|NDX|DAX|FTSE|NIKKEI|HSI|ASX|UK\d+|GER\d+|"
+    r"JP\d+|FRA\d+|EUSTX|VIX|NAS|DOW|DE\d+)",
+    re.I,
+)
+_CRYPTO_HINT: Final[re.Pattern[str]] = re.compile(
+    r"^(BTC|ETH|XRP|LTC|BCH|ADA|SOL|DOT|DOGE|AVAX|MATIC|"
+    r"LINK|UNI|ATOM|BNB|TRX|SHIB)",
+    re.I,
+)
+_SEP_RE: Final[re.Pattern[str]] = re.compile(r"[\s/_\-.:|]+")
+_MAX_SYMBOL_LEN: Final[int] = 64
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalSymbol:
+    raw: str
+    canonical: str
+    base: str
+    quote: str | None
+    asset_class: AssetClass
+
+
+def _classify(base: str, quote: str | None) -> AssetClass:
+    b = (base or "").upper()
+    q = (quote or "").upper() if quote else None
+    if _METAL_HINT.search(b):
+        return AssetClass.METAL
+    if _CRYPTO_HINT.match(b) or (q is not None and q in _STABLE_QUOTES):
+        return AssetClass.CRYPTO
+    if _INDEX_HINT.match(b):
+        return AssetClass.INDEX
+    if b in _FIAT_ISO and (q is None or q in _FIAT_ISO):
+        return AssetClass.FOREX
+    if q is not None and q in _FIAT_ISO and len(b) == 3 and b.isalpha():
+        return AssetClass.FOREX
+    return AssetClass.UNKNOWN
+
+
+_EMPTY_SYMBOL: Final[CanonicalSymbol] = CanonicalSymbol(
+    "", "", "", None, AssetClass.UNKNOWN
+)
+
+
+def _split_concatenated(token: str) -> tuple[str, str | None]:
+    """Best-effort split of a glued symbol like `EURUSD` or `BTCUSDT`."""
+    for q in _STABLE_QUOTES:
+        if token.endswith(q) and len(token) > len(q):
+            return token[: -len(q)], q
+    for q in _FIAT_ISO:
+        if token.endswith(q) and len(token) > len(q):
+            return token[: -len(q)], q
+    return token, None
+
+
+def normalize_symbol(raw: Any) -> CanonicalSymbol:
+    if raw is None:
+        return _EMPTY_SYMBOL
+    s = str(raw).strip().upper()[:_MAX_SYMBOL_LEN]
+    if not s:
+        return _EMPTY_SYMBOL
+    parts = [p for p in _SEP_RE.split(s) if p]
+    if len(parts) >= 2:
+        base, quote = parts[0], parts[1]
+        return CanonicalSymbol(
+            s, f"{base}/{quote}", base, quote, _classify(base, quote)
+        )
+    token = parts[0] if parts else s
+    base, quote = _split_concatenated(token)
+    if quote is not None:
+        return CanonicalSymbol(
+            s, f"{base}/{quote}", base, quote, _classify(base, quote)
+        )
+    return CanonicalSymbol(s, token, token, None, _classify(token, None))
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# TIMEFRAMES
+# ════════════════════════════════════════════════════════════════════════════
+class Timeframe(str, Enum):
+    M1 = "M1"
+    M5 = "M5"
+    M15 = "M15"
+    M30 = "M30"
+    H1 = "H1"
+    H4 = "H4"
+    D1 = "D1"
+    W1 = "W1"
+    MN = "MN"
+    UNKNOWN = "UNKNOWN"
+
+
+_TF_ALIAS: Final[dict[str, Timeframe]] = {
+    "1m": Timeframe.M1, "m1": Timeframe.M1,
+    "5m": Timeframe.M5, "m5": Timeframe.M5,
+    "15m": Timeframe.M15, "m15": Timeframe.M15,
+    "30m": Timeframe.M30, "m30": Timeframe.M30,
+    "1h": Timeframe.H1, "h1": Timeframe.H1,
+    "60m": Timeframe.H1, "hourly": Timeframe.H1,
+    "4h": Timeframe.H4, "h4": Timeframe.H4, "240m": Timeframe.H4,
+    "d": Timeframe.D1, "d1": Timeframe.D1, "daily": Timeframe.D1,
+    "day": Timeframe.D1, "1d": Timeframe.D1,
+    "w": Timeframe.W1, "w1": Timeframe.W1, "weekly": Timeframe.W1,
+    "week": Timeframe.W1, "1w": Timeframe.W1,
+    "mn": Timeframe.MN, "monthly": Timeframe.MN, "month": Timeframe.MN,
+    "1mn": Timeframe.MN,
 }
+
+# FIX-001: _TF_EXTRACT_RE supprimé — regex ReDoS remplacé par split+set (CWE-1333)
+_TF_SET: Final[frozenset[str]] = frozenset({
+    "1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w",
+    "h1", "h4", "d1", "w1", "mn", "daily", "weekly", "monthly", "hourly",
+})
+
+
+def parse_timeframe(raw: Any) -> Timeframe:
+    if raw is None:
+        return Timeframe.UNKNOWN
+    s = str(raw).strip().lower()
+    if not s:
+        return Timeframe.UNKNOWN
+    # 1. Direct lookup O(1)
+    if s in _TF_ALIAS:
+        return _TF_ALIAS[s]
+    # 2. Token split — linéaire, sans backtracking (FIX-001)
+    for part in re.split(r'[^a-z0-9]+', s):
+        if part in _TF_SET:
+            return _TF_ALIAS.get(part, Timeframe.UNKNOWN)
+    return Timeframe.UNKNOWN
+
+
+def safe_float(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not _is_finite_number(f):
+        return None
+    return f
+
+
+def safe_int(value: Any, default: int = 0) -> int:
+    f = safe_float(value)
+    if f is None:
+        return default
+    try:
+        return int(f)
+    except (OverflowError, ValueError):
+        return default
+
+
+def safe_str(value: Any, *, max_len: int = 256) -> str:
+    if value is None:
+        return ""
+    return str(value)[:max_len]
+
+
+def _parse_iso_datetime(raw: Any) -> datetime | None:
+    """Tolerant datetime parser: ISO-8601, Unix epoch (s & ms). UTC-naive."""
+    if raw is None:
+        return None
+    if isinstance(raw, datetime):
+        return raw if raw.tzinfo else raw.replace(tzinfo=timezone.utc)
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        if not _is_finite_number(raw):
+            return None
+        ts = float(raw)
+        if abs(ts) > 1e12:
+            ts /= 1000.0
+        try:
+            return datetime.fromtimestamp(ts, tz=timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            return None
+    s = str(raw).strip()
+    if not s:
+        return None
+    # Normalise trailing Z to +00:00 for fromisoformat compatibility.
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(s)
+        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return None
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# CANONICAL MODELS
+# ════════════════════════════════════════════════════════════════════════════
+class Direction(str, Enum):
+    BULLISH = "Bullish"
+    BEARISH = "Bearish"
+    NEUTRAL = "Neutral"
+
+
+class DivergenceKind(str, Enum):
+    NONE = "None"
+    BULL = "Bullish"
+    BEAR = "Bearish"
+
+
+BaseCfg: Final[ConfigDict] = ConfigDict(
+    extra="ignore",
+    validate_assignment=False,
+    arbitrary_types_allowed=True,
+    str_strip_whitespace=True,
+)
+
+
+# ── RSI status mapping — v9.0 prompt-compatible 7-level scale ─────────────
+# Thresholds (inclusive lower bound, ordered DESC):
+#   80     → extreme_overbought
+#   72     → overbought
+#   68     → grey_high
+#   32     → favorable    (the "neutral" healthy band)
+#   28     → grey_low
+#   20     → oversold
+#   <20    → extreme_oversold
+_RSI_STATUS_THRESHOLDS: Final[tuple[tuple[float, str], ...]] = (
+    (80.0, "extreme_overbought"),
+    (72.0, "overbought"),
+    (68.0, "grey_high"),
+    (32.0, "favorable"),
+    (28.0, "grey_low"),
+    (20.0, "oversold"),
+)
+
+
+def _rsi_status_from_value(v: float | None) -> str | None:
+    """Map RSI value to categorical status using the v9.0 7-level scale.
+    Returns None if value missing. Anything < 20 → 'extreme_oversold'."""
+    if v is None or not _is_finite_number(v):
+        return None
+    for threshold, status in _RSI_STATUS_THRESHOLDS:
+        if v >= threshold:
+            return status
+    return "extreme_oversold"
+
+
+# Conviction cap mapping driven by ATR cascade fallback level (v9.0 §5.1).
+# None = no cap. The downstream LLM is responsible for actually applying
+# the cap; the merger only annotates the source + cap deterministically.
+_ATR_CONVICTION_CAP: Final[dict[str, str | None]] = {
+    "h4":        None,
+    "h1_proxy":  "A",
+    "d1_proxy":  "BBB",
+    "synthetic": "BBB",
+}
+
+# Multiplier applied to atr_h1 when used as proxy for ATR_H4.
+_ATR_H1_PROXY_MULT: Final[float] = 1.8
+# Multiplier applied to atr_daily when used as proxy for ATR_H4.
+_ATR_D1_PROXY_MULT: Final[float] = 0.25
+# Synthetic ATR = current_price × this (0.5% of price).
+_ATR_SYNTHETIC_PCT: Final[float] = 0.005
+# SL floor distance multiplier (v9.0 §8.2).
+_SL_FLOOR_MULT: Final[float] = 0.8
+# SL raw distance multiplier (default = Normal regime, v9.0 §8.2).
+_SL_RAW_DEFAULT_MULT: Final[float] = 1.1
+
+# BB-regime → SL multiplier (v9.0 §8.2).
+_BB_REGIME_SL_MULT: Final[dict[str, float]] = {
+    "Squeeze":   1.0,
+    "Normal":    1.5,
+    "Expansion": 2.0,
+}
+
+# Fresh signal alignment thresholds (v9.0 §6.1).
+_FRESH_CANDLES_MAX: Final[int] = 2
+
+
+class RSIReading(BaseModel):
+    model_config = BaseCfg
+    timeframe: Timeframe
+    value: float | None = None
+    divergence: DivergenceKind = DivergenceKind.NONE
+    # v3.4.3 — Option A: enrichissement des métadonnées de divergence RSI.
+    # Capturés depuis le scanner RSI natif (champs strength_score,
+    # confidence_score, div_kind, confirmed). Tous optionnels pour
+    # rétrocompatibilité avec les sources qui ne les produisent pas.
+    div_strength_score: float | None = None    # force du signal [0..1]
+    div_confidence_score: float | None = None  # confiance confirmation [0..1]
+    div_kind: str | None = None                # "REGULAR" | "HIDDEN" | None
+    div_confirmed: bool = False                # True = pivot confirmé
+
+    @field_validator("value")
+    @classmethod
+    def _clip(cls, v: float | None) -> float | None:
+        if v is None or not _is_finite_number(v):
+            return None
+        if v < 0.0 or v > 100.0:
+            return None
+        return float(v)
+
+
+class TrendBias(BaseModel):
+    model_config = BaseCfg
+    timeframe: Timeframe
+    bias: str
+    direction: Direction = Direction.NEUTRAL
+
+
+class SRZone(BaseModel):
+    model_config = BaseCfg
+    side: Literal["BUY", "SELL", "PIVOT", "UNKNOWN"] = "UNKNOWN"  # MERGE-3: added PIVOT
+    level: float
+    score: float = 0.0
+    weighted_score: float = 0.0
+    status: str = "Unknown"
+    distance_pct: float = 999.0
+    alert: str = ""
+    timeframes: list[Timeframe] = Field(default_factory=list)
+    has_weekly: bool = False
+    has_daily: bool = False
+    has_h4: bool = False
+    type: str | None = None      # MERGE-3: "Support" | "Resistance" | "Pivot"
+    strength: float | None = None  # MERGE-3: SR "Force Totale"
+
+    def is_real_sr(self) -> bool:
+        """True iff this zone comes from a real SR scanner (not a synthetic
+        nearest_support/nearest_resistance built from price_context text)."""
+        return self.score > 0.0 and self.status not in _INVALID_ZONE_STATUSES
+
+
+class PriceContext(BaseModel):
+    model_config = BaseCfg
+    raw: str = ""
+    support_level: float | None = None
+    support_dist_pct: float | None = None
+    support_tag: str | None = None
+    resistance_level: float | None = None
+    resistance_dist_pct: float | None = None
+    resistance_tag: str | None = None
+    is_intermediate: bool = False
+    # MERGE-4: derived fields (populated by _enrich_asset_precompute)
+    trend: str | None = None             # D1 bias direction ("Bullish"/"Bearish"/"Range")
+    near_zone: dict[str, Any] | None = None  # closest zone summary
+
+
+class StructureEvent(BaseModel):
+    model_config = BaseCfg
+    signal_id: str
+    kind: str
+    direction: Direction
+    timeframe: Timeframe
+    level: float | None = None
+    close_price: float | None = None
+    current_price: float | None = None
+    confluence_score: float | None = None
+    status: str = "Unknown"
+    signal_time: datetime | None = None
+    distance_pct: float | None = None
+    distance_atr_multiple: float | None = None
+    volatility: str | None = None
+    force: str | None = None
+    bb_regime: str | None = None
+    session: str | None = None
+    candles_elapsed: int = 0
+
+
+class MTFConsensus(BaseModel):
+    model_config = BaseCfg
+    pct: int = 0
+    direction: Direction = Direction.NEUTRAL
+    quality: str | None = None
+    nc: int = 0
+    age_d1: int | None = None  # MERGE-5: None when GPS returns "N/A"
+    atr_h1: float | None = None
+    atr_h4: float | None = None
+    atr_daily: float | None = None
+    biases: dict[str, str] = Field(default_factory=dict)
+    # MERGE-2: computed fields (null until _enrich_asset_precompute runs)
+    htf: bool | None = None
+    score: int | None = None
+    grade: str | None = None
+
+    @field_validator("pct", mode="before")
+    @classmethod
+    def _clamp_pct(cls, v: Any) -> int:
+        return max(0, min(100, safe_int(v, default=0)))
+
+    @field_validator("nc", mode="before")
+    @classmethod
+    def _coerce_nc(cls, v: Any) -> int:
+        return max(0, safe_int(v, default=0))
+
+    @field_validator("age_d1", mode="before")
+    @classmethod
+    def _coerce_age_d1(cls, v: Any) -> int | None:
+        # MERGE-5: "N/A" / None / empty → None instead of 0
+        if v is None:
+            return None
+        s = str(v).strip().upper()
+        if s in ("N/A", "NA", ""):
+            return None
+        f = safe_float(v)
+        if f is None:
+            return None
+        try:
+            return max(0, int(f))
+        except (OverflowError, ValueError):
+            return None
+
+
+class CanonicalAsset(BaseModel):
+    """Canonical asset pivot.
+
+    v3.4 adds (pre-computation for prompt v9.0):
+      - atr_effective       : float | None     (ATR cascade output)
+      - atr_source          : str | None       (h4 | h1_proxy | d1_proxy | synthetic)
+      - conviction_cap      : str | None       (A | BBB | None)
+      - nearest_aligned_zone: SRZone | None    (real SR preferred over synth)
+      - hot_zone_primary    : SRZone | None    (incl. UNKNOWN pivots by sign)
+
+    v3.3 added:
+      - current_price (GAP 3)
+      - rsi_by_tf dict (GAP 4)
+      - rsi_h4_status pre-computed (GAP 5)
+    """
+    model_config = BaseCfg
+    symbol: str
+    base: str = ""
+    quote: str | None = None
+    asset_class: AssetClass = AssetClass.UNKNOWN
+    current_price: float | None = None
+    rsi: list[RSIReading] = Field(default_factory=list)
+    rsi_by_tf: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    rsi_h4_status: str | None = None
+    biases: list[TrendBias] = Field(default_factory=list)
+    mtf: MTFConsensus | None = None
+    price_context: PriceContext | None = None
+    zones: list[SRZone] = Field(default_factory=list)
+    structure_events: list[StructureEvent] = Field(default_factory=list)
+    provenance: dict[str, list[str]] = Field(default_factory=dict)
+
+    # ── v3.4 pre-computation layer ────────────────────────────────────────
+    atr_effective: float | None = None
+    atr_source: Literal["h4", "h1_proxy", "d1_proxy", "synthetic"] | None = None
+    conviction_cap: Literal["A", "BBB"] | None = None
+    nearest_aligned_zone: SRZone | None = None
+    hot_zone_primary: SRZone | None = None
+    # v3.4.3: direction dénormalisée au top-level (évite asset.mtf.direction dans le LLM)
+    direction: Direction = Direction.NEUTRAL
+
+    @classmethod
+    def from_symbol(cls, sym: CanonicalSymbol) -> CanonicalAsset:
+        return cls(
+            symbol=sym.canonical,
+            base=sym.base,
+            quote=sym.quote,
+            asset_class=sym.asset_class,
+        )
+
+    def add_provenance(self, source: str, tag: str) -> None:
+        # cast: provenance is dict[str, list[str]] at runtime; Pydantic's
+        # FieldInfo annotation misleads pylint into thinking it has no
+        # .setdefault(). The cast silences the false E1101 without any
+        # runtime cost.
+        prov: dict[str, list[str]] = cast(dict[str, list[str]], self.provenance)
+        bucket = prov.setdefault(source, [])
+        if len(bucket) < MAX_PROVENANCE_ENTRIES:
+            bucket.append(tag)
+
+    def recompute_rsi_views(self) -> None:
+        """Build rsi_by_tf dict + rsi_h4_status from rsi list.
+        Called after each fold so views stay in sync. (GAP 4 + 5)
+        v3.4: uses the 7-level v9.0 scale."""
+        by_tf: dict[str, dict[str, Any]] = {}
+        for r in self.rsi:
+            key = r.timeframe.value
+            by_tf[key] = {
+                "value": r.value,
+                "divergence": r.divergence.value,
+                "status": _rsi_status_from_value(r.value),
+                # v3.4.3 — Option A: métadonnées de divergence enrichies.
+                # None si la source ne les fournit pas (rétrocompat totale).
+                "div_strength_score": r.div_strength_score,
+                "div_confidence_score": r.div_confidence_score,
+                "div_kind": r.div_kind,
+                "div_confirmed": r.div_confirmed,
+            }
+        self.rsi_by_tf = by_tf
+        h4 = by_tf.get(Timeframe.H4.value)
+        self.rsi_h4_status = h4.get("status") if h4 else None
+
+    def recompute_current_price(self) -> None:
+        """Promote current_price from first structure_event if missing. (GAP 3)"""
+        if self.current_price is not None:
+            return
+        for ev in self.structure_events:
+            if ev.current_price is not None and _is_finite_number(ev.current_price):
+                self.current_price = ev.current_price
+                return
+
+
+class EnrichmentQuality(BaseModel):
+    model_config = BaseCfg
+    status: Literal["complete", "partial", "minimal", "empty"] = "empty"
+    scanners_matched: int = 0
+    scanners_total: int = 0
+
+
+# ── v3.4: typed pre-computation block embedded in every EnrichedSignal ────
+class SignalPrecomputed(BaseModel):
+    """Deterministic pre-computations for the v9.0 DAG.
+    All fields are derived ONLY from the merged asset + event — no I/O.
+    """
+    model_config = BaseCfg
+    atr_effective: float | None = None
+    atr_source: Literal["h4", "h1_proxy", "d1_proxy", "synthetic"] | None = None
+    bb_mult: float = _SL_RAW_DEFAULT_MULT
+    sl_distance_min: float | None = None
+    sl_distance_raw: float | None = None
+    rsi_h4_value: float | None = None
+    rsi_h4_status: str | None = None
+    candles_elapsed: int = 999
+    sig_fresh_aligned: bool = False
+    htf_aligned: bool = False
+    conviction_cap: Literal["A", "BBB"] | None = None
+
+
+class EnrichedSignal(BaseModel):
+    """v3.4 adds the typed `precomputed` sub-model (SignalPrecomputed)."""
+    model_config = BaseCfg
+    event: StructureEvent
+    asset: CanonicalAsset
+    htf_aligned: bool = False
+    nearest_aligned_zone: SRZone | None = None
+    tp_zones: list[SRZone] = Field(default_factory=list)
+    confluence_total: float = 0.0
+    sl_price: float | None = None
+    sl_atr_multiple: float = _SL_RAW_DEFAULT_MULT
+    tp1_price: float | None = None
+    tp1_atr_multiple: float | None = None
+    rr_estimated: float | None = None
+    enrichment: EnrichmentQuality = Field(default_factory=EnrichmentQuality)
+    warnings: list[str] = Field(default_factory=list)
+    precomputed: SignalPrecomputed = Field(default_factory=SignalPrecomputed)
+
+
+class MergeMeta(BaseModel):
+    model_config = BaseCfg
+    generated_at: datetime
+    version: str = SCHEMA_VERSION
+    scanners_detected: list[str] = Field(default_factory=list)
+    scanners_unknown: int = 0
+    assets_count: int = 0
+    signals_count: int = 0
+    elapsed_ms: float = 0.0
+
+
+class MergeOutput(BaseModel):
+    model_config = BaseCfg
+    meta: MergeMeta
+    assets: dict[str, CanonicalAsset]
+    signals: list[EnrichedSignal]
+    correlation_groups: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
+    hot_zones: list[dict[str, Any]] = Field(default_factory=dict)
+    top_consensus: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
+    diagnostics: list[dict[str, Any]] = Field(default_factory=dict)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# v3.4 — ATR CASCADE & ZONE PRE-COMPUTATION HELPERS
+# ════════════════════════════════════════════════════════════════════════════
+def compute_atr_effective(
+    mtf: MTFConsensus | None,
+    current_price: float | None,
+) -> tuple[float | None, Literal["h4", "h1_proxy", "d1_proxy", "synthetic"] | None]:
+    """ATR cascade per v9.0 §5.1. First level available wins.
+
+    Returns (atr_effective, atr_source). (None, None) only if all levels
+    are unusable — which gates G5 rejects the asset downstream (LLM side).
+    """
+    if mtf is not None:
+        h4 = mtf.atr_h4
+        if h4 is not None and _is_finite_number(h4) and h4 > 0:
+            return float(h4), "h4"
+        h1 = mtf.atr_h1
+        if h1 is not None and _is_finite_number(h1) and h1 > 0:
+            return round(float(h1) * _ATR_H1_PROXY_MULT, 8), "h1_proxy"
+        d1 = mtf.atr_daily
+        if d1 is not None and _is_finite_number(d1) and d1 > 0:
+            return round(float(d1) * _ATR_D1_PROXY_MULT, 8), "d1_proxy"
+    if current_price is not None and _is_finite_number(current_price) and current_price > 0:
+        return round(float(current_price) * _ATR_SYNTHETIC_PCT, 8), "synthetic"
+    return None, None
+
+
+def _select_hot_zone_primary(
+    asset: CanonicalAsset, direction: Direction
+) -> SRZone | None:
+    """Pick the most relevant 'ZONE CHAUDE' for the asset's direction.
+    Includes UNKNOWN-side pivot zones if their distance sign is coherent with
+    the direction (per v9.0 §6.2). Real SR zones are preferred over synthetic
+    nearest zones — the latter rarely carry an 'alert' flag anyway."""
+    if direction is Direction.NEUTRAL:
+        return None
+    wanted = "BUY" if direction is Direction.BULLISH else "SELL"
+
+    def _alignment_ok(z: SRZone) -> bool:
+        if z.alert != "ZONE CHAUDE" and "ZONE CHAUDE" not in z.alert.upper():
+            return False
+        if z.side == wanted:
+            return True
+        if z.side == "UNKNOWN":
+            # Pivots: below price for bullish, above for bearish.
+            # Note: distance_pct is stored absolute since v3.3.1 (P1 fix),
+            # so we cannot use its sign. Fall back to the raw level.
+            # The hot zone must be on the "right" side of current_price.
+            cp = asset.current_price
+            if cp is None or not _is_finite_number(cp) or cp <= 0:
+                # Can't disambiguate → conservative: include UNKNOWN.
+                return True
+            if direction is Direction.BULLISH:
+                return z.level <= cp
+            return z.level >= cp
+        return False
+
+    aligned_hot = [z for z in asset.zones if _alignment_ok(z)]
+    if not aligned_hot:
+        return None
+    # Prefer real SR zones; among those, the closest one wins.
+    real_hot = [z for z in aligned_hot if z.is_real_sr()]
+    pool = real_hot if real_hot else aligned_hot
+    pool.sort(key=lambda z: z.distance_pct)
+    return pool[0]
+
+
+def _select_nearest_aligned_for_asset(
+    asset: CanonicalAsset, direction: Direction
+) -> SRZone | None:
+    """Pick the closest aligned zone for the asset's MTF direction.
+    Mirrors the enrichment-stage selector but operates at asset level so the
+    LLM sees a pre-computed `asset.nearest_aligned_zone`.
+    v3.4.1: inclut les zones UNKNOWN dont la position relative au prix
+    est cohérente avec la direction (aligné avec _select_hot_zone_primary)."""
+    if direction is Direction.NEUTRAL:
+        return None
+    wanted = "BUY" if direction is Direction.BULLISH else "SELL"
+
+    def _is_aligned(z: SRZone) -> bool:
+        if z.side == wanted:
+            return True
+        if z.side == "UNKNOWN" and z.level > 0:
+            cp = asset.current_price
+            if cp is not None and _is_finite_number(cp) and cp > 0:
+                if direction is Direction.BULLISH:
+                    return z.level <= cp  # Support = sous le prix
+                return z.level >= cp      # Résistance = au-dessus du prix
+        return False
+
+    aligned = [z for z in asset.zones if _is_aligned(z)]
+    if not aligned:
+        return None
+    real = [z for z in aligned if z.is_real_sr()]
+    pool = real if real else aligned
+    pool.sort(key=lambda z: z.distance_pct)
+    return pool[0]
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# ADAPTERS — abstract base + concrete implementations
+# ════════════════════════════════════════════════════════════════════════════
+@dataclass(frozen=True, slots=True)
+class AdapterMatch:
+    score: float
+    reason: str
+
+
+class ScannerAdapter(ABC):
+    name: str = "unknown"
+    priority: int = 0
+
+    @abstractmethod
+    def detect(self, payload: Any) -> AdapterMatch: ...
+
+    @abstractmethod
+    def adapt(self, payload: Any) -> Result[list[CanonicalAsset]]: ...
+
+
+# ──── GPS adapter ─────────────────────────────────────────────────────────
+_MTF_PCT_RE: Final[re.Pattern[str]] = re.compile(r"(\d+(?:\.\d+)?)\s*%")
+_MTF_DIR_RE: Final[re.Pattern[str]] = re.compile(
+    r"\b(bullish|bearish|neutral|range)\b", re.I
+)
+_GPS_TF_KEYS: Final[dict[str, Timeframe]] = {
+    "M": Timeframe.MN, "Monthly": Timeframe.MN, "MN": Timeframe.MN,
+    "W": Timeframe.W1, "Weekly": Timeframe.W1, "W1": Timeframe.W1,
+    "D": Timeframe.D1, "Daily": Timeframe.D1, "D1": Timeframe.D1,
+    "4H": Timeframe.H4, "H4": Timeframe.H4,
+    "1H": Timeframe.H1, "H1": Timeframe.H1,
+    "15m": Timeframe.M15, "M15": Timeframe.M15,
+}
+
+
+def _parse_mtf_string(raw: Any) -> tuple[int, Direction]:
+    if raw is None:
+        return 0, Direction.NEUTRAL
+    s = str(raw)
+    pct = 0
+    m = _MTF_PCT_RE.search(s)
+    if m:
+        pct = max(0, min(100, safe_int(m.group(1))))
+    d = _MTF_DIR_RE.search(s)
+    if d is None:
+        return pct, Direction.NEUTRAL
+    t = d.group(1).lower()
+    if t == "bullish":
+        return pct, Direction.BULLISH
+    if t == "bearish":
+        return pct, Direction.BEARISH
+    return pct, Direction.NEUTRAL
+
+
+def _extract_gps_biases(raw: dict[str, Any]) -> dict[str, str]:
+    biases: dict[str, str] = {}
+    for k, tf in _GPS_TF_KEYS.items():
+        v = raw.get(k)
+        if v is not None:
+            biases[tf.value] = safe_str(v, max_len=64)
+    nested = raw.get("biases")
+    if isinstance(nested, dict):
+        for kk, vv in nested.items():
+            tf = parse_timeframe(kk)
+            if tf is not Timeframe.UNKNOWN and vv is not None:
+                biases[tf.value] = safe_str(vv, max_len=64)
+    return biases
+
+
+class GPSAdapter(ScannerAdapter):
+    name = "gps"
+    priority = 10
+
+    def detect(self, payload: Any) -> AdapterMatch:
+        if not isinstance(payload, list) or not payload:
+            return AdapterMatch(0.0, "not non-empty list")
+        sample = payload[0]
+        if not isinstance(sample, dict):
+            return AdapterMatch(0.0, "items not dicts")
+        keys = set(sample.keys())
+        hits = len({"Paire", "MTF", "Quality"} & keys)
+        if hits >= 2:
+            return AdapterMatch(0.60 + 0.15 * hits, f"signature {hits}/3")
+        return AdapterMatch(0.0, "no GPS signature")
+
+    def adapt(self, payload: Any) -> Result[list[CanonicalAsset]]:
+        out: list[CanonicalAsset] = []
+        res: Result[list[CanonicalAsset]] = Result(value=out)
+        if not isinstance(payload, list):
+            res.add(Diagnostic("gps", Severity.ERROR, "bad_root", "expected list"))
+            return res
+        for idx, raw in enumerate(payload):
+            if len(out) >= MAX_ASSETS:
+                res.add(Diagnostic(
+                    "gps", Severity.WARNING, "cap_reached",
+                    f"MAX_ASSETS={MAX_ASSETS}",
+                ))
+                break
+            asset = self._build_asset(raw, idx, res)
+            if asset is not None:
+                out.append(asset)
+        return res
+
+    @staticmethod
+    def _build_asset(
+        raw: Any, idx: int, res: Result[list[CanonicalAsset]]
+    ) -> CanonicalAsset | None:
+        if not isinstance(raw, dict):
+            res.add(Diagnostic(
+                "gps", Severity.DEBUG, "skip", "non-dict", {"i": idx}
+            ))
+            return None
+        sym_raw = raw.get("Paire") or raw.get("pair") or raw.get("symbol")
+        if not sym_raw:
+            res.add(Diagnostic(
+                "gps", Severity.WARNING, "no_symbol",
+                "missing pair", {"i": idx},
+            ))
+            return None
+        sym = normalize_symbol(sym_raw)
+        if not sym.canonical:
+            return None
+        asset = CanonicalAsset.from_symbol(sym)
+        mtf, mtf_diag = GPSAdapter._build_mtf(raw, idx)
+        if mtf_diag is not None:
+            res.add(mtf_diag)
+        if mtf is None:
+            return None
+        asset.mtf = mtf
+        asset.add_provenance("gps", "mtf")
+        return asset
+
+    @staticmethod
+    def _build_mtf(
+        raw: dict[str, Any], idx: int
+    ) -> tuple[MTFConsensus | None, Diagnostic | None]:
+        pct, direction = _parse_mtf_string(raw.get("MTF", ""))
+        biases = _extract_gps_biases(raw)
+        quality_raw = raw.get("Quality")
+        try:
+            # MERGE-5: pass raw Age D1 to MTFConsensus — the _coerce_age_d1 validator
+            # handles "N/A" / None → None (instead of silently coercing to 0).
+            raw_age_d1 = raw.get("Age D1") or raw.get("AgeD1")
+            mtf = MTFConsensus(
+                pct=pct,
+                direction=direction,
+                quality=safe_str(quality_raw, max_len=8) if quality_raw else None,
+                nc=safe_int(raw.get("NC")),
+                age_d1=raw_age_d1,
+                atr_h1=safe_float(raw.get("ATR H1")),
+                atr_h4=safe_float(raw.get("ATR H4")),
+                atr_daily=safe_float(raw.get("ATR Daily") or raw.get("ATR D1")),
+                biases=biases,
+            )
+        except Exception as exc:
+            return None, Diagnostic(
+                "gps", Severity.WARNING, "mtf_invalid",
+                f"{type(exc).__name__}: {exc}", {"i": idx},
+            )
+        return mtf, None
+
+
+# ──── RSI adapter ─────────────────────────────────────────────────────────
+_DIV_MAP: Final[dict[str, DivergenceKind]] = {
+    "none": DivergenceKind.NONE,
+    "aucune": DivergenceKind.NONE,
+    "no": DivergenceKind.NONE,
+    "bull": DivergenceKind.BULL,
+    "bullish": DivergenceKind.BULL,
+    "haussiere": DivergenceKind.BULL,
+    "haussière": DivergenceKind.BULL,
+    "bear": DivergenceKind.BEAR,
+    "bearish": DivergenceKind.BEAR,
+    "baissiere": DivergenceKind.BEAR,
+    "baissière": DivergenceKind.BEAR,
+}
+
+
+def _norm_div(v: Any) -> DivergenceKind:
+    if v is None:
+        return DivergenceKind.NONE
+    return _DIV_MAP.get(str(v).strip().lower(), DivergenceKind.NONE)
+
+
+_TF_REMAP_LOG: Final[dict[str, str]] = {"d": "D1", "w": "W1"}
+
+
+def _extract_nested_rsi(tfs: dict[str, Any]) -> list[RSIReading]:
+    readings: list[RSIReading] = []
+    for k, v in tfs.items():
+        # MERGE-7: log TF label remapping for observability (D→D1, W→W1)
+        k_lc = k.strip().lower()
+        if k_lc in _TF_REMAP_LOG:
+            _LOG.debug(
+                "rsi_tf_remap: '%s' → '%s' (pair context unknown at this level)",
+                k, _TF_REMAP_LOG[k_lc],
+            )
+        tf = parse_timeframe(k)
+        if tf is Timeframe.UNKNOWN or not isinstance(v, dict):
+            continue
+        # Champ div simple (label court : "BULL", "BEAR", "NONE", "STALE"…)
+        div_raw = v.get("div") or v.get("divergence")
+        # Sous-objet divergence structuré (format scanner RSI natif v3+)
+        div_obj = v.get("divergence") if isinstance(v.get("divergence"), dict) else {}
+        # strength_score : présent à la racine du TF ET dans le sous-objet
+        strength = safe_float(
+            v.get("strength_score")
+            or div_obj.get("strength_score")
+        )
+        confidence = safe_float(div_obj.get("confidence_score"))
+        kind = safe_str(div_obj.get("kind") or div_obj.get("div_kind"), max_len=16) or None
+        confirmed = bool(div_obj.get("confirmed", False))
+        # Normaliser la divergence : si div_raw est un dict (champ "divergence"
+        # était le sous-objet), on extrait le label textuel depuis div_obj.
+        if isinstance(div_raw, dict):
+            div_label = div_raw.get("label") or div_raw.get("code") or ""
+        else:
+            div_label = div_raw
+        readings.append(RSIReading(
+            timeframe=tf,
+            value=safe_float(v.get("rsi") or v.get("value")),
+            divergence=_norm_div(div_label),
+            div_strength_score=strength,
+            div_confidence_score=confidence,
+            div_kind=kind if kind else None,
+            div_confirmed=confirmed,
+        ))
+    return readings
+
+
+def _extract_flat_rsi(raw: dict[str, Any]) -> list[RSIReading]:
+    readings: list[RSIReading] = []
+    seen: set[Timeframe] = set()
+    for k, v in raw.items():
+        if not isinstance(k, str):
+            continue
+        kl = k.lower()
+        if not (kl.startswith("rsi") or kl.startswith("rsi_")):
+            continue
+        tf = parse_timeframe(kl.replace("rsi", "").lstrip("_"))
+        if tf is Timeframe.UNKNOWN or tf in seen:
+            continue
+        seen.add(tf)
+        div_val = _find_matching_div(raw, tf)
+        readings.append(RSIReading(
+            timeframe=tf,
+            value=safe_float(v),
+            divergence=_norm_div(div_val),
+        ))
+    return readings
+
+
+def _find_matching_div(raw: dict[str, Any], tf: Timeframe) -> Any:
+    for kk, vv in raw.items():
+        if (
+            isinstance(kk, str)
+            and kk.lower().startswith("div")
+            and parse_timeframe(kk) is tf
+        ):
+            return vv
+    return None
+
+
+class RSIAdapter(ScannerAdapter):
+    name = "rsi"
+    priority = 9
+
+    def detect(self, payload: Any) -> AdapterMatch:
+        items = self._items(payload)
+        if not items:
+            return AdapterMatch(0.0, "no items")
+        sample = items[0]
+        if not isinstance(sample, dict):
+            return AdapterMatch(0.0, "non-dict")
+        keys_lc = {k.lower() for k in sample.keys() if isinstance(k, str)}
+        symbol_keys = {"pair", "devises", "symbol", "instrument", "paire"}
+        if not symbol_keys & keys_lc:
+            return AdapterMatch(0.0, "no symbol key")
+        if "timeframes" in keys_lc and isinstance(sample.get("timeframes"), dict):
+            return AdapterMatch(0.9, "nested timeframes")
+        if any(k.startswith("rsi") for k in keys_lc):
+            return AdapterMatch(0.8, "flat rsi fields")
+        return AdapterMatch(0.0, "no RSI fields")
+
+    @staticmethod
+    def _items(payload: Any) -> list[Any]:
+        if isinstance(payload, list):
+            return payload
+        if isinstance(payload, dict):
+            for k in ("instruments", "data", "items", "rsi", "assets"):
+                v = payload.get(k)
+                if isinstance(v, list):
+                    return v
+        return []
+
+    def adapt(self, payload: Any) -> Result[list[CanonicalAsset]]:
+        out: list[CanonicalAsset] = []
+        res: Result[list[CanonicalAsset]] = Result(value=out)
+        items = self._items(payload)
+        if not items:
+            res.add(Diagnostic("rsi", Severity.ERROR, "empty", "no instruments"))
+            return res
+        for idx, raw in enumerate(items):
+            if len(out) >= MAX_ASSETS:
+                res.add(Diagnostic(
+                    "rsi", Severity.WARNING, "cap_reached",
+                    f"MAX_ASSETS={MAX_ASSETS}",
+                ))
+                break
+            asset = self._build_asset(raw, idx, res)
+            if asset is not None:
+                out.append(asset)
+        return res
+
+    @staticmethod
+    def _build_asset(
+        raw: Any, idx: int, res: Result[list[CanonicalAsset]]
+    ) -> CanonicalAsset | None:
+        if not isinstance(raw, dict):
+            return None
+        sym_raw = (
+            raw.get("pair")
+            or raw.get("Devises")
+            or raw.get("Paire")
+            or raw.get("symbol")
+            or raw.get("instrument")
+        )
+        if not sym_raw:
+            res.add(Diagnostic(
+                "rsi", Severity.WARNING, "no_symbol",
+                "missing pair", {"i": idx},
+            ))
+            return None
+        sym = normalize_symbol(sym_raw)
+        if not sym.canonical:
+            return None
+        asset = CanonicalAsset.from_symbol(sym)
+        readings = RSIAdapter._extract_readings(raw)
+        asset.rsi = readings[:MAX_RSI_READINGS_PER_ASSET]
+        asset.recompute_rsi_views()
+        asset.add_provenance("rsi", f"{len(asset.rsi)}tf")
+        return asset
+
+    @staticmethod
+    def _extract_readings(raw: dict[str, Any]) -> list[RSIReading]:
+        tfs = raw.get("timeframes")
+        if isinstance(tfs, dict):
+            return _extract_nested_rsi(tfs)
+        if isinstance(tfs, list):
+            return _extract_rsi_list(tfs)
+        return _extract_flat_rsi(raw)
+
+
+def _extract_rsi_list(items: list[Any]) -> list[RSIReading]:
+    out: list[RSIReading] = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        tf = parse_timeframe(it.get("timeframe") or it.get("tf"))
+        if tf is Timeframe.UNKNOWN:
+            continue
+        out.append(RSIReading(
+            timeframe=tf,
+            value=safe_float(it.get("value") or it.get("rsi")),
+            divergence=_norm_div(it.get("divergence") or it.get("div")),
+        ))
+    return out
+
+
+# ──── S/R adapter ─────────────────────────────────────────────────────────
+_SUP_RE: Final[re.Pattern[str]] = re.compile(
+    r"(SUR\s+support|S\s+proche|support)[:\s]+([\d.]+)\s*(([-+]?[\d.]+)\s*%)",
+    re.I,
+)
+_RES_RE: Final[re.Pattern[str]] = re.compile(
+    r"(SUR\s+resistance|R\s+proche|resistance)[:\s]+([\d.]+)\s*(([-+]?[\d.]+)\s*%)",
+    re.I,
+)
+_INTER_RE: Final[re.Pattern[str]] = re.compile(
+    r"(intermediaire|intermediate|unavailable|indisponible|n/a)", re.I
+)
+_STATUS_COEFF: Final[dict[str, float]] = {
+    "vierge": 1.0,
+    "virgin": 1.0,
+    "testee": 0.8,
+    "tested": 0.8,
+    "role reverse": 0.6,
+}
+
+
+def _parse_side(raw: Any) -> Literal["BUY", "SELL", "PIVOT", "UNKNOWN"]:
+    sig = str(raw or "").upper()
+    if "BUY" in sig:
+        return "BUY"
+    if "SELL" in sig:
+        return "SELL"
+    if "PIVOT" in sig:
+        return "PIVOT"
+    return "UNKNOWN"
+
+
+def _parse_alert(raw: Any) -> str:
+    """Conserves the original raw string to preserve visual emojis if found."""
+    s = str(raw or "").strip()
+    if not s:
+        return ""
+    upper_s = s.upper()
+    if "CHAUDE" in upper_s or "HOT" in upper_s:
+        return s
+    if "PROCHE" in upper_s or "NEAR" in upper_s:
+        return s
+    return ""
+
+
+def _parse_tf_list(tf_raw: Any) -> list[Timeframe]:
+    tf_list: list[Timeframe] = []
+    if isinstance(tf_raw, list):
+        iterable: Iterable[Any] = tf_raw
+    else:
+        iterable = re.split(r"[+,/]", str(tf_raw or ""))
+    for tok in iterable:
+        tf = parse_timeframe(str(tok).strip())
+        if tf is not Timeframe.UNKNOWN:
+            tf_list.append(tf)
+    return tf_list
+
+
+def _resolve_zone_side(
+    z: dict[str, Any],
+    current_price: float | None,
+    level: float,
+) -> Literal["BUY", "SELL", "PIVOT", "UNKNOWN"]:
+    """Determine the side of an SR zone in two steps:
+    1. Parse explicit side/direction keys in order of priority.
+    2. Only if NO explicit key was found, infer from price position.
+    """
+    _SIDE_KEYS = (
+        "signal", "Signal", "side", "Side",
+        "direction", "Direction", "sens", "Sens",
+        "position", "Position", "role", "Role",
+    )
+    _TYPE_KEYS = ("type", "Type")
+
+    # Check whether any explicit side key exists in the dict at all.
+    has_explicit_key = any(z.get(k) is not None for k in _SIDE_KEYS + _TYPE_KEYS)
+
+    side_src = (
+        z.get("signal") or z.get("Signal")
+        or z.get("side") or z.get("Side")
+        or z.get("direction") or z.get("Direction")
+        or z.get("type") or z.get("Type")
+        or z.get("sens") or z.get("Sens")
+        or z.get("position") or z.get("Position")
+        or z.get("role") or z.get("Role")
+    )
+    side = _parse_side(side_src)
+    if side != "UNKNOWN":
+        return side
+
+    # MERGE-3: Pivots are bidirectional — return "PIVOT" not "UNKNOWN".
+    original_signal = str(z.get("Signal") or z.get("signal") or "")
+    original_type = str(z.get("Type") or z.get("type") or "")
+    if "PIVOT" in original_signal.upper() or "PIVOT" in original_type.upper():
+        return "PIVOT"
+
+    # Positional inference only when NO explicit side key was present.
+    # If an explicit key exists but was unrecognized (e.g. "UNKNOWN", "N/A"),
+    # honour it and return UNKNOWN rather than silently overriding.
+    if has_explicit_key:
+        return "UNKNOWN"
+
+    # v3.4.4 (FIX-003): robust float inference with isfinite + isclose
+    if level > 0 and current_price is not None and current_price > 0:
+        if not math.isfinite(level) or not math.isfinite(current_price):
+            return "UNKNOWN"
+        if math.isclose(level, current_price, rel_tol=1e-9, abs_tol=1e-12):
+            return "UNKNOWN"  # zone touched, ambiguous
+        if level < current_price:
+            return "BUY"   # Support: price is above the level
+        if level > current_price:
+            return "SELL"  # Resistance: price is below the level
+    return "UNKNOWN"
+
+
+def _build_zone_from_raw(z: dict[str, Any], current_price: float | None = None) -> SRZone | None:
+    # Clé principale snake_case (formats tiers génériques) puis alias
+    # PascalCase/FR produits par le scanner BLUESTAR natif.
+    # Ordre : clé standard d'abord → rétrocompatibilité garantie.
+    level = safe_float(z.get("level") or z.get("Niveau"))
+    if level is None or level <= 0:
+        return None
+    score = safe_float(z.get("score") or z.get("Score")) or 0.0
+    dist = safe_float(z.get("distance_pct") or z.get("Distance %"))
+    if dist is None:
+        dist = 999.0
+    status = safe_str(
+        z.get("status") or z.get("Statut") or "Unknown", max_len=32
+    )
+    coeff = _STATUS_COEFF.get(status.lower(), 0.8)
+    tf_list = _parse_tf_list(
+        z.get("timeframes") or z.get("Timeframes") or ""
+    )
+    # Side resolution: explicit keys first, then positional inference.
+    side = _resolve_zone_side(z, current_price, level)
+    # MERGE-3: preserve zone type (Support / Resistance / Pivot)
+    zone_type = safe_str(
+        z.get("zone_type") or z.get("Type") or z.get("type") or "", max_len=32
+    ) or None
+    # MERGE-3: preserve raw strength score from SR scanner
+    zone_strength = safe_float(
+        z.get("zone_strength") or z.get("Force Totale") or z.get("force_totale")
+    )
+    return SRZone(
+        side=side,
+        level=round(level, 5),
+        score=round(score, 2),
+        weighted_score=round(score * coeff, 2),
+        status=status,
+        distance_pct=round(abs(dist), 3),
+        alert=_parse_alert(z.get("alert") or z.get("Alerte") or ""),
+        timeframes=tf_list,
+        has_weekly=Timeframe.W1 in tf_list,
+        has_daily=Timeframe.D1 in tf_list,
+        has_h4=Timeframe.H4 in tf_list,
+        type=zone_type,
+        strength=zone_strength,
+    )
+
+
+def _parse_price_context_from_text(s: str) -> PriceContext:
+    """Regex-based parser for the legacy textual price_context format."""
+    ctx = PriceContext(raw=s)
+    if not s or _INTER_RE.search(s):
+        ctx.is_intermediate = True
+        return ctx
+    m = _SUP_RE.search(s)
+    if m:
+        ctx.support_tag = m.group(1).strip()
+        ctx.support_level = safe_float(m.group(2))
+        ctx.support_dist_pct = safe_float(m.group(3).strip().rstrip("%"))
+    m = _RES_RE.search(s)
+    if m:
+        ctx.resistance_tag = m.group(1).strip()
+        ctx.resistance_level = safe_float(m.group(2))
+        ctx.resistance_dist_pct = safe_float(m.group(3).strip().rstrip("%"))
+    if ctx.support_level is None and ctx.resistance_level is None:
+        ctx.is_intermediate = True
+    return ctx
+
+
+def _parse_price_context(raw: Any) -> PriceContext:
+    """v3.4.4 (FIX-002): _apply_nearest_fallback fusionné inline.
+    Robust parser; falls back to regex on dict['raw']."""
+    if raw is None:
+        return PriceContext(raw="")
+    if isinstance(raw, dict):
+        raw_text = safe_str(raw.get("raw") or "", max_len=512)
+        sup_level = safe_float(raw.get("support_level"))
+        sup_dist = safe_float(raw.get("support_dist_pct"))
+        sup_tag = raw.get("support_tag")
+        res_level = safe_float(raw.get("resistance_level"))
+        res_dist = safe_float(raw.get("resistance_dist_pct"))
+        res_tag = raw.get("resistance_tag")
+        # FIX-002: inline nearest_support / nearest_resistance (was _apply_nearest_fallback)
+        if sup_level is None or res_level is None:
+            ns = raw.get("nearest_support")
+            nr = raw.get("nearest_resistance")
+            if isinstance(ns, dict) and sup_level is None:
+                sup_level = safe_float(ns.get("level"))
+                sup_dist = safe_float(ns.get("distance_pct"))
+                sup_tag = ns.get("tag") or ns.get("status")
+            if isinstance(nr, dict) and res_level is None:
+                res_level = safe_float(nr.get("level"))
+                res_dist = safe_float(nr.get("distance_pct"))
+                res_tag = nr.get("tag") or nr.get("status")
+        if (
+            sup_level is None
+            and res_level is None
+            and raw_text
+            and not _INTER_RE.search(raw_text)
+        ):
+            fallback = _parse_price_context_from_text(raw_text)
+            sup_level = fallback.support_level
+            sup_dist = fallback.support_dist_pct
+            sup_tag = fallback.support_tag or sup_tag
+            res_level = fallback.resistance_level
+            res_dist = fallback.resistance_dist_pct
+            res_tag = fallback.resistance_tag or res_tag
+        ctx = PriceContext(raw=raw_text)
+        ctx.support_level = sup_level
+        ctx.support_dist_pct = sup_dist
+        ctx.support_tag = safe_str(sup_tag, max_len=64) if sup_tag else None
+        ctx.resistance_level = res_level
+        ctx.resistance_dist_pct = res_dist
+        ctx.resistance_tag = safe_str(res_tag, max_len=64) if res_tag else None
+        is_inter = raw.get("is_intermediate")
+        if isinstance(is_inter, bool):
+            ctx.is_intermediate = is_inter
+        elif raw_text and _INTER_RE.search(raw_text):
+            ctx.is_intermediate = True
+        elif sup_level is None and res_level is None:
+            ctx.is_intermediate = True
+        return ctx
+    s = safe_str(raw, max_len=512)
+    return _parse_price_context_from_text(s)
+
+
+def _build_zone_from_nearest(
+    obj: Any, side: Literal["BUY", "SELL"]
+) -> SRZone | None:
+    """Build a synthetic SRZone from nearest_support / nearest_resistance.
+    v3.3.1 (P1): distance_pct forced positive, status tagged 'SR_nearest'."""
+    if not isinstance(obj, dict):
+        return None
+    level = safe_float(obj.get("level"))
+    if level is None or level <= 0:
+        return None
+    dist = safe_float(obj.get("distance_pct"))
+    if dist is None:
+        dist = 999.0
+    status = _SR_NEAREST_STATUS
+    score = 0.0
+    tf_list = _parse_tf_list(obj.get("timeframes") or obj.get("tf") or "")
+    return SRZone(
+        side=side,
+        level=round(level, 5),
+        score=round(score, 2),
+        weighted_score=0.0,
+        status=status,
+        distance_pct=round(abs(dist), 3),
+        alert=_parse_alert(obj.get("alert", "")),
+        timeframes=tf_list,
+        has_weekly=Timeframe.W1 in tf_list,
+        has_daily=Timeframe.D1 in tf_list,
+        has_h4=Timeframe.H4 in tf_list,
+    )
+
+
+class SRAdapter(ScannerAdapter):
+    name = "sr"
+    priority = 8
+
+    def detect(self, payload: Any) -> AdapterMatch:
+        if not isinstance(payload, dict):
+            return AdapterMatch(0.0, "not dict")
+        assets = payload.get("assets")
+        if not isinstance(assets, list) or not assets:
+            return AdapterMatch(0.0, "no assets list")
+        sample = assets[0]
+        if not isinstance(sample, dict):
+            return AdapterMatch(0.0, "non-dict asset")
+        keys = set(sample.keys())
+        score = 0.0
+        if "symbol" in keys:
+            score += 0.3
+        if "zones" in keys:
+            score += 0.45
+        if "price_context" in keys or "trends" in keys:
+            score += 0.2
+        return AdapterMatch(score, "sr signature")
+
+    def adapt(self, payload: Any) -> Result[list[CanonicalAsset]]:
+        out: list[CanonicalAsset] = []
+        res: Result[list[CanonicalAsset]] = Result(value=out)
+        if not isinstance(payload, dict):
+            res.add(Diagnostic("sr", Severity.ERROR, "bad_root", "expected dict"))
+            return res
+        assets = payload.get("assets", [])
+        if not isinstance(assets, list):
+            res.add(Diagnostic("sr", Severity.ERROR, "bad_assets", "assets not list"))
+            return res
+        for idx, raw in enumerate(assets):
+            if len(out) >= MAX_ASSETS:
+                res.add(Diagnostic(
+                    "sr", Severity.WARNING, "cap_reached",
+                    f"MAX_ASSETS={MAX_ASSETS}",
+                ))
+                break
+            asset = self._build_asset(raw, idx, res)
+            if asset is not None:
+                out.append(asset)
+        return res
+
+    @staticmethod
+    def _build_asset(
+        raw: Any, idx: int, res: Result[list[CanonicalAsset]]
+    ) -> CanonicalAsset | None:
+        if not isinstance(raw, dict):
+            return None
+        sym_raw = raw.get("symbol") or raw.get("pair") or raw.get("Paire")
+        if not sym_raw:
+            res.add(Diagnostic(
+                "sr", Severity.WARNING, "no_symbol",
+                "missing", {"i": idx},
+            ))
+            return None
+        sym = normalize_symbol(sym_raw)
+        if not sym.canonical:
+            return None
+        asset = CanonicalAsset.from_symbol(sym)
+        cp = safe_float(raw.get("current_price") or raw.get("price"))
+        if cp is not None:
+            asset.current_price = cp
+        asset.price_context = _parse_price_context(raw.get("price_context", ""))
+        zones = SRAdapter._collect_zones(raw.get("zones", []), asset.current_price)
+        pc_raw = raw.get("price_context")
+        if isinstance(pc_raw, dict):
+            ns = pc_raw.get("nearest_support")
+            nr = pc_raw.get("nearest_resistance")
+        else:
+            ns = raw.get("nearest_support")
+            nr = raw.get("nearest_resistance")
+        z_ns = _build_zone_from_nearest(ns, "BUY")
+        z_nr = _build_zone_from_nearest(nr, "SELL")
+        if z_ns is not None:
+            zones.append(z_ns)
+        if z_nr is not None:
+            zones.append(z_nr)
+        seen: set[tuple[str, float]] = set()
+        dedup: list[SRZone] = []
+        for z in zones:
+            key = (z.side, round(z.level, 5))
+            if key in seen:
+                continue
+            seen.add(key)
+            dedup.append(z)
+        # Correction minimale : On supprime le tri par distance_pct pour préserver l'ordre d'origine
+        asset.zones = dedup[:MAX_ZONES_PER_ASSET]
+        asset.add_provenance("sr", f"{len(asset.zones)}zones")
+        return asset
+
+    @staticmethod
+    def _collect_zones(zones_raw: Any, current_price: float | None = None) -> list[SRZone]:
+        zones: list[SRZone] = []
+        if not isinstance(zones_raw, list):
+            return zones
+        for z in zones_raw:
+            if len(zones) >= MAX_ZONES_PER_ASSET:
+                break
+            if not isinstance(z, dict):
+                continue
+            parsed = _build_zone_from_raw(z, current_price)
+            if parsed is not None:
+                zones.append(parsed)
+        # Bug #1 fix: Ne pas trier. L'ordre d'insertion du scanner source est préservé.
+        return zones
+
+
+# ──── CHoCH adapter ───────────────────────────────────────────────────────
+def _parse_direction_text(raw: Any) -> Direction:
+    s = str(raw or "").lower()
+    if "bull" in s:
+        return Direction.BULLISH
+    if "bear" in s:
+        return Direction.BEARISH
+    return Direction.NEUTRAL
+
+
+def _maybe_str(raw: dict[str, Any], key: str, max_len: int = 32) -> str | None:
+    v = raw.get(key)
+    if v is None:
+        return None
+    s = safe_str(v, max_len=max_len)
+    return s if s else None
+
+
+class CHoCHAdapter(ScannerAdapter):
+    name = "choch"
+    priority = 7
+
+    def detect(self, payload: Any) -> AdapterMatch:
+        if not isinstance(payload, dict):
+            return AdapterMatch(0.0, "not dict")
+        sigs = payload.get("signals")
+        if not isinstance(sigs, list) or not sigs:
+            return AdapterMatch(0.0, "no signals list")
+        sample = sigs[0]
+        if not isinstance(sample, dict):
+            return AdapterMatch(0.0, "non-dict signal")
+        return AdapterMatch(self._signature_score(sample), "choch signature")
+
+    @staticmethod
+    def _signature_score(sample: dict[str, Any]) -> float:
+        keys = set(sample.keys())
+        score = 0.3
+        if {"type", "is_choch", "kind"} & keys:
+            score += 0.3
+        if "direction" in keys:
+            score += 0.2
+        if "confluence_score" in keys:
+            score += 0.2
+        return min(score, 1.0)
+
+    def adapt(self, payload: Any) -> Result[list[CanonicalAsset]]:
+        out: list[CanonicalAsset] = []
+        res: Result[list[CanonicalAsset]] = Result(value=out)
+        if not isinstance(payload, dict):
+            res.add(Diagnostic("choch", Severity.ERROR, "bad_root", "expected dict"))
+            return res
+        sigs = payload.get("signals", [])
+        if not isinstance(sigs, list):
+            res.add(Diagnostic("choch", Severity.ERROR, "bad_signals", "not list"))
+            return res
+        by_sym: dict[str, CanonicalAsset] = {}
+        for idx, raw in enumerate(sigs):
+            if len(by_sym) >= MAX_ASSETS:
+                res.add(Diagnostic(
+                    "choch", Severity.WARNING, "cap_reached",
+                    f"MAX_ASSETS={MAX_ASSETS}",
+                ))
+                break
+            self._ingest_signal(raw, idx, by_sym, res)
+        out.extend(by_sym.values())
+        return res
+
+    @staticmethod
+    def _ingest_signal(
+        raw: Any,
+        idx: int,
+        by_sym: dict[str, CanonicalAsset],
+        res: Result[list[CanonicalAsset]],
+    ) -> None:
+        if not isinstance(raw, dict):
+            return
+        sym_raw = (
+            raw.get("pair") or raw.get("symbol")
+            or raw.get("pair_oanda") or raw.get("Paire")
+        )
+        if not sym_raw:
+            res.add(Diagnostic(
+                "choch", Severity.WARNING, "no_symbol",
+                "missing", {"i": idx},
+            ))
+            return
+        sym = normalize_symbol(sym_raw)
+        if not sym.canonical:
+            return
+        asset = by_sym.setdefault(sym.canonical, CanonicalAsset.from_symbol(sym))
+        if len(asset.structure_events) >= MAX_EVENTS_PER_ASSET:
+            return
+        event = CHoCHAdapter._build_event(raw, idx, sym.canonical, res)
+        if event is None:
+            return
+        asset.structure_events.append(event)
+        asset.add_provenance("choch", event.signal_id)
+        if asset.current_price is None and event.current_price is not None:
+            asset.current_price = event.current_price
+
+    @staticmethod
+    def _build_event(
+        raw: dict[str, Any],
+        idx: int,
+        symbol: str,
+        res: Result[list[CanonicalAsset]],
+    ) -> StructureEvent | None:
+        ts_raw = raw.get("signal_time") or raw.get("timestamp")
+        ts = _parse_iso_datetime(ts_raw)
+        if ts_raw and ts is None:
+            res.add(Diagnostic(
+                "choch", Severity.DEBUG, "bad_time",
+                "unparseable signal_time",
+                {"v": safe_str(ts_raw, max_len=40)},
+            ))
+        try:
+            return StructureEvent(
+                signal_id=safe_str(
+                    raw.get("signal_id") or raw.get("id")
+                    or f"auto_{idx}_{symbol}",
+                    max_len=128,
+                ),
+                kind=safe_str(
+                    raw.get("type") or raw.get("kind") or "CHoCH",
+                    max_len=32,
+                ),
+                direction=_parse_direction_text(raw.get("direction")),
+                timeframe=parse_timeframe(raw.get("timeframe") or raw.get("tf")),
+                level=safe_float(raw.get("level")),
+                close_price=safe_float(raw.get("close_price")),
+                current_price=safe_float(raw.get("current_price")),
+                confluence_score=safe_float(raw.get("confluence_score")),
+                status=safe_str(raw.get("status") or "Unknown", max_len=32),
+                signal_time=ts,
+                distance_pct=safe_float(raw.get("distance_pct")),
+                distance_atr_multiple=safe_float(raw.get("distance_atr_multiple")),
+                volatility=_maybe_str(raw, "volatility"),
+                force=_maybe_str(raw, "force"),
+                bb_regime=_maybe_str(raw, "bb_regime"),
+                session=_maybe_str(raw, "session"),
+                candles_elapsed=safe_int(raw.get("candles_elapsed")),
+            )
+        except Exception as exc:
+            res.add(Diagnostic(
+                "choch", Severity.WARNING, "event_invalid",
+                f"{type(exc).__name__}: {exc}",
+                {"i": idx, "sym": symbol},
+            ))
+            return None
+
+
+# ──── Heuristic fallback ─────────────────────────────────────────────────
+_SYMBOL_HINTS: Final[tuple[str, ...]] = (
+    "pair", "symbol", "instrument", "ticker", "devises", "paire", "asset",
+)
+
+
+def _fuzzy_score(a: str, b: str) -> int:
+    if _HAS_RAPIDFUZZ and _rf_fuzz is not None:
+        return int(_rf_fuzz.partial_ratio(a.lower(), b.lower()))
+    a_l, b_l = a.lower(), b.lower()
+    if a_l == b_l:
+        return 100
+    if a_l in b_l or b_l in a_l:
+        return 85
+    set_a, set_b = set(a_l), set(b_l)
+    union = set_a | set_b
+    if not union:
+        return 0
+    return int(100 * len(set_a & set_b) / len(union))
+
+
+def _best_fuzzy_key(
+    keys: Iterable[str], target: str, threshold: int = 75
+) -> str | None:
+    best_k: str | None = None
+    best_s = 0
+    for k in keys:
+        if not isinstance(k, str):
+            continue
+        s = _fuzzy_score(target, k)
+        if s > best_s:
+            best_k, best_s = k, s
+    return best_k if best_s >= threshold else None
+
+
+class HeuristicAdapter(ScannerAdapter):
+    name = "heuristic"
+    priority = 1
+
+    def detect(self, payload: Any) -> AdapterMatch:
+        items = self._items(payload)
+        if not items:
+            return AdapterMatch(0.0, "no items")
+        sample = items[0]
+        if not isinstance(sample, dict):
+            return AdapterMatch(0.0, "non-dict items")
+        keys = list(sample.keys())
+        if any(_best_fuzzy_key(keys, h, 80) for h in _SYMBOL_HINTS):
+            return AdapterMatch(0.45, "fuzzy symbol key found")
+        return AdapterMatch(0.0, "no recognizable symbol")
+
+    @staticmethod
+    def _items(payload: Any) -> list[Any]:
+        if isinstance(payload, list):
+            return payload
+        if isinstance(payload, dict):
+            for v in payload.values():
+                if isinstance(v, list) and v and isinstance(v[0], dict):
+                    return v
+        return []
+
+    def adapt(self, payload: Any) -> Result[list[CanonicalAsset]]:
+        out: list[CanonicalAsset] = []
+        res: Result[list[CanonicalAsset]] = Result(value=out)
+        items = self._items(payload)
+        if not items:
+            res.add(Diagnostic("heuristic", Severity.ERROR, "empty", "no items"))
+            return res
+        for raw in items:
+            if len(out) >= MAX_ASSETS:
+                break
+            asset = self._build_asset(raw)
+            if asset is not None:
+                out.append(asset)
+        res.add(Diagnostic(
+            "heuristic", Severity.INFO, "introspected",
+            f"extracted {len(out)} assets",
+        ))
+        return res
+
+    @staticmethod
+    def _build_asset(raw: Any) -> CanonicalAsset | None:
+        if not isinstance(raw, dict):
+            return None
+        sym_key = HeuristicAdapter._find_symbol_key(raw)
+        if sym_key is None:
+            return None
+        sym = normalize_symbol(raw[sym_key])
+        if not sym.canonical:
+            return None
+        asset = CanonicalAsset.from_symbol(sym)
+        readings = HeuristicAdapter._extract_rsi(raw)
+        asset.rsi = readings[:MAX_RSI_READINGS_PER_ASSET]
+        asset.recompute_rsi_views()
+        asset.add_provenance("heuristic", "introspected")
+        return asset
+
+    @staticmethod
+    def _find_symbol_key(raw: dict[str, Any]) -> str | None:
+        keys = list(raw.keys())
+        for hint in _SYMBOL_HINTS:
+            k = _best_fuzzy_key(keys, hint, 80)
+            if k is not None:
+                return k
+        return None
+
+    @staticmethod
+    def _extract_rsi(raw: dict[str, Any]) -> list[RSIReading]:
+        readings: list[RSIReading] = []
+        seen: set[Timeframe] = set()
+        for k, v in raw.items():
+            if not isinstance(k, str) or "rsi" not in k.lower():
+                continue
+            val, tf = HeuristicAdapter._rsi_value_and_tf(k, v)
+            if val is None or val < 0 or val > 100:
+                continue
+            if tf is Timeframe.UNKNOWN or tf in seen:
+                continue
+            seen.add(tf)
+            readings.append(RSIReading(timeframe=tf, value=val))
+        return readings
+
+    @staticmethod
+    def _rsi_value_and_tf(
+        key: str, value: Any
+    ) -> tuple[float | None, Timeframe]:
+        if isinstance(value, dict):
+            val = safe_float(value.get("rsi") or value.get("value"))
+            tf = parse_timeframe(key)
+            if tf is Timeframe.UNKNOWN:
+                tf = parse_timeframe(value.get("tf") or value.get("timeframe"))
+            return val, tf
+        return safe_float(value), parse_timeframe(key)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# REGISTRY — deterministic adapter selection
+# ════════════════════════════════════════════════════════════════════════════
+@dataclass(slots=True)
+class DetectionResult:
+    adapter: ScannerAdapter | None
+    score: float
+    reason: str
+
+
+class ScannerRegistry:
+    """Deterministic adapter selection with score + priority tie-break."""
+    _FALLBACK_THRESHOLD: Final[float] = 0.5
+
+    def __init__(
+        self,
+        adapters: Sequence[ScannerAdapter],
+        fallback: ScannerAdapter | None = None,
+    ) -> None:
+        if not adapters:
+            raise ValueError("ScannerRegistry requires at least one adapter")
+        self._adapters: tuple[ScannerAdapter, ...] = tuple(adapters)
+        self._fallback = fallback
+
+    def detect(self, payload: Any) -> DetectionResult:
+        best = DetectionResult(None, 0.0, "no match")
+        for adapter in self._adapters:
+            match = self._safe_detect(adapter, payload)
+            if match is None:
+                continue
+            if self._is_better(match, adapter, best):
+                best = DetectionResult(adapter, match.score, match.reason)
+        if best.score < self._FALLBACK_THRESHOLD and self._fallback is not None:
+            fb_match = self._safe_detect(self._fallback, payload)
+            if fb_match is not None and fb_match.score > best.score:
+                return DetectionResult(
+                    self._fallback, fb_match.score, "fallback"
+                )
+        return best
+
+    @staticmethod
+    def _safe_detect(
+        adapter: ScannerAdapter, payload: Any
+    ) -> AdapterMatch | None:
+        match, diag = _safe_call(
+            f"registry.detect.{adapter.name}", "detect_crash",
+            lambda a=adapter, p=payload: a.detect(p),
+            AdapterMatch(0.0, "crash"),
+            severity=Severity.WARNING,
+        )
+        if diag is not None:
+            _LOG.warning("adapter %s.detect crashed", adapter.name)
+            return None
+        return match
+
+    @staticmethod
+    def _is_better(
+        match: AdapterMatch,
+        adapter: ScannerAdapter,
+        best: DetectionResult,
+    ) -> bool:
+        if match.score > best.score:
+            return True
+        if (
+            match.score == best.score
+            and best.adapter is not None
+            and adapter.priority > best.adapter.priority
+        ):
+            return True
+        return False
+
+    def adapt(self, payload: Any) -> tuple[str, Result[list[CanonicalAsset]]]:
+        det = self.detect(payload)
+        if det.adapter is None:
+            r: Result[list[CanonicalAsset]] = Result(value=[])
+            r.add(Diagnostic(
+                "registry", Severity.ERROR, "no_adapter",
+                "no adapter matched", {"reason": det.reason},
+            ))
+            return "unknown", r
+        adapter = det.adapter
+        result, crash_diag = _safe_call(
+            f"registry.adapt.{adapter.name}", "adapter_crash",
+            lambda a=adapter, p=payload: a.adapt(p),
+            Result(value=cast(list[CanonicalAsset], [])),
+            severity=Severity.ERROR,
+        )
+        if crash_diag is not None:
+            result.add(crash_diag)
+            return adapter.name, result
+        result.add(Diagnostic(
+            "registry", Severity.INFO, "selected",
+            f"{adapter.name} (score={det.score:.2f})",
+            {"reason": det.reason},
+        ))
+        return adapter.name, result
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# MERGE ENGINE
+# ════════════════════════════════════════════════════════════════════════════
+class MergeEngine:
+    """Deterministic, defensive merger of partial asset groups into a canon."""
+
+    def merge(
+        self, partial_groups: list[list[CanonicalAsset]]
+    ) -> Result[dict[str, CanonicalAsset]]:
+        merged: dict[str, CanonicalAsset] = {}
+        res: Result[dict[str, CanonicalAsset]] = Result(value=merged)
+        collisions: dict[str, int] = defaultdict(int)
+        for group in partial_groups:
+            stop = self._merge_group(group, merged, collisions, res)
+            if stop:
+                break
+
+        # ── Phase 2: per-asset pre-computation (v3.4) ────────────────────
+        for asset in merged.values():
+            asset.recompute_rsi_views()
+            asset.recompute_current_price()
+            self._enrich_asset_precompute(asset, res)
+
+        res.add(Diagnostic(
+            "merge", Severity.INFO, "summary",
+            f"merged {len(merged)} assets",
+            {"collisions_top": dict(
+                sorted(collisions.items(), key=lambda kv: -kv[1])[:10]
+            )},
+        ))
+        return res
+
+    # ── v3.4: per-asset pre-computation (ATR cascade, zones) ──────────────
+    @staticmethod
+    def _enrich_asset_precompute(
+        asset: CanonicalAsset,
+        res: Result[dict[str, CanonicalAsset]],
+    ) -> None:
+        """Compute ATR cascade output, conviction cap, nearest aligned zone
+        and primary hot zone. Pure, deterministic, no I/O."""
+        atr_eff, atr_src = compute_atr_effective(asset.mtf, asset.current_price)
+        asset.atr_effective = atr_eff
+        asset.atr_source = atr_src
+        cap = _ATR_CONVICTION_CAP.get(atr_src) if atr_src is not None else None
+        # cast for type-checker; values are constrained to A | BBB | None
+        asset.conviction_cap = cast(
+            "Literal['A', 'BBB'] | None", cap
+        )
+
+        # MERGE-1: populate asset.biases (top-level list) from mtf.biases dict.
+        # ENGINE_V9 reads asset.biases for HTF alignment; mtf.biases is preserved.
+        if asset.mtf is not None and asset.mtf.biases:
+            asset.biases = [
+                TrendBias(
+                    timeframe=parse_timeframe(tf),
+                    bias=direction,
+                    direction=_direction_from_text(direction),
+                )
+                for tf, direction in asset.mtf.biases.items()
+            ]
+
+        # MERGE-2: compute mtf.htf, mtf.score, mtf.grade from biases + quality.
+        if asset.mtf is not None:
+            # grade = quality (already computed by GPS)
+            asset.mtf.grade = asset.mtf.quality
+
+            # score = count of TFs aligned with MTF direction
+            mtf_dir = asset.mtf.direction
+            if mtf_dir in (Direction.BULLISH, Direction.BEARISH):
+                asset.mtf.score = sum(
+                    1 for b in asset.biases
+                    if b.direction == mtf_dir
+                )
+            else:
+                asset.mtf.score = 0
+
+            # htf = at least _HTF_MIN_AGREEMENT of _HTF_BIAS_TFS agree on same direction (excluding Range)
+            htf_directions = [
+                b.direction for b in asset.biases
+                if b.timeframe.value in _HTF_BIAS_TFS
+                and b.direction not in (Direction.NEUTRAL,)
+                and "range" not in b.bias.lower()
+            ]
+            if not htf_directions:
+                asset.mtf.htf = False
+            else:
+                dominant = max(set(htf_directions), key=htf_directions.count)
+                asset.mtf.htf = (
+                    len([d for d in htf_directions if d == dominant]) >= _HTF_MIN_AGREEMENT
+                )
+
+        direction = asset.mtf.direction if asset.mtf else Direction.NEUTRAL
+        asset.direction = direction  # v3.4.3: dénormalisation top-level
+        asset.nearest_aligned_zone = _select_nearest_aligned_for_asset(
+            asset, direction
+        )
+        asset.hot_zone_primary = _select_hot_zone_primary(asset, direction)
+
+        # MERGE-4: derive price_context.trend and near_zone
+        if asset.price_context is not None:
+            # trend = D1 bias
+            d1_bias = next(
+                (b for b in asset.biases if b.timeframe is Timeframe.D1), None
+            )
+            asset.price_context.trend = d1_bias.bias if d1_bias else None
+
+            # near_zone = closest zone by distance_pct
+            if asset.zones:
+                nearest_z = min(
+                    asset.zones,
+                    key=lambda z: z.distance_pct if z.distance_pct is not None else 999.0,
+                )
+                asset.price_context.near_zone = {
+                    "level": nearest_z.level,
+                    "type": nearest_z.type,
+                    "side": nearest_z.side,
+                    "distance_pct": nearest_z.distance_pct,
+                }
+            else:
+                asset.price_context.near_zone = None
+
+        if atr_eff is None:
+            res.add(Diagnostic(
+                "merge.precompute", Severity.WARNING, "no_atr",
+                "ATR cascade exhausted — asset will be downgraded downstream",
+                {"sym": asset.symbol},
+            ))
+        elif atr_src != "h4":
+            res.add(Diagnostic(
+                "merge.precompute", Severity.INFO, "atr_fallback",
+                f"using {atr_src} (cap={cap})",
+                {"sym": asset.symbol, "atr_effective": atr_eff},
+            ))
+
+    @staticmethod
+    def _merge_group(
+        group: list[CanonicalAsset],
+        merged: dict[str, CanonicalAsset],
+        collisions: dict[str, int],
+        res: Result[dict[str, CanonicalAsset]],
+    ) -> bool:
+        for asset in group:
+            if len(merged) >= MAX_ASSETS and asset.symbol not in merged:
+                res.add(Diagnostic(
+                    "merge", Severity.WARNING, "cap_reached",
+                    f"MAX_ASSETS={MAX_ASSETS}",
+                ))
+                return True
+            key = asset.symbol
+            if not key:
+                res.add(Diagnostic(
+                    "merge", Severity.WARNING, "empty_symbol", "dropped"
+                ))
+                continue
+            existing = merged.get(key)
+            if existing is None:
+                merged[key] = asset.model_copy(deep=True)
+                continue
+            _, diag = _safe_call(
+                "merge", "fold_crash",
+                lambda t=existing, s=asset, r=res: MergeEngine._fold_into(t, s, r),
+                None,
+                severity=Severity.WARNING,
+            )
+            if diag is not None:
+                res.add(diag)
+            collisions[key] += 1
+        return False
+
+    @staticmethod
+    def _fold_into(
+        target: CanonicalAsset,
+        source: CanonicalAsset,
+        res: Result[dict[str, CanonicalAsset]],
+    ) -> None:
+        src = source.model_copy(deep=True)
+        MergeEngine._fold_identity(target, src)
+        MergeEngine._fold_rsi(target, src, res)
+        MergeEngine._fold_biases(target, src)
+        MergeEngine._fold_mtf(target, src)
+        MergeEngine._fold_price_context(target, src)
+        MergeEngine._fold_zones(target, src)
+        MergeEngine._fold_events(target, src)
+        MergeEngine._fold_current_price(target, src)
+        MergeEngine._fold_provenance(target, src)
+
+    @staticmethod
+    def _fold_identity(target: CanonicalAsset, source: CanonicalAsset) -> None:
+        if (
+            target.asset_class is AssetClass.UNKNOWN
+            and source.asset_class is not AssetClass.UNKNOWN
+        ):
+            target.asset_class = source.asset_class
+        if not target.base and source.base:
+            target.base = source.base
+        if not target.quote and source.quote:
+            target.quote = source.quote
+
+    @staticmethod
+    def _fold_rsi(
+        target: CanonicalAsset,
+        source: CanonicalAsset,
+        res: Result[dict[str, CanonicalAsset]],
+    ) -> None:
+        existing_tfs = {r.timeframe for r in target.rsi}
+        for reading in source.rsi:
+            if len(target.rsi) >= MAX_RSI_READINGS_PER_ASSET:
+                break
+            if reading.timeframe in existing_tfs:
+                res.add(Diagnostic(
+                    "merge", Severity.DEBUG, "rsi_conflict",
+                    f"{reading.timeframe.value} duplicate",
+                    {"sym": target.symbol},
+                ))
+                continue
+            target.rsi.append(reading)
+            existing_tfs.add(reading.timeframe)
+
+    @staticmethod
+    def _fold_biases(target: CanonicalAsset, source: CanonicalAsset) -> None:
+        existing = {b.timeframe for b in target.biases}
+        for b in source.biases:
+            if len(target.biases) >= MAX_BIASES_PER_ASSET:
+                break
+            if b.timeframe not in existing:
+                target.biases.append(b)
+                existing.add(b.timeframe)
+
+    @staticmethod
+    def _fold_mtf(target: CanonicalAsset, source: CanonicalAsset) -> None:
+        if source.mtf is None:
+            return
+        if target.mtf is None or source.mtf.pct > target.mtf.pct:
+            target.mtf = source.mtf
+
+    @staticmethod
+    def _fold_price_context(
+        target: CanonicalAsset, source: CanonicalAsset
+    ) -> None:
+        if source.price_context is None:
+            return
+        if target.price_context is None:
+            target.price_context = source.price_context
+            return
+        if (
+            not source.price_context.is_intermediate
+            and target.price_context.is_intermediate
+        ):
+            target.price_context = source.price_context
+            return
+        tpc = target.price_context
+        spc = source.price_context
+        if tpc.support_level is None and spc.support_level is not None:
+            tpc.support_level = spc.support_level
+            tpc.support_dist_pct = spc.support_dist_pct
+            tpc.support_tag = spc.support_tag
+        if tpc.resistance_level is None and spc.resistance_level is not None:
+            tpc.resistance_level = spc.resistance_level
+            tpc.resistance_dist_pct = spc.resistance_dist_pct
+            tpc.resistance_tag = spc.resistance_tag
+
+    @staticmethod
+    def _fold_zones(target: CanonicalAsset, source: CanonicalAsset) -> None:
+        # FIX-004: clé enrichie round(6)+status pour éviter collisions sur niveaux très proches
+        existing = {(z.side, round(z.level, 6), z.status) for z in target.zones}
+        for z in source.zones:
+            if len(target.zones) >= MAX_ZONES_PER_ASSET:
+                break
+            key = (z.side, round(z.level, 6), z.status)
+            if key not in existing:
+                target.zones.append(z)
+                existing.add(key)
+        # Bug #1 fix: Ne pas trier après fusion — ordre sémantique préservé.
+        # Tri d'affichage uniquement côté rendu.
+
+    @staticmethod
+    def _fold_events(target: CanonicalAsset, source: CanonicalAsset) -> None:
+        existing = {e.signal_id for e in target.structure_events}
+        for e in source.structure_events:
+            if len(target.structure_events) >= MAX_EVENTS_PER_ASSET:
+                break
+            if e.signal_id not in existing:
+                target.structure_events.append(e)
+                existing.add(e.signal_id)
+
+    @staticmethod
+    def _fold_current_price(
+        target: CanonicalAsset, source: CanonicalAsset
+    ) -> None:
+        if target.current_price is None and source.current_price is not None:
+            target.current_price = source.current_price
+
+    @staticmethod
+    def _fold_provenance(target: CanonicalAsset, source: CanonicalAsset) -> None:
+        for k, v in source.provenance.items():
+            bucket = target.provenance.setdefault(k, [])
+            remaining = MAX_PROVENANCE_ENTRIES - len(bucket)
+            if remaining <= 0:
+                continue
+            bucket.extend(v[:remaining])
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# ENRICHMENT
+# ════════════════════════════════════════════════════════════════════════════
+_DIR_TOKENS: Final[dict[Direction, tuple[str, ...]]] = {
+    Direction.BULLISH: ("bullish", "bull", "haussier", "hausse", "long"),
+    Direction.BEARISH: ("bearish", "bear", "baissier", "baisse", "short"),
+}
+
+
+def _direction_from_text(text: str) -> Direction:
+    s = (text or "").lower()
+    for d, tokens in _DIR_TOKENS.items():
+        if any(t in s for t in tokens):
+            return d
+    return Direction.NEUTRAL
+
+
+# v3.3 (GAP 7): relaxed threshold for aligned zone detection.
+_ALIGNED_ZONE_MAX_DIST_PCT: Final[float] = 5.0
+
+
+def _split_zones_by_alignment(
+    asset: CanonicalAsset, direction: Direction
+) -> tuple[list[SRZone], list[SRZone]]:
+    aligned: list[SRZone] = []
+    opposite: list[SRZone] = []
+    if direction is Direction.NEUTRAL:
+        return aligned, opposite
+    for z in asset.zones:
+        if z.distance_pct > _ALIGNED_ZONE_MAX_DIST_PCT:
+            continue
+        if direction is Direction.BULLISH:
+            if z.side == "BUY":
+                aligned.append(z)
+            elif z.side == "SELL":
+                opposite.append(z)
+        else:  # BEARISH
+            if z.side == "SELL":
+                aligned.append(z)
+            elif z.side == "BUY":
+                opposite.append(z)
+    return aligned, opposite
+
+
+class EnrichmentEngine:
+    """Computes HTF alignment, confluence, TP zones, SL/TP1/RR and the
+    v3.4 typed `precomputed` block for each event."""
+
+    def enrich(
+        self, assets: dict[str, CanonicalAsset]
+    ) -> Result[list[EnrichedSignal]]:
+        signals: list[EnrichedSignal] = []
+        res: Result[list[EnrichedSignal]] = Result(value=signals)
+        for asset in assets.values():
+            if self._enrich_asset(asset, signals, res):
+                break
+        res.add(Diagnostic(
+            "enrich", Severity.INFO, "summary",
+            f"enriched {len(signals)} signals from {len(assets)} assets",
+        ))
+        return res
+
+    def _enrich_asset(
+        self,
+        asset: CanonicalAsset,
+        signals: list[EnrichedSignal],
+        res: Result[list[EnrichedSignal]],
+    ) -> bool:
+        for event in asset.structure_events:
+            if len(signals) >= MAX_SIGNALS_OUT:
+                res.add(Diagnostic(
+                    "enrich", Severity.WARNING, "cap_reached",
+                    f"MAX_SIGNALS_OUT={MAX_SIGNALS_OUT}",
+                ))
+                return True
+            signal, diag = _safe_call(
+                "enrich", "signal_build_crash",
+                lambda a=asset, e=event: self._build_signal(a, e),
+                None,
+                severity=Severity.WARNING,
+            )
+            if diag is not None:
+                res.add(diag)
+            if signal is not None:
+                signals.append(signal)
+        return False
+
+    def _build_signal(
+        self, asset: CanonicalAsset, event: StructureEvent
+    ) -> EnrichedSignal:
+        aligned, opposite = _split_zones_by_alignment(asset, event.direction)
+        nearest = self._select_nearest_aligned_zone(asset, event, aligned)
+        tp_zones = opposite[:MAX_TP_ZONES]
+        htf_aligned = self._htf_aligned(asset, event)
+        confluence = self._confluence(asset, event)
+
+        # v3.4: SL/TP/RR now use atr_effective (cascade-aware)
+        sl_price, tp1_price, rr, sl_mult = self._compute_sl_tp_rr(
+            asset, event, nearest, tp_zones
+        )
+
+        # TP1 ATR multiple is computed using atr_effective when available.
+        tp1_atr = None
+        if (
+            tp1_price is not None
+            and event.level is not None
+            and asset.atr_effective is not None
+            and asset.atr_effective > 0
+        ):
+            tp1_atr = round(
+                abs(tp1_price - event.level) / asset.atr_effective, 2
+            )
+
+        precomputed = self._build_precomputed(asset, event, htf_aligned, sl_mult)
+
+        return EnrichedSignal(
+            event=event,
+            asset=asset,
+            htf_aligned=htf_aligned,
+            nearest_aligned_zone=nearest,
+            tp_zones=tp_zones,
+            confluence_total=confluence,
+            sl_price=sl_price,
+            sl_atr_multiple=sl_mult,
+            tp1_price=tp1_price,
+            tp1_atr_multiple=tp1_atr,
+            rr_estimated=rr,
+            enrichment=self._enrichment_quality(asset),
+            warnings=self._warnings(asset, event),
+            precomputed=precomputed,
+        )
+
+    # ── v3.4: typed precomputed block (consumed verbatim by prompt v9.0) ─
+    @staticmethod
+    def _build_precomputed(
+        asset: CanonicalAsset,
+        event: StructureEvent,
+        htf_aligned: bool,
+        _sl_mult: float,  # BB-regime mult pre-computed by caller; kept for API symmetry
+    ) -> SignalPrecomputed:
+        bb_mult = _BB_REGIME_SL_MULT.get(
+            event.bb_regime or "", _SL_RAW_DEFAULT_MULT
+        )
+        atr_eff = asset.atr_effective
+        sl_distance_min: float | None = None
+        sl_distance_raw: float | None = None
+        if atr_eff is not None and _is_finite_number(atr_eff) and atr_eff > 0:
+            sl_distance_min = round(atr_eff * _SL_FLOOR_MULT, 8)
+            sl_distance_raw = round(atr_eff * bb_mult, 8)
+
+        h4_view = asset.rsi_by_tf.get(Timeframe.H4.value) or {}
+        rsi_h4_value = safe_float(h4_view.get("value"))
+
+        candles = safe_int(event.candles_elapsed, default=999)
+        # sig_fresh_aligned: Fresh + direction match + ≤2 candles since signal.
+        # event.status is free-form text from the scanner; we lowercase-compare.
+        is_fresh = str(event.status or "").strip().lower() == "fresh"
+        sig_fresh_aligned = bool(
+            is_fresh
+            and event.direction is not Direction.NEUTRAL
+            and asset.mtf is not None
+            and event.direction == asset.mtf.direction
+            and candles <= _FRESH_CANDLES_MAX
+        )
+
+        return SignalPrecomputed(
+            atr_effective=atr_eff,
+            atr_source=asset.atr_source,
+            bb_mult=bb_mult,
+            sl_distance_min=sl_distance_min,
+            sl_distance_raw=sl_distance_raw,
+            rsi_h4_value=rsi_h4_value,
+            rsi_h4_status=asset.rsi_h4_status,
+            candles_elapsed=candles,
+            sig_fresh_aligned=sig_fresh_aligned,
+            htf_aligned=htf_aligned,
+            conviction_cap=asset.conviction_cap,
+        )
+
+    # ── BUG 1 FIX: htf_aligned requires BOTH D1 AND H4 aligned ────────────
+    @staticmethod
+    def _htf_aligned(asset: CanonicalAsset, event: StructureEvent) -> bool:
+        if asset.mtf is None:
+            return False
+        if event.direction is Direction.NEUTRAL:
+            return False
+        d1_bias = asset.mtf.biases.get(Timeframe.D1.value)
+        h4_bias = asset.mtf.biases.get(Timeframe.H4.value)
+        if not d1_bias or not h4_bias:
+            return False
+        d1_dir = _direction_from_text(d1_bias)
+        h4_dir = _direction_from_text(h4_bias)
+        if d1_dir is Direction.NEUTRAL or h4_dir is Direction.NEUTRAL:
+            return False
+        return d1_dir == event.direction and h4_dir == event.direction
+
+    @staticmethod
+    def _select_nearest_aligned_zone(
+        _asset: CanonicalAsset,  # reserved for future alignment filtering
+        _event: StructureEvent,  # reserved for future timeframe filtering
+        aligned_zones: list[SRZone],
+    ) -> SRZone | None:
+        if not aligned_zones:
+            return None
+        real = [z for z in aligned_zones if z.is_real_sr()]
+        if real:
+            real.sort(key=lambda z: z.distance_pct)
+            return real[0]
+        aligned_sorted = sorted(aligned_zones, key=lambda z: z.distance_pct)
+        return aligned_sorted[0]
+
+    @staticmethod
+    def _confluence(asset: CanonicalAsset, event: StructureEvent) -> float:
+        total = event.confluence_score or 0.0
+        if asset.mtf is not None:
+            total += asset.mtf.pct * 0.5
+        for z in asset.zones:
+            if not z.is_real_sr():
+                continue
+            total += z.weighted_score * 0.1
+        return round(total, 2)
+
+    @staticmethod
+    def _resolve_tp1_from_zones(
+        direction: Direction,
+        tp_zones: list[SRZone],
+        price_context: PriceContext | None,
+    ) -> float | None:
+        """Resolve TP1 price: real SR zones first, price_context fallback,
+        then any synthetic zone. Extracted from _compute_sl_tp_rr to
+        reduce cyclomatic complexity."""
+        real_tp = [z for z in tp_zones if z.is_real_sr()]
+        if real_tp:
+            return real_tp[0].level
+        if price_context is not None:
+            if direction is Direction.BULLISH and price_context.resistance_level is not None:
+                return price_context.resistance_level
+            if direction is Direction.BEARISH and price_context.support_level is not None:
+                return price_context.support_level
+        if tp_zones:
+            return tp_zones[0].level
+        return None
+
+    # ── GAP 6 + v3.4: SL / TP1 / RR using atr_effective ───────────────────
+    @staticmethod
+    def _compute_sl_tp_rr(
+        asset: CanonicalAsset,
+        event: StructureEvent,
+        _nearest: SRZone | None,  # reserved — TP1 currently derived from tp_zones
+        tp_zones: list[SRZone],
+    ) -> tuple[float | None, float | None, float | None, float]:
+        """Compute SL / TP1 / RR. v3.4 uses asset.atr_effective (cascade).
+        Returns (sl_price, tp1_price, rr, sl_mult_actually_used).
+        sl_mult is the BB-regime multiplier (or 1.1 fallback) so callers can
+        persist it on EnrichedSignal.sl_atr_multiple."""
+        level = event.level
+        sl_mult = _BB_REGIME_SL_MULT.get(
+            event.bb_regime or "", _SL_RAW_DEFAULT_MULT
+        )
+        if level is None or not _is_finite_number(level) or level <= 0:
+            return None, None, None, sl_mult
+
+        atr_eff = asset.atr_effective
+        if atr_eff is None or not _is_finite_number(atr_eff) or atr_eff <= 0:
+            sl_price: float | None = None
+        else:
+            if event.direction is Direction.BULLISH:
+                sl_price = round(level - sl_mult * atr_eff, 5)
+            elif event.direction is Direction.BEARISH:
+                sl_price = round(level + sl_mult * atr_eff, 5)
+            else:
+                sl_price = None
+
+        tp1_price: float | None = None
+        if event.direction in (Direction.BULLISH, Direction.BEARISH):
+            raw_tp1 = EnrichmentEngine._resolve_tp1_from_zones(
+                event.direction, tp_zones, asset.price_context
+            )
+            if raw_tp1 is not None:
+                tp1_price = round(raw_tp1, 5)
+
+        rr: float | None = None
+        if (
+            sl_price is not None
+            and tp1_price is not None
+            and _is_finite_number(sl_price)
+            and _is_finite_number(tp1_price)
+        ):
+            risk = abs(level - sl_price)
+            reward = abs(tp1_price - level)
+            if risk > 0:
+                rr = round(reward / risk, 2)
+        return sl_price, tp1_price, rr, sl_mult
+
+    @staticmethod
+    def _enrichment_quality(asset: CanonicalAsset) -> EnrichmentQuality:
+        sources = {k for k in asset.provenance if k != "heuristic"}
+        n = len(sources)
+        if n >= 3:
+            status: Literal["complete", "partial", "minimal", "empty"] = "complete"
+        elif n == 2:
+            status = "partial"
+        elif n == 1:
+            status = "minimal"
+        else:
+            status = "empty"
+        return EnrichmentQuality(status=status, scanners_matched=n, scanners_total=n)
+
+    @staticmethod
+    def _warnings(asset: CanonicalAsset, event: StructureEvent) -> list[str]:
+        w: list[str] = []
+        if event.direction is Direction.NEUTRAL:
+            w.append("neutral direction")
+        if event.level is not None and event.level <= 0:
+            w.append(f"non-positive level: {event.level}")
+        if asset.mtf and not 0 <= asset.mtf.pct <= 100:
+            w.append(f"mtf_pct out of range: {asset.mtf.pct}")
+        for r in asset.rsi:
+            if r.value is not None and not 0 <= r.value <= 100:
+                w.append(f"rsi {r.timeframe.value} out of range")
+        if asset.atr_effective is None:
+            w.append("atr_cascade_exhausted")
+        elif asset.atr_source and asset.atr_source != "h4":
+            w.append(f"atr_source={asset.atr_source}")
+        return w
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# CORRELATION
+# ════════════════════════════════════════════════════════════════════════════
+_QUALITY_RANK: Final[dict[str, int]] = {"A+": 4, "A": 3, "B+": 2, "B": 1}
+
+
+class CorrelationEngine:
+    """Groups signals by base/quote currency for cross-pair correlation."""
+
+    def build(
+        self, signals: list[EnrichedSignal]
+    ) -> dict[str, list[dict[str, Any]]]:
+        groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for s in signals:
+            self._append_signal_legs(s, groups)
+        return self._finalize_groups(groups)
+
+    @staticmethod
+    def _append_signal_legs(
+        s: EnrichedSignal, groups: dict[str, list[dict[str, Any]]]
+    ) -> None:
+        asset = s.asset
+        for leg in (asset.base, asset.quote):
+            if not leg:
+                continue
+            bucket = groups[leg]
+            if len(bucket) >= MAX_CORRELATION_GROUP_SIZE:
+                continue
+            bucket.append({
+                "symbol": asset.symbol,
+                "direction": s.event.direction.value,
+                "kind": s.event.kind,
+                "timeframe": s.event.timeframe.value,
+                "mtf_pct": asset.mtf.pct if asset.mtf else 0,
+                "quality": asset.mtf.quality if asset.mtf else None,
+                "confluence": s.confluence_total,
+            })
+
+    @staticmethod
+    def _finalize_groups(
+        groups: dict[str, list[dict[str, Any]]]
+    ) -> dict[str, list[dict[str, Any]]]:
+        return {
+            leg: sorted(
+                items,
+                key=lambda x: (
+                    _QUALITY_RANK.get(str(x.get("quality")), 0),
+                    safe_float(x.get("confluence")) or 0.0,
+                ),
+                reverse=True,
+            )
+            for leg, items in sorted(groups.items())
+            if len(items) >= 2
+        }
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# PIPELINE
+# ════════════════════════════════════════════════════════════════════════════
+@dataclass(slots=True, frozen=True)
+class IngestedFile:
+    name: str
+    payload: Any
+
+
+def _zone_dict(z: SRZone) -> dict[str, Any]:
+    return {
+        "side": z.side,
+        "level": z.level,
+        "score": z.score,
+        "weighted_score": z.weighted_score,
+        "status": z.status,
+        "distance_pct": z.distance_pct,
+        "alert": z.alert,
+        "timeframes": [t.value for t in z.timeframes],
+        "has_weekly": z.has_weekly,
+        "has_daily": z.has_daily,
+        "has_h4": z.has_h4,
+        "type": z.type,          # MERGE-3: "Support" | "Resistance" | "Pivot"
+        "strength": z.strength,  # MERGE-3: Force Totale from SR scanner
+    }
+
+
+class MergePipeline:
+    """Orchestrates: detect → adapt → merge → enrich → correlate."""
+
+    def __init__(
+        self,
+        registry: ScannerRegistry,
+        merger: MergeEngine | None = None,
+        enricher: EnrichmentEngine | None = None,
+        correlator: CorrelationEngine | None = None,
+    ) -> None:
+        self._registry = registry
+        self._merger = merger or MergeEngine()
+        self._enricher = enricher or EnrichmentEngine()
+        self._correlator = correlator or CorrelationEngine()
+
+    def run(self, files: list[IngestedFile]) -> Result[MergeOutput]:
+        t0 = time.perf_counter()
+        diags: list[Diagnostic] = []
+        if not files:
+            res: Result[MergeOutput] = Result(value=None)
+            res.add(Diagnostic(
+                "pipeline", Severity.ERROR, "no_input", "no files provided"
+            ))
+            return res
+        partials, scanners, unknown = self._adapt_phase(files, diags)
+        assets = self._merge_phase(partials, diags)
+        signals = self._enrich_phase(assets, diags)
+        groups, hot, top = self._post_phase(assets, signals)
+        elapsed_ms = (time.perf_counter() - t0) * 1000.0
+        out = MergeOutput(
+            meta=MergeMeta(
+                generated_at=datetime.now(timezone.utc),
+                scanners_detected=scanners,
+                scanners_unknown=unknown,
+                assets_count=len(assets),
+                signals_count=len(signals),
+                elapsed_ms=round(elapsed_ms, 2),
+            ),
+            assets=assets,
+            signals=signals,
+            correlation_groups=groups,
+            hot_zones=hot,
+            top_consensus=top,
+            diagnostics=[d.to_dict() for d in diags],
+        )
+        return Result(value=out, diagnostics=diags)
+
+    def _adapt_phase(
+        self,
+        files: list[IngestedFile],
+        diags: list[Diagnostic],
+    ) -> tuple[list[list[CanonicalAsset]], list[str], int]:
+        partials: list[list[CanonicalAsset]] = []
+        scanners_detected: list[str] = []
+        unknown_count = 0
+        for f in files:
+            name, r = self._registry.adapt(f.payload)
+            diags.extend(r.diagnostics)
+            if name == "unknown" or not r.value:
+                unknown_count += 1
+                continue
+            scanners_detected.append(f"{f.name}:{name}")
+            partials.append(r.value)
+        return partials, scanners_detected, unknown_count
+
+    def _merge_phase(
+        self,
+        partials: list[list[CanonicalAsset]],
+        diags: list[Diagnostic],
+    ) -> dict[str, CanonicalAsset]:
+        merged_r = self._merger.merge(partials)
+        diags.extend(merged_r.diagnostics)
+        return merged_r.value or {}
+
+    def _enrich_phase(
+        self,
+        assets: dict[str, CanonicalAsset],
+        diags: list[Diagnostic],
+    ) -> list[EnrichedSignal]:
+        enriched_r = self._enricher.enrich(assets)
+        diags.extend(enriched_r.diagnostics)
+        return enriched_r.value or []
+
+    def _post_phase(
+        self,
+        assets: dict[str, CanonicalAsset],
+        signals: list[EnrichedSignal],
+    ) -> tuple[
+        dict[str, list[dict[str, Any]]],
+        list[dict[str, Any]],
+        dict[str, list[dict[str, Any]]],
+    ]:
+        groups, _ = _safe_call(
+            "pipeline.correlate", "correlate_crash",
+            lambda s=signals: self._correlator.build(s),
+            cast(dict[str, list[dict[str, Any]]], {}),
+        )
+        hot, _ = _safe_call(
+            "pipeline.hot_zones", "hot_zones_crash",
+            lambda a=assets: self._hot_zones(a),
+            cast(list[dict[str, Any]], []),
+        )
+        top, _ = _safe_call(
+            "pipeline.top_consensus", "top_consensus_crash",
+            lambda a=assets: self._top_consensus(a),
+            cast(dict[str, list[dict[str, Any]]], {}),
+        )
+        return groups, hot, top
+
+    # ── P3 FIX: hot_zones excludes synthetic / invalid zones ───────────────
+    @staticmethod
+    def _hot_zones(
+        assets: dict[str, CanonicalAsset]
+    ) -> list[dict[str, Any]]:
+        zones: list[dict[str, Any]] = []
+        soft_cap = MAX_HOT_ZONES_OUT * 2
+        for sym, asset in assets.items():
+            for z in asset.zones:
+                if not z.is_real_sr():
+                    continue
+                if z.distance_pct >= 2.0:
+                    continue
+                # FIX-006: log discret si zone UNKNOWN devient hot (aide debug)
+                if z.side == "UNKNOWN" and z.alert == "🔥 ZONE CHAUDE":
+                    _LOG.debug("hot_zone_primary UNKNOWN pour %s (niveau %s)", sym, z.level)
+                zones.append({"symbol": sym, **_zone_dict(z)})
+                if len(zones) >= soft_cap:
+                    break
+            if len(zones) >= soft_cap:
+                break
+        zones.sort(key=lambda x: safe_float(x["distance_pct"]) or 999.0)
+        return zones[:MAX_HOT_ZONES_OUT]
+
+    @staticmethod
+    def _top_consensus(
+        assets: dict[str, CanonicalAsset],
+        min_pct_bull: int = _TOP_CONSENSUS_MIN_PCT_BULL,
+        min_pct_bear: int = _TOP_CONSENSUS_MIN_PCT_BEAR,
+        top_n: int = 5,
+    ) -> dict[str, list[dict[str, Any]]]:
+        bull: list[dict[str, Any]] = []
+        bear: list[dict[str, Any]] = []
+        for sym, asset in assets.items():
+            if asset.mtf is None:
+                continue
+            entry = {
+                "symbol": sym,
+                "mtf_pct": asset.mtf.pct,
+                "quality": asset.mtf.quality,
+                "nc": asset.mtf.nc,
+                "age_d1": asset.mtf.age_d1,
+            }
+            if asset.mtf.direction is Direction.BULLISH and asset.mtf.pct >= min_pct_bull:
+                bull.append(entry)
+            elif asset.mtf.direction is Direction.BEARISH and asset.mtf.pct >= min_pct_bear:
+                bear.append(entry)
+
+        def _rank(e: dict[str, Any]) -> tuple[int, int, int]:
+            q = _QUALITY_RANK.get(str(e.get("quality")), 0)
+            return q, safe_int(e.get("nc")), safe_int(e.get("mtf_pct"))
+
+        bull.sort(key=_rank, reverse=True)
+        bear.sort(key=_rank, reverse=True)
+        return {"top_bullish": bull[:top_n], "top_bearish": bear[:top_n]}
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# EXPORT
+# ════════════════════════════════════════════════════════════════════════════
+def _json_default(o: Any) -> Any:
+    if isinstance(o, datetime):
+        return o.isoformat()
+    if isinstance(o, Enum):
+        return o.value
+    if hasattr(o, "model_dump"):
+        return o.model_dump(mode="json")
+    raise TypeError(f"Type {type(o).__name__} not serializable")
+
+
+def export_json(output: MergeOutput, *, indent: int = 2) -> str:
+    payload = output.model_dump(mode="json")
+    return json.dumps(
+        payload, indent=indent, ensure_ascii=False, default=_json_default
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# STREAMLIT — caching layer (content-addressable, never hashes raw bytes)
+# ════════════════════════════════════════════════════════════════════════════
+@dataclass(frozen=True, slots=True)
+class FileEntry:
+    """Content-addressed file. Streamlit hashes via ``__hash__``/``__eq__``,
+    which use only the SHA-256 fingerprint — never the raw bytes.
+    ``__hash__`` and ``__eq__`` are intentional overrides: frozen dataclasses
+    generate an ``__eq__`` that compares all fields (including ``data``),
+    which would be prohibitively slow and would break Streamlit's cache key.
+    The ``type: ignore[override]`` annotations below suppress the mypy false
+    positive that arises because frozen dataclasses generate a ``__hash__``
+    whose signature is technically identical — not a real conflict.
+    """
+    name: str
+    sha256: str
+    data: bytes = field(repr=False)
+
+    def __hash__(self) -> int:  # type: ignore[override]
+        return hash((self.name, self.sha256))
+
+    def __eq__(self, other: object) -> bool:  # type: ignore[override]
+        if not isinstance(other, FileEntry):
+            return NotImplemented
+        return self.name == other.name and self.sha256 == other.sha256
+
+
+def _make_file_entry(name: str, data: bytes) -> FileEntry:
+    return FileEntry(name=name, sha256=hashlib.sha256(data).hexdigest(), data=data)
+
+
+@st.cache_resource(show_spinner=False)
+def get_pipeline() -> MergePipeline:
+    """Stateless pipeline — safe singleton across reruns."""
+    adapters: list[ScannerAdapter] = [
+        GPSAdapter(),
+        RSIAdapter(),
+        SRAdapter(),
+        CHoCHAdapter(),
+    ]
+    registry = ScannerRegistry(adapters, fallback=HeuristicAdapter())
+    return MergePipeline(registry=registry)
+
+
+@st.cache_data(show_spinner=False, max_entries=64, ttl=3600, persist=False)  # FIX-005: 128→64
+def parse_json_bytes(entry: FileEntry) -> tuple[Any | None, str | None]:
+    """Cache-friendly JSON parsing — keyed on (name, sha256), not raw bytes."""
+    data = entry.data
+    name = entry.name
+    if not data:
+        return None, f"{name}: empty file"
+    if len(data) > MAX_FILE_SIZE_BYTES:
+        return None, (
+            f"{name}: file too large ({len(data)} > {MAX_FILE_SIZE_BYTES} bytes)"
+        )
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        try:
+            text = data.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            return None, f"{name}: encoding error ({exc})"
+    try:
+        return json.loads(text), None
+    except json.JSONDecodeError as exc:
+        return None, (
+            f"{name}: invalid JSON at line {exc.lineno} col {exc.colno} "
+            f"({exc.msg})"
+        )
+    except (RecursionError, MemoryError) as exc:
+        return None, f"{name}: resource error ({type(exc).__name__})"
+    except ValueError as exc:
+        return None, f"{name}: {type(exc).__name__}: {exc}"
+
+
+def _files_fingerprint(entries: Sequence[FileEntry]) -> str:
+    """Deterministic combined fingerprint of multiple files."""
+    h = hashlib.sha256()
+    for e in sorted(entries, key=lambda x: (x.name, x.sha256)):
+        h.update(e.name.encode("utf-8"))
+        h.update(b"\x00")
+        h.update(e.sha256.encode("ascii"))
+        h.update(b"\x00")
+    return h.hexdigest()
+
+
+@st.cache_data(show_spinner=False, max_entries=16, ttl=1800, persist=False)
+def run_pipeline_cached(
+    fingerprint: str, entries: tuple[FileEntry, ...]
+) -> dict[str, Any]:
+    """Cached pipeline run. Returns a serializable dict."""
+    _ = fingerprint
+    pipeline = get_pipeline()
+    ingested: list[IngestedFile] = []
+    parse_errors: list[str] = []
+    for entry in entries:
+        payload, err = parse_json_bytes(entry)
+        if err is not None:
+            parse_errors.append(err)
+            continue
+        ingested.append(IngestedFile(name=entry.name, payload=payload))
+
+    result, crash_diag = _safe_call(
+        "pipeline", "pipeline_crash",
+        lambda p=pipeline, i=ingested: p.run(i),
+        Result(value=cast(MergeOutput | None, None)),
+        severity=Severity.CRITICAL,
+    )
+    if crash_diag is not None:
+        result.add(crash_diag)
+        _LOG.error("pipeline crashed; degraded result returned")
+
+    output_dict: dict[str, Any] | None = None
+    if result.value is not None:
+        output_dict = result.value.model_dump(mode="json")
+
+    return {
+        "ok": result.ok,
+        "parse_errors": parse_errors,
+        "output": output_dict,
+        "diagnostics": [d.to_dict() for d in result.diagnostics],
+        "schema_version": SCHEMA_VERSION,
+    }
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# UI RENDERING
+# ════════════════════════════════════════════════════════════════════════════
+_SEV_ICON: Final[dict[str, str]] = {
+    "critical": "🔴", "error": "🔴", "warning": "🟡",
+    "info": "🔵", "debug": "⚪",
+}
+_STATUS_BADGE: Final[dict[str, str]] = {
+    "complete": "🟢", "partial": "🟡", "minimal": "🟠", "empty": "🔴",
+}
+_ATR_SRC_BADGE: Final[dict[str, str]] = {
+    "h4": "🟢H4",
+    "h1_proxy": "🟡H1×1.8",
+    "d1_proxy": "🟠D1×0.25",
+    "synthetic": "🔴SYNTH",
+}
+
+
+def _render_header() -> None:
+    st.markdown(
+        f"""
+        <div style="background:linear-gradient(135deg,#1B45B4 0%,#0f2d8a 100%);
+                    color:white;padding:18px 24px;border-radius:10px;margin-bottom:18px">
+          <div style="font-family:monospace;font-size:10px;opacity:.65;letter-spacing:2px">
+            BLUESTAR SYSTEM · GENERIC MULTI-SCANNER MERGE
+          </div>
+          <div style="font-family:monospace;font-size:22px;font-weight:700">
+            BLUESTAR MERGE
+            <span style="opacity:.6;font-size:14px">v{SCHEMA_VERSION}</span>
+          </div>
+          <div style="font-family:monospace;font-size:11px;opacity:.85">
+            Auto-detection · Canonical pivot · Pre-computation layer for v9.0 prompt
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _render_metrics(meta: dict[str, Any], hot_count: int) -> None:
+    cols = st.columns(6)
+    cols[0].metric("Scanners détectés", len(meta.get("scanners_detected", [])))
+    cols[1].metric("Inconnus", safe_int(meta.get("scanners_unknown")))
+    cols[2].metric("Actifs", safe_int(meta.get("assets_count")))
+    cols[3].metric("Signaux", safe_int(meta.get("signals_count")))
+    cols[4].metric("Zones chaudes", hot_count)
+    cols[5].metric(
+        "Latence", f"{safe_float(meta.get('elapsed_ms')) or 0.0:.0f} ms"
+    )
+
+
+def _zone_text(nz: dict[str, Any] | None) -> str:
+    if not nz or not isinstance(nz, dict):
+        return "no aligned zone"
+    status = nz.get("status")
+    synth = " ⚠️synth" if status in _INVALID_ZONE_STATUSES else ""
+    return (
+        f"@ `{nz.get('level')}` "
+        f"(d={safe_float(nz.get('distance_pct')) or 0.0:.2f}%, "
+        f"sc={nz.get('score')}, {status}){synth}"
+    )
+
+
+def _fmt_price(v: Any) -> str:
+    f = safe_float(v)
+    if f is None:
+        return "—"
+    return f"{f:.5f}" if f < 10 else f"{f:.2f}"
+
+
+def _build_trade_txt(s: dict[str, Any]) -> str:
+    """Format SL / TP1 / RR inline badges for a signal row."""
+    parts: list[str] = []
+    sl = s.get("sl_price")
+    tp1 = s.get("tp1_price")
+    rr = s.get("rr_estimated")
+    if sl is not None:
+        parts.append(f"SL={_fmt_price(sl)}")
+    if tp1 is not None:
+        parts.append(f"TP1={_fmt_price(tp1)}")
+    if rr is not None:
+        parts.append(f"RR={rr:.2f}")
+    return (" · " + " ".join(parts)) if parts else ""
+
+
+def _build_extra_txt(s: dict[str, Any]) -> str:
+    """Format v3.4 pre-computed badges (ATR source, fresh, conviction cap)."""
+    pre = s.get("precomputed") or {}
+    asset = s.get("asset") or {}
+    parts: list[str] = []
+    atr_src = pre.get("atr_source") or asset.get("atr_source")
+    if atr_src:
+        parts.append(_ATR_SRC_BADGE.get(atr_src, atr_src))
+    if pre.get("sig_fresh_aligned"):
+        parts.append("🔥FRESH")
+    cap = pre.get("conviction_cap") or asset.get("conviction_cap")
+    if cap:
+        parts.append(f"cap≤{cap}")
+    return (" · " + " ".join(parts)) if parts else ""
+
+
+def _render_one_signal(s: dict[str, Any]) -> None:
+    ev = s.get("event") or {}
+    asset = s.get("asset") or {}
+    enr = s.get("enrichment") or {}
+    status = str(enr.get("status", "empty"))
+    badge = _STATUS_BADGE.get(status, "⚪")
+    htf = "✅" if s.get("htf_aligned") else "⚠️"
+    zone_txt = _zone_text(s.get("nearest_aligned_zone"))
+    warns = s.get("warnings") or []
+    warn_txt = f" ⚡{len(warns)}w" if warns else ""
+    trade_txt = _build_trade_txt(s)
+    extra_txt = _build_extra_txt(s)
+    st.markdown(
+        f"- {badge}  `{asset.get('symbol', '?')}` "
+        f"[{ev.get('timeframe', '?')}]  {ev.get('direction', '?')}  ·  "
+        f"HTF {htf} · {zone_txt} ·  "
+        f"confluence={s.get('confluence_total', 0)}{warn_txt}{trade_txt}{extra_txt}"
+    )
+
+
+def _render_signals(signals: list[dict[str, Any]]) -> None:
+    if not signals:
+        st.info("Aucun signal de structure trouvé dans les fichiers fournis.")
+        return
+    st.subheader(f"📊 Signaux enrichis ({len(signals)})")
+    ui_cap = 200
+    for s in signals[:ui_cap]:
+        _render_one_signal(s)
+    if len(signals) > ui_cap:
+        extra = len(signals) - ui_cap
+        st.caption(
+            f"({extra} signaux supplémentaires masqués — "
+            f"exporter le JSON pour la liste complète)"
+        )
+
+
+def _render_top_consensus(top: dict[str, Any]) -> None:
+    bull = top.get("top_bullish") or []
+    bear = top.get("top_bearish") or []
+    if not bull and not bear:
+        return
+    st.subheader("🏆 Top consensus MTF (≥85%)")
+    col1, col2 = st.columns(2)
+    with col1:
+        _render_consensus_column("🟢 Bullish", bull)
+    with col2:
+        _render_consensus_column("🔴 Bearish", bear)
+
+
+def _render_consensus_column(label: str, entries: list[dict[str, Any]]) -> None:
+    st.markdown(f"**{label}**")
+    if not entries:
+        st.markdown("*aucun*")
+        return
+    for e in entries:
+        symbol = e.get("symbol", "?")
+        pct = e.get("mtf_pct", "?")
+        quality = e.get("quality") or "?"
+        nc = e.get("nc")
+        st.markdown(f"-  `{symbol}`  · {pct}% · Q={quality} · NC={nc}")
+
+
+def _hot_zone_tags(z: dict[str, Any]) -> str:
+    parts = [
+        t for t in (
+            "W" if z.get("has_weekly") else "",
+            "D" if z.get("has_daily") else "",
+            "H4" if z.get("has_h4") else "",
+        ) if t
+    ]
+    return " ".join(parts) or "—"
+
+
+def _render_hot_zones(hot: list[dict[str, Any]]) -> None:
+    if not hot:
+        return
+    with st.expander(f"🔥 Zones chaudes ({len(hot)})"):
+        for z in hot[:50]:
+            dist = safe_float(z.get("distance_pct")) or 0.0
+            st.markdown(
+                f"-  `{z.get('symbol', '?')}`  {z.get('side', '?')}  "
+                f"@  `{z.get('level')}` "
+                f"(d={dist:.2f}%, sc={z.get('weighted_score')},  "
+                f"TF={_hot_zone_tags(z)}, {z.get('status')})  "
+                f"{z.get('alert') or ''}"
+            )
+
+
+def _render_correlations(groups: dict[str, list[dict[str, Any]]]) -> None:
+    if not groups:
+        return
+    with st.expander(f"🔗 Clusters de corrélation ({len(groups)})"):
+        for leg, entries in groups.items():
+            dirs = {e.get("direction") for e in entries}
+            flag = "✅" if len(dirs) == 1 else "⚠️"
+            members = " ·  ".join(
+                f"`{e.get('symbol', '?')}`  {e.get('direction', '?')}"
+                for e in entries[:20]
+            )
+            extra = "" if len(entries) <= 20 else f"  (+{len(entries) - 20})"
+            st.markdown(f"**{leg}**  {flag} · {members}{extra}")
+
+
+def _diag_context_text(ctx: Any) -> str:
+    if not ctx:
+        return ""
+    try:
+        s = json.dumps(ctx, ensure_ascii=False, default=str)
+    except (TypeError, ValueError):
+        return ""
+    return f" · `{s[:120]}`"
+
+
+def _render_diagnostics(diags: list[dict[str, Any]]) -> None:
+    if not diags:
+        return
+    severities = [d.get("severity", "info") for d in diags]
+    err = sum(1 for s in severities if s in ("error", "critical"))
+    warn = sum(1 for s in severities if s == "warning")
+    info = sum(1 for s in severities if s == "info")
+    label = (
+        f"🔧 Diagnostics · {len(diags)} total ·  "
+        f"{err}🔴 · {warn}🟡 · {info}🔵"
+    )
+    with st.expander(label):
+        priority = {
+            "critical": 0, "error": 1, "warning": 2, "info": 3, "debug": 4,
+        }
+        ordered = sorted(
+            diags, key=lambda x: priority.get(x.get("severity", "info"), 9)
+        )
+        ui_cap = 500
+        for d in ordered[:ui_cap]:
+            icon = _SEV_ICON.get(d.get("severity", "info"), "•")
+            ctx_txt = _diag_context_text(d.get("context") or {})
+            st.markdown(
+                f"{icon}  `[{d.get('stage')}/{d.get('code')}]` "
+                f"{d.get('message')}{ctx_txt}"
+            )
+        if len(ordered) > ui_cap:
+            extra = len(ordered) - ui_cap
+            st.caption(f"({extra} diagnostics supplémentaires masqués)")
+
+
+def _render_export(payload_dict: dict[str, Any]) -> None:
+    payload, diag = _safe_call(
+        "ui.export", "serialize_crash",
+        lambda p=payload_dict: json.dumps(
+            p, indent=2, ensure_ascii=False, default=_json_default
+        ),
+        None,
+    )
+    if payload is None:
+        msg = diag.message if diag else "unknown"
+        st.error(f"Export JSON impossible: {msg}")
+        return
+    fname = (
+        f"merged_pipeline_"
+        f"{datetime.now(timezone.utc):%Y%m%d_%H%M}UTC.json"
+    )
+    st.download_button(
+        "📥 Télécharger merged_pipeline.json",
+        data=payload.encode("utf-8"),
+        file_name=fname,
+        mime="application/json",
+        use_container_width=True,
+        type="primary",
+    )
+    with st.expander("Prévisualiser JSON (4000 premiers caractères)"):
+        st.code(
+            payload[:4000] + ("\n…" if len(payload) > 4000 else ""),
+            language="json",
+        )
+
+
+def _render_asset_browser(assets: dict[str, Any]) -> None:
+    if not assets:
+        return
+    with st.expander(f"🔍 Explorer actifs canoniques ({len(assets)})"):
+        symbols = sorted(assets.keys())
+        selected = st.selectbox("Symbole", symbols, key="asset_browser")
+        if selected:
+            st.json(assets[selected], expanded=False)
+
+
+# ──── Upload handling ─────────────────────────────────────────────────────
+def _read_one_upload(f: Any) -> tuple[bytes | None, str | None]:
+    try:
+        f.seek(0)
+        data = f.read()
+    except (OSError, IOError, AttributeError) as exc:
+        name = getattr(f, "name", "?")
+        return None, (
+            f"Lecture impossible de `{name}` : {type(exc).__name__}: {exc}"
+        )
+    if not isinstance(data, (bytes, bytearray)):
+        try:
+            data = str(data).encode("utf-8")
+        except (UnicodeEncodeError, TypeError) as exc:
+            name = getattr(f, "name", "?")
+            return None, (
+                f"Encodage impossible de `{name}` : {type(exc).__name__}: {exc}"
+            )
+    return bytes(data), None
+
+
+def _read_uploads(uploads: list[Any]) -> tuple[list[FileEntry], list[str]]:
+    files: list[FileEntry] = []
+    errors: list[str] = []
+    total_size = 0
+    if len(uploads) > MAX_FILES:
+        errors.append(
+            f"Trop de fichiers ({len(uploads)} > MAX_FILES={MAX_FILES}); "
+            f"seuls les {MAX_FILES} premiers seront traités."
+        )
+        uploads = uploads[:MAX_FILES]
+    for f in uploads:
+        data, err = _read_one_upload(f)
+        if data is None:
+            if err:
+                errors.append(err)
+            continue
+        name = getattr(f, "name", "?")
+        size = len(data)
+        if size == 0:
+            errors.append(f"`{name}`: fichier vide ignoré")
+            continue
+        if size > MAX_FILE_SIZE_BYTES:
+            errors.append(
+                f"`{name}`: fichier trop volumineux "
+                f"({size} > {MAX_FILE_SIZE_BYTES} octets), ignoré"
+            )
+            continue
+        if total_size + size > MAX_TOTAL_SIZE_BYTES:
+            errors.append(
+                f"`{name}`: dépasserait la limite globale "
+                f"({MAX_TOTAL_SIZE_BYTES} octets), ignoré"
+            )
+            continue
+        total_size += size
+        files.append(_make_file_entry(name, data))
+    return files, errors
+
+
+def _render_sidebar() -> None:
+    with st.sidebar:
+        st.markdown("### ⚙️ Pipeline")
+        st.caption("Adapters actifs:")
+        st.markdown(
+            "- `gps` · MTF consensus\n"
+            "- `rsi` · flat & nested (7-level v9.0 scale)\n"
+            "- `sr` · zones + price context\n"
+            "- `choch` · structure events\n"
+            "- `heuristic` · fuzzy fallback"
+        )
+        st.markdown("### 🧮 Pré-calculs v3.4")
+        st.markdown(
+            "- ATR cascade (`h4 → h1×1.8 → d1×0.25 → synth`)\n"
+            "- `nearest_aligned_zone` (réelles prioritaires)\n"
+            "- `hot_zone_primary` (avec pivots UNKNOWN)\n"
+            "- `sig_fresh_aligned`, `bb_mult`, `sl_distance_*`\n"
+            "- `conviction_cap` selon source ATR"
+        )
+        fuzz_state = "✅ natif" if _HAS_RAPIDFUZZ else "⚠️ fallback Python"
+        st.caption(f"RapidFuzz: {fuzz_state}")
+        st.caption(f"Schema: `v{SCHEMA_VERSION}`")
+        st.caption(
+            f"Limits: {MAX_FILES} fichiers · "
+            f"{MAX_FILE_SIZE_BYTES // (1024 * 1024)} MB/fichier · "
+            f"{MAX_ASSETS} actifs"
+        )
+        if st.button("🧹 Vider le cache", use_container_width=True):
+            st.cache_data.clear()
+            st.cache_resource.clear()
+            st.success("Cache vidé. Rerun…")
+            st.rerun()
+
+
+def _render_results(result: dict[str, Any]) -> None:
+    parse_errors = result.get("parse_errors") or []
+    if parse_errors:
+        st.error(
+            "Fichiers JSON invalides :\n"
+            + "\n".join(f"- {e}" for e in parse_errors)
+        )
+    output = result.get("output")
+    diagnostics = result.get("diagnostics") or []
+    if output is None:
+        st.error("Pipeline en erreur — aucun résultat exploitable.")
+        _render_diagnostics(diagnostics)
+        return
+    meta = output.get("meta") or {}
+    hot = output.get("hot_zones") or []
+    _render_metrics(meta, len(hot))
+    st.divider()
+    _render_signals(output.get("signals") or [])
+    _render_top_consensus(output.get("top_consensus") or {})
+    _render_hot_zones(hot)
+    _render_correlations(output.get("correlation_groups") or {})
+    _render_asset_browser(output.get("assets") or {})
+    _render_diagnostics(diagnostics)
+    st.divider()
+    _render_export(output)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# ENTRY POINT
+# ════════════════════════════════════════════════════════════════════════════
+def main() -> None:
+    st.set_page_config(
+        page_title=f"BLUESTAR MERGE v{SCHEMA_VERSION}",
+        page_icon="🔷",
+        layout="wide",
+        initial_sidebar_state="collapsed",
+    )
+    _render_header()
+    _render_sidebar()
+    uploads = st.file_uploader(
+        "Déposez vos scanners JSON (détection automatique)",
+        type=["json"],
+        accept_multiple_files=True,
+    )
+    if not uploads:
+        st.info("⬆️ Déposez 1 à N fichiers JSON pour démarrer.")
+        return
+
+    entries, read_errors = _read_uploads(uploads)
+    for err in read_errors:
+        st.warning(err)
+    if not entries:
+        st.error("Aucun fichier lisible.")
+        return
+
+    run_btn = st.button(
+        "🚀 Exécuter le pipeline",
+        type="primary",
+        use_container_width=True,
+    )
+    if not run_btn:
+        st.caption(f"{len(entries)} fichier(s) prêt(s).")
+        return
+
+    fingerprint = _files_fingerprint(entries)
+    entries_tuple = tuple(entries)
+    with st.spinner("Pipeline en cours…"):
+        result, diag = _safe_call(
+            "ui.run", "ui_pipeline_crash",
+            lambda fp=fingerprint, e=entries_tuple: run_pipeline_cached(fp, e),
+            None,
+            severity=Severity.CRITICAL,
+        )
+    if result is None:
+        msg = diag.message if diag else "unknown"
+        st.error(f"Erreur fatale du pipeline: {msg}")
+        return
+    _render_results(result)
+
+
+if __name__ == "__main__":
+    main()
