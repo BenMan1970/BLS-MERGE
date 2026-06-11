@@ -702,6 +702,7 @@ class CanonicalAsset(BaseModel):
     quote: str | None = None
     asset_class: AssetClass = AssetClass.UNKNOWN
     current_price: float | None = None
+    current_price_source: Literal["live", "stale"] | None = None  # SR-1: propagé depuis scanner S/R
     rsi: list[RSIReading] = Field(default_factory=list)
     rsi_by_tf: dict[str, dict[str, Any]] = Field(default_factory=dict)
     rsi_h4_status: str | None = None
@@ -1619,6 +1620,16 @@ class SRAdapter(ScannerAdapter):
             asset = self._build_asset(raw, idx, res)
             if asset is not None:
                 out.append(asset)
+        # SR-1: propager diagnostics.assets_with_no_zones comme INFO dans le pipeline
+        diag_block = payload.get("diagnostics")
+        if isinstance(diag_block, dict):
+            no_zones = diag_block.get("assets_with_no_zones")
+            if isinstance(no_zones, list) and no_zones:
+                res.add(Diagnostic(
+                    "sr", Severity.INFO, "no_zones_detected",
+                    f"{len(no_zones)} assets sans zones",
+                    {"assets": no_zones},
+                ))
         return res
 
     @staticmethod
@@ -1641,6 +1652,10 @@ class SRAdapter(ScannerAdapter):
         cp = safe_float(raw.get("current_price") or raw.get("price"))
         if cp is not None:
             asset.current_price = cp
+        # SR-1: propager la source du prix (live vs stale/marché fermé)
+        cp_source = raw.get("current_price_source")
+        if cp_source in ("live", "stale"):
+            asset.current_price_source = cp_source
         asset.price_context = _parse_price_context(raw.get("price_context", ""))
         zones = SRAdapter._collect_zones(raw.get("zones", []), asset.current_price)
         pc_raw = raw.get("price_context")
@@ -2114,6 +2129,11 @@ class MergeEngine:
         asset.atr_effective = atr_eff
         asset.atr_source = atr_src
         cap = _ATR_CONVICTION_CAP.get(atr_src) if atr_src is not None else None
+        # SR-1: prix stale (marché fermé) → conviction cap plafonnée à BBB
+        # même si l'ATR serait normalement A. Le prix de référence est figé,
+        # donc nearest_aligned_zone et sl/tp sont moins fiables.
+        if asset.current_price_source == "stale":
+            cap = "BBB" if cap is None or cap == "A" else cap
         # cast for type-checker; values are constrained to A | BBB | None
         asset.conviction_cap = cast(
             "Literal['A', 'BBB'] | None", cap
@@ -2359,8 +2379,17 @@ class MergeEngine:
     def _fold_current_price(
         target: CanonicalAsset, source: CanonicalAsset
     ) -> None:
-        if target.current_price is None and source.current_price is not None:
+        # Préférer un prix "live" à un prix "stale" si les deux sont présents
+        if target.current_price is None:
             target.current_price = source.current_price
+            target.current_price_source = source.current_price_source
+        elif (
+            target.current_price_source == "stale"
+            and source.current_price is not None
+            and source.current_price_source == "live"
+        ):
+            target.current_price = source.current_price
+            target.current_price_source = "live"
 
     @staticmethod
     def _fold_provenance(target: CanonicalAsset, source: CanonicalAsset) -> None:
