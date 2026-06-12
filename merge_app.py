@@ -635,6 +635,10 @@ class StructureEvent(BaseModel):
     bb_regime: str | None = None
     session: str | None = None
     candles_elapsed: int = 0
+    # DIR-1: trend du contexte CHoCH (Bullish|Bearish) — informatif uniquement.
+    # Permet de distinguer "CHoCH bearish dans trend bullish" vs inverse.
+    # None si la source ne fournit pas ce champ (backward-compatible).
+    choch_trend: Direction | None = None
 
 
 class MTFConsensus(BaseModel):
@@ -797,6 +801,14 @@ class SignalPrecomputed(BaseModel):
     sig_fresh_aligned: bool = False
     htf_aligned: bool = False
     conviction_cap: Literal["A", "BBB"] | None = None
+    # DIR-1: contexte directionnel GPS vs CHoCH — purement informatif.
+    # Aucun filtre, aucune modification de score/SL/TP/ranking.
+    # L'engine consomme ces champs pour ses propres décisions.
+    gps_direction: Direction | None = None        # = asset.mtf.direction
+    choch_direction: Direction | None = None      # = event.direction
+    direction_aligned: bool | None = None         # True si gps == choch
+    counter_trend_signal: bool | None = None      # True si gps != choch
+    alignment_score: int | None = None            # 100 si aligné, 0 sinon
 
 
 class EnrichedSignal(BaseModel):
@@ -1842,6 +1854,9 @@ class CHoCHAdapter(ScannerAdapter):
                 bb_regime=_maybe_str(raw, "bb_regime"),
                 session=_maybe_str(raw, "session"),
                 candles_elapsed=safe_int(raw.get("candles_elapsed")),
+                # DIR-1: lire "trend" du scanner CHoCH (contexte directionnel)
+                choch_trend=_parse_direction_text(raw["trend"])
+                if raw.get("trend") else None,
             )
         except Exception as exc:
             res.add(Diagnostic(
@@ -2578,6 +2593,26 @@ class EnrichmentEngine:
             sig_fresh_aligned=sig_fresh_aligned,
             htf_aligned=htf_aligned,
             conviction_cap=asset.conviction_cap,
+            # DIR-1: enrichissement directionnel GPS vs CHoCH — purement informatif.
+            # Aucun filtre, aucun impact sur SL/TP/score/ranking.
+            gps_direction=asset.mtf.direction if asset.mtf is not None else None,
+            choch_direction=event.direction if event.direction is not Direction.NEUTRAL else None,
+            direction_aligned=(
+                event.direction == asset.mtf.direction
+                if asset.mtf is not None and event.direction is not Direction.NEUTRAL
+                else None
+            ),
+            counter_trend_signal=(
+                event.direction != asset.mtf.direction
+                if asset.mtf is not None and event.direction is not Direction.NEUTRAL
+                else None
+            ),
+            alignment_score=(
+                100 if event.direction == asset.mtf.direction
+                else 0
+                if asset.mtf is not None and event.direction is not Direction.NEUTRAL
+                else None
+            ),
         )
 
     # ── BUG 1 FIX: htf_aligned requires BOTH D1 AND H4 aligned ────────────
