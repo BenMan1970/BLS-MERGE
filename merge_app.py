@@ -2658,19 +2658,29 @@ def _mc_classify_market_state(
     if highest_sen == 3 and mtf_pct >= 70:
         return "DEEP_PULLBACK", "Moderate"
 
-    # PULLBACK_CONTINUATION — H1 or H4 counter in strong MTF, or mature with div
+    # PULLBACK_CONTINUATION — H1/H4 counter in strong MTF
     if highest_sen in (2, 3) and mtf_pct >= 70:
         risk = "Low-Moderate"
         if htf_div and age_cat == "mature":
             risk = "Moderate"
         return "PULLBACK_CONTINUATION", risk
 
-    # CLEAN_CONTINUATION — no counter or only low-seniority counter
+    # FIX-B: counter H1/M15 in mid MTF (50–70%) — conflicted structure, not range
+    # Covers: AUD/CHF (Bear 58% + H1 Bull counter), GBP/NZD (Bull 56% + H1 Bear counter)
+    if highest_sen <= 2 and aligned_fresh == 0 and 50 <= mtf_pct < 70:
+        return "TRANSITION_WATCH", "Moderate-High"
+
+    # CLEAN_CONTINUATION — no counter or only low-seniority counter in strong MTF
     if highest_sen <= 2 and mtf_pct >= 85 and aligned_fresh >= 1:
         risk = "Low"
         if htf_div:
             risk = "Low-Moderate"
         return "CLEAN_CONTINUATION", risk
+
+    # FIX-A: aligned Fresh present but MTF too weak for CLEAN/PULLBACK
+    # Covers: AUD/JPY (Bull 51% + H1 aligned Fresh, no counter)
+    if aligned_fresh >= 1 and highest_sen == 0 and 40 <= mtf_pct < 60:
+        return "TRANSITION_WATCH", "Moderate-High"
 
     # Fallback for ambiguous combinations
     if mtf_pct >= 60 and aligned_fresh >= 1:
