@@ -1,9 +1,45 @@
 # -*- coding: utf-8 -*-
 """
-BLUESTAR MERGE v3.4.2 — Production-grade Streamlit application.
+BLUESTAR MERGE v3.5.0 — Production-grade Streamlit application.
 Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
 heuristic fallback, full pipeline diagnostics, and hardened against malformed
 input, DoS, and partial failures.
+
+v3.5.0 — Market Context Layer (passive, additive, zero scoring impact):
+    Adds a `market_context` block to every CanonicalAsset in the merge output.
+    Computed after all existing pre-computations. Strictly read-only: no effect
+    on scoring, conviction, SL/TP, rankings, or rendering.
+
+      • CanonicalAsset gains:
+          - market_context : dict | None  (None only on internal crash)
+
+      • New pure functions (module-level, no side effects):
+          - _build_market_context()
+          - _mc_classify_structure_events()
+          - _mc_classify_market_state()
+          - _mc_build_confidence_drivers()
+          - _mc_divergence_context()
+          - _mc_sr_context()
+          - _mc_age_category()
+
+      • market_context schema:
+          - market_state        : 8-state enum (CLEAN_CONTINUATION …
+                                  REVERSAL_RISK / RANGE_COMPRESSION /
+                                  DATA_INCOMPLETE)
+          - structural_risk     : Low | Low-Moderate | Moderate |
+                                  Moderate-High | High | Critical | Undefined
+          - mtf_alignment       : HTF anchor, aligned TFs, conflict TFs
+          - structure_events_summary : aligned/counter counts, escalation
+          - momentum_context    : RSI H4 status + divergence confirmed TFs
+          - sr_context          : nearest zone proximity (≤ 2%)
+          - transition_signals  : age_d1 category, distribution_phase_risk
+          - confidence_drivers  : ordered list of explicit string drivers
+          - structural_risk_drivers : risk factors list
+
+      • ENGINE_V9 is unmodified. market_context is silently ignored by its
+        own CanonicalAsset model (extra="ignore"). Zero regression guaranteed.
+
+      • meta.version bumped to "3.5.0".
 
 v3.4.2 — Directional inference patch (fixed: current_price from asset) (S/R side fix):
     When the scanner SR produces zones with side="UNKNOWN" (e.g. pivot zones
@@ -120,7 +156,7 @@ MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
 MAX_TP_ZONES: Final[int] = 3
 
-SCHEMA_VERSION: Final[str] = "3.4.3"
+SCHEMA_VERSION: Final[str] = "3.5.0"
 
 # ── MERGE-2: HTF alignment thresholds (configurable via these constants) ──
 # Timeframes considered "high timeframe" for bias alignment.
