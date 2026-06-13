@@ -725,6 +725,11 @@ class CanonicalAsset(BaseModel):
     hot_zone_primary: SRZone | None = None
     # v3.4.3: direction dénormalisée au top-level (évite asset.mtf.direction dans le LLM)
     direction: Direction = Direction.NEUTRAL
+    # v3.5.0: market_context — bloc passif, observabilité uniquement.
+    # Calculé dans MergeEngine._enrich_asset_precompute après les autres pre-computations.
+    # IGNORÉ par ENGINE_V9 (extra="ignore" dans son propre CanonicalAsset).
+    # Aucun impact sur scoring/conviction/SL/TP/ranking.
+    market_context: dict[str, Any] | None = None
 
     @classmethod
     def from_symbol(cls, sym: CanonicalSymbol) -> CanonicalAsset:
@@ -2239,6 +2244,18 @@ class MergeEngine:
                 {"sym": asset.symbol, "atr_effective": atr_eff},
             ))
 
+        # v3.5.0: market_context — passive, additive, zero scoring impact.
+        # Computed last so all other pre-computations are already finalised.
+        ctx, ctx_diag = _safe_call(
+            "merge.market_ctx", "market_ctx_crash",
+            lambda a=asset: _build_market_context(a),
+            None,
+            severity=Severity.WARNING,
+        )
+        if ctx_diag is not None:
+            res.add(ctx_diag)
+        asset.market_context = ctx  # None on crash — engine silently ignores it
+
     @staticmethod
     def _merge_group(
         group: list[CanonicalAsset],
@@ -2417,8 +2434,453 @@ class MergeEngine:
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# ENRICHMENT
+# v3.5.0 — MARKET CONTEXT (passive, read-only, zero scoring impact)
 # ════════════════════════════════════════════════════════════════════════════
+# Timeframe seniority ordinal: higher = structurally more significant.
+_MC_TF_SENIORITY: Final[dict[str, int]] = {
+    "MN": 6, "W1": 5, "D1": 4, "H4": 3, "H1": 2, "M15": 1, "M5": 0, "M1": 0,
+}
+
+# age_d1 category thresholds (inclusive lower bound).
+_MC_AGE_MATURE: Final[int] = 30
+_MC_AGE_YOUNG: Final[int] = 10
+
+# S/R proximity threshold for sr_context (%).
+_MC_SR_NEAR_PCT: Final[float] = 2.0
+
+# RSI divergence TFs considered "higher-timeframe" for risk amplification.
+_MC_DIV_HTF: Final[frozenset[str]] = frozenset({"D1", "W1"})
+
+
+def _mc_classify_structure_events(
+    events: list[StructureEvent],
+    mtf_direction: Direction,
+) -> dict[str, Any]:
+    """Classify structure events as aligned / counter and compute escalation.
+
+    Pure function — no side effects, no mutation.
+    Returns a dict matching structure_events_summary schema.
+    """
+    aligned_fresh = 0
+    counter_fresh = 0
+    # Collect counter-fresh events with their seniority for escalation check.
+    counter_seniorities: list[int] = []
+
+    for ev in events:
+        is_fresh = str(ev.status or "").strip().lower() == "fresh"
+        if not is_fresh:
+            continue
+        if ev.direction is Direction.NEUTRAL:
+            continue
+        if ev.direction == mtf_direction:
+            aligned_fresh += 1
+        else:
+            counter_fresh += 1
+            sen = _MC_TF_SENIORITY.get(ev.timeframe.value, 0)
+            counter_seniorities.append(sen)
+
+    # Highest counter TF
+    highest_counter_seniority = max(counter_seniorities) if counter_seniorities else 0
+    highest_counter_tf: str | None = None
+    if highest_counter_seniority > 0:
+        for tf, sen in _MC_TF_SENIORITY.items():
+            if sen == highest_counter_seniority:
+                highest_counter_tf = tf
+                break
+
+    # Escalation: >= 2 distinct ascending seniority levels among counter-fresh events.
+    unique_sorted = sorted(set(counter_seniorities))
+    escalation_detected = len(unique_sorted) >= 2
+    escalation_score = len(unique_sorted) if escalation_detected else 0
+
+    # Build readable escalation sequence (TF names, ascending seniority)
+    escalation_sequence: list[str] = []
+    if escalation_detected:
+        for sen in unique_sorted:
+            for tf, s in _MC_TF_SENIORITY.items():
+                if s == sen and sen > 0:
+                    escalation_sequence.append(tf)
+                    break
+
+    # Counter classification based on highest seniority
+    if highest_counter_seniority == 0:
+        counter_classification = "none"
+    elif highest_counter_seniority <= 2:
+        counter_classification = "pullback_candidate"
+    elif highest_counter_seniority == 3:
+        counter_classification = "deep_pullback_watch"
+    elif highest_counter_seniority == 4:
+        counter_classification = "structural_watch"
+    else:
+        counter_classification = "reversal_candidate"
+
+    return {
+        "aligned_fresh_count": aligned_fresh,
+        "counter_fresh_count": counter_fresh,
+        "highest_counter_tf": highest_counter_tf,
+        "highest_counter_seniority": highest_counter_seniority,
+        "escalation_detected": escalation_detected,
+        "escalation_sequence": escalation_sequence,
+        "escalation_score": escalation_score,
+        "counter_classification": counter_classification,
+    }
+
+
+def _mc_age_category(age_d1: int | None) -> str:
+    """Map age_d1 to a categorical label. Pure."""
+    if age_d1 is None:
+        return "unknown"
+    if age_d1 < _MC_AGE_YOUNG:
+        return "young"
+    if age_d1 < _MC_AGE_MATURE:
+        return "standard"
+    return "mature"
+
+
+def _mc_divergence_context(rsi_by_tf: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """Extract divergence context from rsi_by_tf. Pure."""
+    confirmed_tfs: list[str] = []
+    div_direction: str | None = None
+
+    for tf, data in rsi_by_tf.items():
+        if not isinstance(data, dict):
+            continue
+        if not data.get("div_confirmed"):
+            continue
+        div_dir = str(data.get("divergence") or "").strip()
+        if div_dir in ("Bullish", "Bearish"):
+            confirmed_tfs.append(tf)
+            # First confirmed divergence direction wins (consistent per asset).
+            if div_direction is None:
+                div_direction = div_dir
+
+    return {
+        "divergence_active": bool(confirmed_tfs),
+        "divergence_confirmed_tfs": confirmed_tfs,
+        "divergence_direction": div_direction,
+    }
+
+
+def _mc_sr_context(zones: list[SRZone], mtf_direction: Direction) -> dict[str, Any]:
+    """Summarise S/R proximity context. Pure."""
+    wanted_side = "BUY" if mtf_direction is Direction.BULLISH else "SELL"
+    near: list[SRZone] = [
+        z for z in zones
+        if z.is_real_sr()
+        and z.side == wanted_side
+        and z.distance_pct <= _MC_SR_NEAR_PCT
+    ]
+    if not near:
+        return {
+            "nearest_zone_present": False,
+            "nearest_zone_distance_pct": None,
+            "nearest_zone_side": None,
+            "at_key_level": False,
+        }
+    best = min(near, key=lambda z: z.distance_pct)
+    at_key = best.has_weekly or best.has_daily
+    return {
+        "nearest_zone_present": True,
+        "nearest_zone_distance_pct": round(best.distance_pct, 4),
+        "nearest_zone_side": best.side,
+        "at_key_level": at_key,
+    }
+
+
+def _mc_classify_market_state(
+    mtf_pct: int,
+    mtf_direction: Direction,
+    events_summary: dict[str, Any],
+    age_d1: int | None,
+    divergence_ctx: dict[str, Any],
+) -> tuple[str, str]:
+    """Derive (market_state, structural_risk) deterministically.
+
+    Rules applied in priority order — first match wins.
+    Returns (market_state, structural_risk).
+    Pure, no side effects.
+    """
+    # Insufficient data
+    if mtf_direction is Direction.NEUTRAL or mtf_pct == 0:
+        return "DATA_INCOMPLETE", "Undefined"
+
+    counter_class = events_summary.get("counter_classification", "none")
+    escalation = events_summary.get("escalation_detected", False)
+    highest_sen = events_summary.get("highest_counter_seniority", 0)
+    aligned_fresh = events_summary.get("aligned_fresh_count", 0)
+    age_cat = _mc_age_category(age_d1)
+
+    # Divergence amplifier: confirmed HTF divergence counter to MTF direction
+    htf_div = False
+    if divergence_ctx.get("divergence_active"):
+        div_dir = divergence_ctx.get("divergence_direction")
+        # Counter-to-MTF divergence on D1/W1
+        confirmed_tfs = divergence_ctx.get("divergence_confirmed_tfs") or []
+        on_htf = any(tf in _MC_DIV_HTF for tf in confirmed_tfs)
+        if on_htf and div_dir is not None:
+            if mtf_direction is Direction.BULLISH and div_dir == "Bearish":
+                htf_div = True
+            elif mtf_direction is Direction.BEARISH and div_dir == "Bullish":
+                htf_div = True
+
+    # No structure events at all — classify purely from MTF bias
+    if aligned_fresh == 0 and highest_sen == 0:
+        if mtf_pct < 60:
+            return "RANGE_COMPRESSION", "Undefined"
+        if mtf_pct >= 85:
+            risk = "Low-Moderate" if htf_div else "Low"
+            return "CLEAN_CONTINUATION", risk
+        if mtf_pct >= 70:
+            risk = "Low-Moderate"
+            return "PULLBACK_CONTINUATION", risk
+        if mtf_pct >= 60:
+            return "TRANSITION_WATCH", "Moderate-High"
+        return "RANGE_COMPRESSION", "Undefined"
+
+    # REVERSAL_RISK — escalation full OR W1+ counter OR (D1 counter + htf div + mature)
+    if escalation and highest_sen >= 4:
+        return "REVERSAL_RISK", "Critical"
+    if highest_sen >= 5:  # W1 or MN counter
+        return "REVERSAL_RISK", "Critical"
+    if highest_sen == 4 and htf_div and age_cat == "mature":
+        return "REVERSAL_RISK", "Critical"
+
+    # STRUCTURAL_CONFLICT — D1 counter without full escalation
+    if highest_sen == 4:
+        risk = "High"
+        return "STRUCTURAL_CONFLICT", risk
+
+    # TRANSITION_WATCH — MTF weakening + H4 counter
+    if highest_sen == 3 and mtf_pct < 70:
+        return "TRANSITION_WATCH", "Moderate-High"
+
+    # DEEP_PULLBACK — H4 counter in moderate MTF
+    if highest_sen == 3 and mtf_pct >= 70:
+        return "DEEP_PULLBACK", "Moderate"
+
+    # PULLBACK_CONTINUATION — H1 or H4 counter in strong MTF, or mature with div
+    if highest_sen in (2, 3) and mtf_pct >= 70:
+        risk = "Low-Moderate"
+        if htf_div and age_cat == "mature":
+            risk = "Moderate"
+        return "PULLBACK_CONTINUATION", risk
+
+    # CLEAN_CONTINUATION — no counter or only low-seniority counter
+    if highest_sen <= 2 and mtf_pct >= 85 and aligned_fresh >= 1:
+        risk = "Low"
+        if htf_div:
+            risk = "Low-Moderate"
+        return "CLEAN_CONTINUATION", risk
+
+    # Fallback for ambiguous combinations
+    if mtf_pct >= 60 and aligned_fresh >= 1:
+        return "PULLBACK_CONTINUATION", "Low-Moderate"
+    if mtf_pct < 60:
+        return "RANGE_COMPRESSION", "Undefined"
+
+    return "DATA_INCOMPLETE", "Undefined"
+
+
+def _mc_build_confidence_drivers(
+    mtf_direction: Direction,
+    mtf_pct: int,
+    mtf_biases: dict[str, str],
+    events: list[StructureEvent],
+    events_summary: dict[str, Any],
+    divergence_ctx: dict[str, Any],
+    sr_ctx: dict[str, Any],
+    age_d1: int | None,
+    age_cat: str,
+) -> tuple[list[str], list[str]]:
+    """Build (confidence_drivers, structural_risk_drivers) lists. Pure."""
+    drivers: list[str] = []
+    risk_drivers: list[str] = []
+
+    # 1 — MTF statement (always)
+    aligned_tfs = [
+        tf for tf, bias in mtf_biases.items()
+        if _direction_from_text(bias) == mtf_direction
+    ]
+    tf_list = "/".join(aligned_tfs) if aligned_tfs else "—"
+    drivers.append(
+        f"MTF {mtf_direction.value} {mtf_pct}% — alignement {tf_list}"
+    )
+
+    # 2 — Best aligned Fresh CHoCH (lowest candles_elapsed)
+    aligned_fresh_events = [
+        ev for ev in events
+        if str(ev.status or "").strip().lower() == "fresh"
+        and ev.direction == mtf_direction
+    ]
+    if aligned_fresh_events:
+        best = min(aligned_fresh_events, key=lambda e: e.candles_elapsed)
+        score_str = f"score={int(best.confluence_score)}" if best.confluence_score else ""
+        candles_str = f"{best.candles_elapsed}c"
+        drivers.append(
+            f"{best.timeframe.value} CHoCH {best.direction.value} Fresh"
+            f" ({score_str}, {candles_str}) — trigger aligné"
+        )
+
+    # 3 — Counter-trend statement
+    counter_class = events_summary.get("counter_classification", "none")
+    if counter_class != "none":
+        highest_tf = events_summary.get("highest_counter_tf")
+        counter_events = [
+            ev for ev in events
+            if str(ev.status or "").strip().lower() == "fresh"
+            and ev.direction != mtf_direction
+            and ev.direction is not Direction.NEUTRAL
+        ]
+        if counter_events and highest_tf:
+            # Most recent counter event on the highest TF
+            top_counter = [
+                ev for ev in counter_events
+                if ev.timeframe.value == highest_tf
+            ]
+            ev_ref = top_counter[0] if top_counter else counter_events[0]
+            score_str = f"score={int(ev_ref.confluence_score)}" if ev_ref.confluence_score else ""
+            drivers.append(
+                f"{ev_ref.timeframe.value} CHoCH {ev_ref.direction.value} Fresh"
+                f" ({score_str}) — {counter_class}"
+            )
+            risk_drivers.append(
+                f"{ev_ref.timeframe.value} CHoCH {ev_ref.direction.value} Fresh"
+                f" — séniorité {_MC_TF_SENIORITY.get(ev_ref.timeframe.value, 0)}/6"
+            )
+
+    # 4 — Escalation
+    if events_summary.get("escalation_detected"):
+        seq = events_summary.get("escalation_sequence") or []
+        drivers.append(f"Escalade structurelle détectée : {' → '.join(seq)}")
+        risk_drivers.append(f"Escalade {' → '.join(seq)}")
+
+    # 5 — Divergence
+    if divergence_ctx.get("divergence_active"):
+        div_tfs = divergence_ctx.get("divergence_confirmed_tfs") or []
+        div_dir = divergence_ctx.get("divergence_direction") or "—"
+        drivers.append(
+            f"Divergence RSI {div_dir} confirmée sur {'/'.join(div_tfs)}"
+        )
+        # Risk driver only if counter-to-MTF on HTF
+        on_htf = any(tf in _MC_DIV_HTF for tf in div_tfs)
+        is_counter = (
+            (mtf_direction is Direction.BULLISH and div_dir == "Bearish")
+            or (mtf_direction is Direction.BEARISH and div_dir == "Bullish")
+        )
+        if on_htf and is_counter:
+            risk_drivers.append(
+                f"Divergence RSI {div_dir} confirmée sur {'/'.join(div_tfs)} — counter-MTF"
+            )
+
+    # 6 — S/R context
+    if sr_ctx.get("nearest_zone_present"):
+        dist = sr_ctx.get("nearest_zone_distance_pct")
+        side = sr_ctx.get("nearest_zone_side")
+        key_lbl = " (niveau clé W1/D1)" if sr_ctx.get("at_key_level") else ""
+        drivers.append(
+            f"Zone S/R {side} proche à {dist}%{key_lbl}"
+        )
+
+    # 7 — Age context
+    if age_d1 is not None:
+        if age_cat == "mature":
+            drivers.append(f"Actif mature {age_d1}j — surveillance distribution")
+            risk_drivers.append(f"age_d1={age_d1}j — structure mature")
+        elif age_cat == "young":
+            drivers.append(f"Structure récente {age_d1}j — tendance en établissement")
+
+    return drivers, risk_drivers
+
+
+def _build_market_context(asset: CanonicalAsset) -> dict[str, Any]:
+    """Compute the full market_context dict for a CanonicalAsset.
+
+    Pure function — reads asset fields, returns a plain dict.
+    No side effects, no mutation, no I/O.
+    Identical inputs → identical outputs.
+    """
+    mtf = asset.mtf
+    if mtf is None:
+        return {"market_state": "DATA_INCOMPLETE", "structural_risk": "Undefined"}
+
+    mtf_direction = mtf.direction
+    mtf_pct = mtf.pct
+    mtf_biases = mtf.biases or {}
+    age_d1 = mtf.age_d1
+    age_cat = _mc_age_category(age_d1)
+
+    events = list(asset.structure_events)
+    rsi_by_tf = asset.rsi_by_tf or {}
+    zones = list(asset.zones)
+
+    # HTF alignment summary
+    htf_tfs_aligned = [
+        tf for tf, bias in mtf_biases.items()
+        if tf in _MC_TF_SENIORITY
+        and _MC_TF_SENIORITY[tf] >= 4  # D1 and above
+        and _direction_from_text(bias) == mtf_direction
+    ]
+    conflict_tfs = [
+        tf for tf, bias in mtf_biases.items()
+        if tf in _MC_TF_SENIORITY
+        and _MC_TF_SENIORITY[tf] >= 4
+        and _direction_from_text(bias) not in (mtf_direction, Direction.NEUTRAL)
+    ]
+
+    # Sub-contexts (pure)
+    events_summary = _mc_classify_structure_events(events, mtf_direction)
+    divergence_ctx = _mc_divergence_context(rsi_by_tf)
+    sr_ctx = _mc_sr_context(zones, mtf_direction)
+
+    # Market state + risk
+    market_state, structural_risk = _mc_classify_market_state(
+        mtf_pct, mtf_direction, events_summary, age_d1, divergence_ctx
+    )
+
+    # Drivers
+    confidence_drivers, structural_risk_drivers = _mc_build_confidence_drivers(
+        mtf_direction, mtf_pct, mtf_biases, events,
+        events_summary, divergence_ctx, sr_ctx, age_d1, age_cat,
+    )
+
+    # RSI H4 quick summary
+    h4_rsi = rsi_by_tf.get("H4") or {}
+    rsi_h4_status = h4_rsi.get("status")
+    rsi_h4_value = safe_float(h4_rsi.get("value"))
+
+    return {
+        "market_state": market_state,
+        "structural_risk": structural_risk,
+        "mtf_alignment": {
+            "direction": mtf_direction.value,
+            "pct": mtf_pct,
+            "htf_anchor": bool(len(htf_tfs_aligned) >= 2),
+            "htf_tfs_aligned": htf_tfs_aligned,
+            "conflict_tfs": conflict_tfs,
+        },
+        "structure_events_summary": events_summary,
+        "momentum_context": {
+            "rsi_h4_status": rsi_h4_status,
+            "rsi_h4_value": rsi_h4_value,
+            **divergence_ctx,
+        },
+        "sr_context": sr_ctx,
+        "transition_signals": {
+            "age_d1": age_d1,
+            "age_d1_category": age_cat,
+            "distribution_phase_risk": (
+                age_cat == "mature"
+                and events_summary.get("counter_classification") in (
+                    "structural_watch", "reversal_candidate"
+                )
+            ),
+        },
+        "confidence_drivers": confidence_drivers,
+        "structural_risk_drivers": structural_risk_drivers,
+    }
+
+
+
 _DIR_TOKENS: Final[dict[Direction, tuple[str, ...]]] = {
     Direction.BULLISH: ("bullish", "bull", "haussier", "hausse", "long"),
     Direction.BEARISH: ("bearish", "bear", "baissier", "baisse", "short"),
