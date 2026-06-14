@@ -5,6 +5,32 @@ Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
 heuristic fallback, full pipeline diagnostics, and hardened against malformed
 input, DoS, and partial failures.
 
+v3.5.1 — Market Context Layer — schema completion (additive, zero regression):
+    Completes the market_context schema introduced in v3.5.0 with 5 fields
+    that were present in the architectural audit but missing from the initial
+    implementation. All additions are pure, derived from already-computed data.
+    No existing field is modified. No scoring/conviction/SL/TP impact.
+
+      • New fields in market_context:
+          - counter_trend_classification : structured bloc (present, class,
+            dominant_tf, aligns_with_divergence, age_d1_modifier_applied,
+            description). Derived from events_summary + divergence_ctx.
+          - momentum_context.rsi_gradient : "rising"|"falling"|"neutral"|
+            "unknown". H1 vs H4 RSI differential (threshold 3 pts).
+          - sr_context.key_level_type     : "W1"|"D1"|None. Precision on
+            at_key_level when True.
+          - sr_context.sr_confluence_with_counter : bool. True if a counter-
+            side zone ≤ 2% exists AND counter structure events are present.
+          - transition_signals.weakening_trend    : bool. mtf_pct < 70 AND
+            no aligned Fresh AND counter present.
+          - transition_signals.compression_detected : bool. Projection of
+            market_state == RANGE_COMPRESSION.
+
+      • _mc_sr_context signature gains optional counter_present: bool = False.
+        Call sites updated. Existing behaviour preserved when False (default).
+
+      • _mc_divergence_context return dict gains rsi_gradient key.
+
 v3.5.0 — Market Context Layer (passive, additive, zero scoring impact):
     Adds a `market_context` block to every CanonicalAsset in the merge output.
     Computed after all existing pre-computations. Strictly read-only: no effect
@@ -2590,36 +2616,83 @@ def _mc_divergence_context(rsi_by_tf: dict[str, dict[str, Any]]) -> dict[str, An
             if div_direction is None:
                 div_direction = div_dir
 
+    # rsi_gradient: H1 vs H4 momentum direction.
+    # Threshold of 3 RSI points filters noise while remaining sensitive to
+    # meaningful short-term vs medium-term RSI divergence.
+    # Values: "rising" | "falling" | "neutral" | "unknown"
+    _MC_RSI_GRADIENT_THRESHOLD: float = 3.0
+    h1_val = safe_float((rsi_by_tf.get("H1") or {}).get("value"))
+    h4_val = safe_float((rsi_by_tf.get("H4") or {}).get("value"))
+    if h1_val is not None and h4_val is not None:
+        diff = h1_val - h4_val
+        if diff > _MC_RSI_GRADIENT_THRESHOLD:
+            rsi_gradient = "rising"
+        elif diff < -_MC_RSI_GRADIENT_THRESHOLD:
+            rsi_gradient = "falling"
+        else:
+            rsi_gradient = "neutral"
+    else:
+        rsi_gradient = "unknown"
+
     return {
         "divergence_active": bool(confirmed_tfs),
         "divergence_confirmed_tfs": confirmed_tfs,
         "divergence_direction": div_direction,
+        "rsi_gradient": rsi_gradient,
     }
 
 
-def _mc_sr_context(zones: list[SRZone], mtf_direction: Direction) -> dict[str, Any]:
-    """Summarise S/R proximity context. Pure."""
+def _mc_sr_context(
+    zones: list[SRZone],
+    mtf_direction: Direction,
+    counter_present: bool = False,
+) -> dict[str, Any]:
+    """Summarise S/R proximity context. Pure.
+
+    counter_present: True if at least one counter-fresh structure event exists.
+    Used to compute sr_confluence_with_counter without coupling to events_summary
+    inside this function.
+    """
     wanted_side = "BUY" if mtf_direction is Direction.BULLISH else "SELL"
+    counter_side = "SELL" if mtf_direction is Direction.BULLISH else "BUY"
+
     near: list[SRZone] = [
         z for z in zones
         if z.is_real_sr()
         and z.side == wanted_side
         and z.distance_pct <= _MC_SR_NEAR_PCT
     ]
+
+    # Counter-side zones: zones aligned with the counter-trend direction.
+    near_counter: list[SRZone] = [
+        z for z in zones
+        if z.is_real_sr()
+        and z.side == counter_side
+        and z.distance_pct <= _MC_SR_NEAR_PCT
+    ]
+    sr_confluence_with_counter = bool(counter_present and near_counter)
+
     if not near:
         return {
             "nearest_zone_present": False,
             "nearest_zone_distance_pct": None,
             "nearest_zone_side": None,
             "at_key_level": False,
+            "key_level_type": None,
+            "sr_confluence_with_counter": sr_confluence_with_counter,
         }
     best = min(near, key=lambda z: z.distance_pct)
     at_key = best.has_weekly or best.has_daily
+    key_level_type: str | None = None
+    if at_key:
+        key_level_type = "W1" if best.has_weekly else "D1"
     return {
         "nearest_zone_present": True,
         "nearest_zone_distance_pct": round(best.distance_pct, 4),
         "nearest_zone_side": best.side,
         "at_key_level": at_key,
+        "key_level_type": key_level_type,
+        "sr_confluence_with_counter": sr_confluence_with_counter,
     }
 
 
@@ -2876,7 +2949,8 @@ def _build_market_context(asset: CanonicalAsset) -> dict[str, Any]:
     # Sub-contexts (pure)
     events_summary = _mc_classify_structure_events(events, mtf_direction)
     divergence_ctx = _mc_divergence_context(rsi_by_tf)
-    sr_ctx = _mc_sr_context(zones, mtf_direction)
+    counter_present = events_summary.get("counter_fresh_count", 0) > 0
+    sr_ctx = _mc_sr_context(zones, mtf_direction, counter_present=counter_present)
 
     # Market state + risk
     market_state, structural_risk = _mc_classify_market_state(
@@ -2894,6 +2968,58 @@ def _build_market_context(asset: CanonicalAsset) -> dict[str, Any]:
     rsi_h4_status = h4_rsi.get("status")
     rsi_h4_value = safe_float(h4_rsi.get("value"))
 
+    # counter_trend_classification: structured bloc derived from already-computed
+    # events_summary + divergence_ctx. No new calculation.
+    counter_class = events_summary.get("counter_classification", "none")
+    highest_counter_tf = events_summary.get("highest_counter_tf")
+    highest_counter_sen = events_summary.get("highest_counter_seniority", 0)
+    # htf_div: counter-to-MTF divergence confirmed on D1/W1 — mirrors logic in
+    # _mc_classify_market_state to remain consistent without duplication.
+    div_dir = divergence_ctx.get("divergence_direction")
+    div_confirmed_tfs = divergence_ctx.get("divergence_confirmed_tfs") or []
+    on_htf_div = any(tf in _MC_DIV_HTF for tf in div_confirmed_tfs)
+    aligns_with_divergence = bool(
+        on_htf_div
+        and div_dir is not None
+        and (
+            (mtf_direction is Direction.BULLISH and div_dir == "Bearish")
+            or (mtf_direction is Direction.BEARISH and div_dir == "Bullish")
+        )
+    )
+    age_d1_modifier_applied = age_cat == "mature" and counter_class != "none"
+
+    # Build human-readable description for UI / LLM consumption.
+    if counter_class == "none":
+        ctc_description = "Aucun CHoCH counter-MTF détecté"
+    else:
+        age_suffix = f" (actif mature {age_d1}j)" if age_d1_modifier_applied else ""
+        div_suffix = " + divergence HTF confirmée" if aligns_with_divergence else ""
+        ctc_description = (
+            f"{highest_counter_tf} CHoCH counter dans MTF"
+            f" {mtf_direction.value} — {counter_class}{age_suffix}{div_suffix}"
+        )
+
+    counter_trend_classification = {
+        "present": counter_class != "none",
+        "class": counter_class,
+        "dominant_tf": highest_counter_tf,
+        "aligns_with_divergence": aligns_with_divergence,
+        "age_d1_modifier_applied": age_d1_modifier_applied,
+        "description": ctc_description,
+    }
+
+    # weakening_trend: MTF directional but no aligned trigger and counter pressure
+    # present. Derived from raw inputs — no dependency on market_state.
+    aligned_fresh = events_summary.get("aligned_fresh_count", 0)
+    weakening_trend = bool(
+        mtf_pct < 70
+        and aligned_fresh == 0
+        and counter_present
+    )
+
+    # compression_detected: direct projection of RANGE_COMPRESSION state.
+    compression_detected = market_state == "RANGE_COMPRESSION"
+
     return {
         "market_state": market_state,
         "structural_risk": structural_risk,
@@ -2905,6 +3031,7 @@ def _build_market_context(asset: CanonicalAsset) -> dict[str, Any]:
             "conflict_tfs": conflict_tfs,
         },
         "structure_events_summary": events_summary,
+        "counter_trend_classification": counter_trend_classification,
         "momentum_context": {
             "rsi_h4_status": rsi_h4_status,
             "rsi_h4_value": rsi_h4_value,
@@ -2920,6 +3047,8 @@ def _build_market_context(asset: CanonicalAsset) -> dict[str, Any]:
                     "structural_watch", "reversal_candidate"
                 )
             ),
+            "weakening_trend": weakening_trend,
+            "compression_detected": compression_detected,
         },
         "confidence_drivers": confidence_drivers,
         "structural_risk_drivers": structural_risk_drivers,
