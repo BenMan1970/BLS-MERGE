@@ -1,4 +1,3 @@
-```python
 # -*- coding: utf-8 -*-
 """
 BLUESTAR MERGE v3.5.0 — Production-grade Streamlit application.
@@ -567,7 +566,6 @@ _RSI_STATUS_THRESHOLDS: Final[tuple[tuple[float, str], ...]] = (
     (20.0, "oversold"),
 )
 
-
 # ── Hiérarchie de préférence des sources de prix : live > stale > None ────
 # Utilisée par _fold_current_price pour upgrader la source lors d'une
 # collision de merge, indépendamment de l'ordre d'arrivée des groupes.
@@ -576,6 +574,7 @@ _PRICE_SOURCE_RANK: Final[dict[str | None, int]] = {
     "stale": 1,
     None: 0,
 }
+
 
 
 def _rsi_status_from_value(v: float | None) -> str | None:
@@ -2481,6 +2480,7 @@ class MergeEngine:
                 existing.add(e.signal_id)
 
     @staticmethod
+    @staticmethod
     def _fold_current_price(
         target: CanonicalAsset, source: CanonicalAsset
     ) -> None:
@@ -4131,4 +4131,141 @@ def _read_uploads(uploads: list[Any]) -> tuple[list[FileEntry], list[str]]:
             if err:
                 errors.append(err)
             continue
-        name = getattr(f, "name",
+        name = getattr(f, "name", "?")
+        size = len(data)
+        if size == 0:
+            errors.append(f"`{name}`: fichier vide ignoré")
+            continue
+        if size > MAX_FILE_SIZE_BYTES:
+            errors.append(
+                f"`{name}`: fichier trop volumineux "
+                f"({size} > {MAX_FILE_SIZE_BYTES} octets), ignoré"
+            )
+            continue
+        if total_size + size > MAX_TOTAL_SIZE_BYTES:
+            errors.append(
+                f"`{name}`: dépasserait la limite globale "
+                f"({MAX_TOTAL_SIZE_BYTES} octets), ignoré"
+            )
+            continue
+        total_size += size
+        files.append(_make_file_entry(name, data))
+    return files, errors
+
+
+def _render_sidebar() -> None:
+    with st.sidebar:
+        st.markdown("### ⚙️ Pipeline")
+        st.caption("Adapters actifs:")
+        st.markdown(
+            "- `gps` · MTF consensus\n"
+            "- `rsi` · flat & nested (7-level v9.0 scale)\n"
+            "- `sr` · zones + price context\n"
+            "- `choch` · structure events\n"
+            "- `heuristic` · fuzzy fallback"
+        )
+        st.markdown("### 🧮 Pré-calculs v3.4")
+        st.markdown(
+            "- ATR cascade (`h4 → h1×1.8 → d1×0.25 → synth`)\n"
+            "- `nearest_aligned_zone` (réelles prioritaires)\n"
+            "- `hot_zone_primary` (avec pivots UNKNOWN)\n"
+            "- `sig_fresh_aligned`, `bb_mult`, `sl_distance_*`\n"
+            "- `conviction_cap` selon source ATR"
+        )
+        fuzz_state = "✅ natif" if _HAS_RAPIDFUZZ else "⚠️ fallback Python"
+        st.caption(f"RapidFuzz: {fuzz_state}")
+        st.caption(f"Schema: `v{SCHEMA_VERSION}`")
+        st.caption(
+            f"Limits: {MAX_FILES} fichiers · "
+            f"{MAX_FILE_SIZE_BYTES // (1024 * 1024)} MB/fichier · "
+            f"{MAX_ASSETS} actifs"
+        )
+        if st.button("🧹 Vider le cache", use_container_width=True):
+            st.cache_data.clear()
+            st.cache_resource.clear()
+            st.success("Cache vidé. Rerun…")
+            st.rerun()
+
+
+def _render_results(result: dict[str, Any]) -> None:
+    parse_errors = result.get("parse_errors") or []
+    if parse_errors:
+        st.error(
+            "Fichiers JSON invalides :\n"
+            + "\n".join(f"- {e}" for e in parse_errors)
+        )
+    output = result.get("output")
+    diagnostics = result.get("diagnostics") or []
+    if output is None:
+        st.error("Pipeline en erreur — aucun résultat exploitable.")
+        _render_diagnostics(diagnostics)
+        return
+    meta = output.get("meta") or {}
+    hot = output.get("hot_zones") or []
+    _render_metrics(meta, len(hot))
+    st.divider()
+    _render_signals(output.get("signals") or [])
+    _render_top_consensus(output.get("top_consensus") or {})
+    _render_hot_zones(hot)
+    _render_correlations(output.get("correlation_groups") or {})
+    _render_asset_browser(output.get("assets") or {})
+    _render_diagnostics(diagnostics)
+    st.divider()
+    _render_export(output)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# ENTRY POINT
+# ════════════════════════════════════════════════════════════════════════════
+def main() -> None:
+    st.set_page_config(
+        page_title=f"BLUESTAR MERGE v{SCHEMA_VERSION}",
+        page_icon="🔷",
+        layout="wide",
+        initial_sidebar_state="collapsed",
+    )
+    _render_header()
+    _render_sidebar()
+    uploads = st.file_uploader(
+        "Déposez vos scanners JSON (détection automatique)",
+        type=["json"],
+        accept_multiple_files=True,
+    )
+    if not uploads:
+        st.info("⬆️ Déposez 1 à N fichiers JSON pour démarrer.")
+        return
+
+    entries, read_errors = _read_uploads(uploads)
+    for err in read_errors:
+        st.warning(err)
+    if not entries:
+        st.error("Aucun fichier lisible.")
+        return
+
+    run_btn = st.button(
+        "🚀 Exécuter le pipeline",
+        type="primary",
+        use_container_width=True,
+    )
+    if not run_btn:
+        st.caption(f"{len(entries)} fichier(s) prêt(s).")
+        return
+
+    fingerprint = _files_fingerprint(entries)
+    entries_tuple = tuple(entries)
+    with st.spinner("Pipeline en cours…"):
+        result, diag = _safe_call(
+            "ui.run", "ui_pipeline_crash",
+            lambda fp=fingerprint, e=entries_tuple: run_pipeline_cached(fp, e),
+            None,
+            severity=Severity.CRITICAL,
+        )
+    if result is None:
+        msg = diag.message if diag else "unknown"
+        st.error(f"Erreur fatale du pipeline: {msg}")
+        return
+    _render_results(result)
+
+
+if __name__ == "__main__":
+    main()
