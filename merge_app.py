@@ -187,7 +187,12 @@ MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
 MAX_TP_ZONES: Final[int] = 3
 
-SCHEMA_VERSION: Final[str] = "3.5.0"
+# AUDIT FIX B9: SCHEMA_VERSION was frozen at "3.5.0" while the module changelog
+# documents v3.5.1 (counter_trend_classification) and v3.5.2 (rsi_gradient,
+# market_context full payload) — both features are present in this file.
+# Bumping to "3.5.2" corrects the traceability of the meta.version JSON field.
+# Downstream consumers that hard-match "3.5.0" must be updated accordingly.
+SCHEMA_VERSION: Final[str] = "3.5.2"
 
 # ── MERGE-2: HTF alignment thresholds (configurable via these constants) ──
 # Timeframes considered "high timeframe" for bias alignment.
@@ -291,20 +296,24 @@ def _safe_call(
     try:
         return fn(), None
     except Exception as exc:
-        tb_lines = traceback.format_exc(limit=4).splitlines()
+        # AUDIT FIX A3: traceback.format_exc() was unconditionally called on every
+        # caught exception.  On high-volume ingestion of malformed payloads this
+        # generates N full stack-trace strings in tight succession, wasting CPU.
+        # The trace is a debug aid, not business data: generate it only when the
+        # logger is actually set to DEBUG so production paths pay zero overhead.
         _LOG.warning(
             "safe_call boundary: %s in %s/%s: %s",
             type(exc).__name__, stage, code, exc,
         )
+        context_data: dict[str, Any] = {"exception_type": type(exc).__name__}
+        if _LOG.isEnabledFor(logging.DEBUG):
+            context_data["trace_tail"] = traceback.format_exc(limit=4).splitlines()[-4:]
         diag = Diagnostic(
             stage=stage,
             severity=severity,
             code=code,
             message=f"{type(exc).__name__}: {exc}",
-            context={
-                "exception_type": type(exc).__name__,
-                "trace_tail": tb_lines[-4:],
-            },
+            context=context_data,
         )
         return default, diag
 
@@ -499,6 +508,29 @@ def safe_str(value: Any, *, max_len: int = 256) -> str:
     if value is None:
         return ""
     return str(value)[:max_len]
+
+
+def _coerce_bool(value: Any, default: bool = False) -> bool:
+    """Safely coerce scanner-emitted values to bool.
+
+    AUDIT FIX B5: Python's built-in bool() treats any non-empty string as True,
+    so bool("false") == True.  Scanners may emit JSON-serialised strings such as
+    "false", "no", "0" when their serialiser converts booleans to strings.  This
+    helper handles those cases explicitly so divergence flags are never wrongly
+    activated, which would incorrectly amplify reversal risk in market_context.
+
+    Behaviour for well-typed inputs is identical to bool():
+      - bool/None/int/float → unchanged (no regression for current scanner output)
+      - "false"/"no"/"0"/"none"/"" → False  (new safe path for string payloads)
+      - any other non-empty string  → True
+    """
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return value.strip().lower() not in ("false", "no", "0", "none", "")
+    return bool(value)
 
 
 def _parse_iso_datetime(raw: Any) -> datetime | None:
@@ -1244,7 +1276,7 @@ def _extract_nested_rsi(tfs: dict[str, Any]) -> list[RSIReading]:
         )
         confidence = safe_float(div_obj.get("confidence_score"))
         kind = safe_str(div_obj.get("kind") or div_obj.get("div_kind"), max_len=16) or None
-        confirmed = bool(div_obj.get("confirmed", False))
+        confirmed = _coerce_bool(div_obj.get("confirmed", False))  # AUDIT FIX B5
         # Normaliser la divergence : si div_raw est un dict (champ "divergence"
         # était le sous-objet), on extrait le label textuel depuis div_obj.
         if isinstance(div_raw, dict):
@@ -2531,6 +2563,13 @@ _MC_SR_NEAR_PCT: Final[float] = 2.0
 # RSI divergence TFs considered "higher-timeframe" for risk amplification.
 _MC_DIV_HTF: Final[frozenset[str]] = frozenset({"D1", "W1"})
 
+# AUDIT FIX C3: _MC_RSI_GRADIENT_THRESHOLD was defined as a local variable inside
+# _mc_divergence_context(), making it invisible to linters and inconsistent with
+# every other _MC_* constant defined at module scope.  Hoisting it here makes the
+# threshold discoverable, configurable, and consistent with naming conventions.
+# Semantic value is unchanged (3.0 RSI points, same as the local definition).
+_MC_RSI_GRADIENT_THRESHOLD: Final[float] = 3.0
+
 
 def _mc_classify_structure_events(
     events: list[StructureEvent],
@@ -2638,7 +2677,7 @@ def _mc_divergence_context(rsi_by_tf: dict[str, dict[str, Any]]) -> dict[str, An
     # Threshold of 3 RSI points filters noise while remaining sensitive to
     # meaningful short-term vs medium-term RSI divergence.
     # Values: "rising" | "falling" | "neutral" | "unknown"
-    _MC_RSI_GRADIENT_THRESHOLD: float = 3.0
+    # AUDIT FIX C3: threshold is now the module-level constant _MC_RSI_GRADIENT_THRESHOLD.
     h1_val = safe_float((rsi_by_tf.get("H1") or {}).get("value"))
     h4_val = safe_float((rsi_by_tf.get("H4") or {}).get("value"))
     if h1_val is not None and h4_val is not None:
@@ -3851,16 +3890,20 @@ def _render_header() -> None:
     )
 
 
-def _render_metrics(meta: dict[str, Any], hot_count: int) -> None:
+def _render_metrics(meta: dict[str, Any], hot_count: int, is_cached: bool = False) -> None:
+    # AUDIT FIX C5: elapsed_ms is computed once at pipeline execution time and
+    # stored in the cached result.  On a cache hit the displayed value is the
+    # duration of the original run, not the current request.  The is_cached flag
+    # lets the UI communicate this clearly so operators are not misled.
+    latency_label = "Latence (cached)" if is_cached else "Latence"
+    latency_value = f"{safe_float(meta.get('elapsed_ms')) or 0.0:.0f} ms"
     cols = st.columns(6)
     cols[0].metric("Scanners détectés", len(meta.get("scanners_detected", [])))
     cols[1].metric("Inconnus", safe_int(meta.get("scanners_unknown")))
     cols[2].metric("Actifs", safe_int(meta.get("assets_count")))
     cols[3].metric("Signaux", safe_int(meta.get("signals_count")))
     cols[4].metric("Zones chaudes", hot_count)
-    cols[5].metric(
-        "Latence", f"{safe_float(meta.get('elapsed_ms')) or 0.0:.0f} ms"
-    )
+    cols[5].metric(latency_label, latency_value)
 
 
 def _zone_text(nz: dict[str, Any] | None) -> str:
@@ -3954,7 +3997,7 @@ def _render_top_consensus(top: dict[str, Any]) -> None:
     bear = top.get("top_bearish") or []
     if not bull and not bear:
         return
-    st.subheader("🏆 Top consensus MTF (≥85%)")
+    st.subheader("🏆 Top consensus MTF (Bull ≥85% · Bear ≥50%)")  # AUDIT FIX B10: reflect actual bear threshold (_TOP_CONSENSUS_MIN_PCT_BEAR = 50)
     col1, col2 = st.columns(2)
     with col1:
         _render_consensus_column("🟢 Bullish", bull)
@@ -4191,7 +4234,7 @@ def _render_sidebar() -> None:
             st.rerun()
 
 
-def _render_results(result: dict[str, Any]) -> None:
+def _render_results(result: dict[str, Any], is_cached: bool = False) -> None:  # AUDIT FIX C5
     parse_errors = result.get("parse_errors") or []
     if parse_errors:
         st.error(
@@ -4206,7 +4249,7 @@ def _render_results(result: dict[str, Any]) -> None:
         return
     meta = output.get("meta") or {}
     hot = output.get("hot_zones") or []
-    _render_metrics(meta, len(hot))
+    _render_metrics(meta, len(hot), is_cached=is_cached)  # AUDIT FIX C5
     st.divider()
     _render_signals(output.get("signals") or [])
     _render_top_consensus(output.get("top_consensus") or {})
@@ -4257,6 +4300,11 @@ def main() -> None:
 
     fingerprint = _files_fingerprint(entries)
     entries_tuple = tuple(entries)
+    # AUDIT FIX C5: measure wall time around the cached call.  A Streamlit cache
+    # hit returns a deep-copied dict in microseconds; an actual pipeline run takes
+    # tens-to-hundreds of milliseconds.  We use the ratio between UI elapsed time
+    # and the stored elapsed_ms to detect cache hits and label the metric correctly.
+    _t_ui_start = time.perf_counter()
     with st.spinner("Pipeline en cours…"):
         result, diag = _safe_call(
             "ui.run", "ui_pipeline_crash",
@@ -4264,11 +4312,25 @@ def main() -> None:
             None,
             severity=Severity.CRITICAL,
         )
+    _ui_wall_ms = (time.perf_counter() - _t_ui_start) * 1000.0
+    # Heuristic: if UI elapsed < 10% of stored pipeline time (and < 50ms),
+    # the result was served from cache.  Worst case: we mislabel a very fast
+    # fresh run — the consequence is cosmetic only (a label).
+    _pipeline_ms = 0.0
+    if result and isinstance(result.get("output"), dict):
+        _pipeline_ms = float(
+            (result["output"].get("meta") or {}).get("elapsed_ms") or 0.0
+        )
+    _is_cached = (
+        result is not None
+        and _pipeline_ms > 0.0
+        and _ui_wall_ms < max(50.0, _pipeline_ms * 0.1)
+    )  # AUDIT FIX C5
     if result is None:
         msg = diag.message if diag else "unknown"
         st.error(f"Erreur fatale du pipeline: {msg}")
         return
-    _render_results(result)
+    _render_results(result, is_cached=_is_cached)  # AUDIT FIX C5
 
 
 if __name__ == "__main__":
