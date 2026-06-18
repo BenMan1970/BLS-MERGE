@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-BLUESTAR MERGE v3.5.0 — Production-grade Streamlit application.
+BLUESTAR MERGE v3.5.2 — Production-grade Streamlit application.
 Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
 heuristic fallback, full pipeline diagnostics, and hardened against malformed
 input, DoS, and partial failures.
+
+v3.5.2 — Lint fix (no behaviour change):
+    Removed redundant @staticmethod decorator on _fold_current_price()
+    (double @staticmethod is a no-op in Python ≥ 3.10 but is misleading).
+    Zero regression: AST-verified, no logic modified.
 
 v3.5.1 — Market Context Layer — schema completion (additive, zero regression):
     Completes the market_context schema introduced in v3.5.0 with 5 fields
@@ -2479,7 +2484,6 @@ class MergeEngine:
                 target.structure_events.append(e)
                 existing.add(e.signal_id)
 
-    @staticmethod
     @staticmethod
     def _fold_current_price(
         target: CanonicalAsset, source: CanonicalAsset
