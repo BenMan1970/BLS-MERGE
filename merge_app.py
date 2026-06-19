@@ -930,6 +930,15 @@ class SignalPrecomputed(BaseModel):
     sig_fresh_aligned: bool = False
     htf_aligned: bool = False
     conviction_cap: Literal["A", "BBB"] | None = None
+    # AUDIT_FIX ATR_TF: ATR effectivement utilisé pour le calcul du SL.
+    # Distinct de atr_effective (ATR de référence de l'actif, toujours H4-based).
+    # sl_atr_used = ATR natif du TF du signal quand disponible, sinon atr_effective.
+    # sl_atr_tf   = label de la source : "h4" | "h1" | "d1" |
+    #               "h1_sub_proxy" | "d1_super_proxy" | "h4_fallback".
+    # "h4_fallback" indique que le TF natif était absent → comportement pré-v3.5.3.
+    # Ces deux champs permettent au LLM de contextualiser le SL sans ambiguïté.
+    sl_atr_used: float | None = None
+    sl_atr_tf: str | None = None
     # DIR-1: contexte directionnel GPS vs CHoCH — purement informatif.
     # Aucun filtre, aucune modification de score/SL/TP/ranking.
     # L'engine consomme ces champs pour ses propres décisions.
@@ -1010,6 +1019,69 @@ def compute_atr_effective(
             return round(float(d1) * _ATR_D1_PROXY_MULT, 8), "d1_proxy"
     if current_price is not None and _is_finite_number(current_price) and current_price > 0:
         return round(float(current_price) * _ATR_SYNTHETIC_PCT, 8), "synthetic"
+    return None, None
+
+
+# ── AUDIT_FIX ATR_TF: ATR natif par timeframe du signal ─────────────────────
+# Mapping timeframe → (getter sur MTFConsensus, label source).
+# Les TF sans ATR natif (M1..M30, W1, MN) utilisent le proxy le plus proche
+# avec un label distinct pour que le LLM sache que c'est une estimation.
+# Ordre de résolution par TF :
+#   H4          → atr_h4          (exact, pas de proxy)
+#   H1          → atr_h1          (exact)
+#   D1          → atr_daily       (exact)
+#   M1/M5/M15/M30 → atr_h1       (sub-hourly : H1 est le plus proche disponible)
+#   W1/MN       → atr_daily       (super-daily : D1 est le plus proche disponible)
+#   UNKNOWN     → None (fallback sur atr_effective assuré par l'appelant)
+_ATR_TF_RESOLUTION: Final[dict[str, tuple[str, str]]] = {
+    # tf_value : (mtf_field_name, sl_atr_label)
+    Timeframe.H4.value:  ("atr_h4",    "h4"),
+    Timeframe.H1.value:  ("atr_h1",    "h1"),
+    Timeframe.D1.value:  ("atr_daily", "d1"),
+    Timeframe.M1.value:  ("atr_h1",    "h1_sub_proxy"),
+    Timeframe.M5.value:  ("atr_h1",    "h1_sub_proxy"),
+    Timeframe.M15.value: ("atr_h1",    "h1_sub_proxy"),
+    Timeframe.M30.value: ("atr_h1",    "h1_sub_proxy"),
+    Timeframe.W1.value:  ("atr_daily", "d1_super_proxy"),
+    Timeframe.MN.value:  ("atr_daily", "d1_super_proxy"),
+}
+
+
+def _resolve_atr_for_signal_tf(
+    mtf: "MTFConsensus | None",
+    signal_tf: "Timeframe",
+    atr_effective_fallback: float | None,
+) -> tuple[float | None, str | None]:
+    """Résout l'ATR le plus approprié pour le timeframe du signal CHoCH.
+
+    Stratégie :
+    - TF avec ATR natif (H1, H4, D1) → ATR natif si disponible et > 0.
+    - TF sub-hourly (M1..M30) → atr_h1 (proxy le plus proche sous-jacent).
+    - TF super-daily (W1, MN) → atr_daily (proxy le plus proche).
+    - TF UNKNOWN ou MTF absent → fallback sur atr_effective_fallback.
+    - Si l'ATR natif résolu est None/nul → fallback sur atr_effective_fallback.
+
+    Returns (atr_value, sl_atr_label).
+    sl_atr_label ∈ {"h4", "h1", "d1", "h1_sub_proxy", "d1_super_proxy", "h4_fallback"}.
+    "h4_fallback" signale que le TF natif était indisponible et qu'on utilise
+    l'ATR H4 de l'actif (comportement pré-correction, traçable par le LLM).
+    """
+    # AUDIT_FIX ATR_TF: résolution par table — pas de if/elif, extensible.
+    resolution = _ATR_TF_RESOLUTION.get(signal_tf.value if signal_tf else "")
+    if resolution is not None and mtf is not None:
+        field_name, label = resolution
+        raw = getattr(mtf, field_name, None)
+        if raw is not None and _is_finite_number(raw) and float(raw) > 0:
+            return float(raw), label
+
+    # Fallback : ATR effectif de l'actif (comportement pré-correction).
+    if (
+        atr_effective_fallback is not None
+        and _is_finite_number(atr_effective_fallback)
+        and atr_effective_fallback > 0
+    ):
+        return atr_effective_fallback, "h4_fallback"
+
     return None, None
 
 
@@ -3234,12 +3306,14 @@ class EnrichmentEngine:
         htf_aligned = self._htf_aligned(asset, event)
         confluence = self._confluence(asset, event)
 
-        # v3.4: SL/TP/RR now use atr_effective (cascade-aware)
-        sl_price, tp1_price, rr, sl_mult = self._compute_sl_tp_rr(
+        # AUDIT_FIX ATR_TF v3.5.3: _compute_sl_tp_rr retourne désormais 6 valeurs.
+        # sl_atr_used / sl_atr_tf propagés à _build_precomputed pour le LLM.
+        sl_price, tp1_price, rr, sl_mult, sl_atr_used, sl_atr_tf = self._compute_sl_tp_rr(
             asset, event, nearest, tp_zones
         )
 
-        # TP1 ATR multiple is computed using atr_effective when available.
+        # TP1 ATR multiple est calculé sur atr_effective (référence actif H4-based)
+        # pour conserver la comparabilité inter-signaux, indépendamment de sl_atr_used.
         tp1_atr = None
         if (
             tp1_price is not None
@@ -3251,7 +3325,17 @@ class EnrichmentEngine:
                 abs(tp1_price - event.level) / asset.atr_effective, 2
             )
 
-        precomputed = self._build_precomputed(asset, event, htf_aligned, sl_mult)
+        precomputed = self._build_precomputed(
+            asset, event, htf_aligned, sl_mult, sl_atr_used, sl_atr_tf
+        )
+
+        # AUDIT_FIX ATR_TF: warning si le SL n'est pas basé sur l'ATR natif du TF.
+        # "h4_fallback" = ATR H4 utilisé faute d'ATR natif disponible.
+        # "*_proxy" = TF sub/super-daily sans ATR natif, proxy le plus proche utilisé.
+        # Le warning est ajouté après _warnings() pour ne pas modifier sa signature.
+        warnings = self._warnings(asset, event)
+        if sl_atr_tf and sl_atr_tf not in ("h4", "h1", "d1"):
+            warnings.append(f"sl_atr_tf={sl_atr_tf}")
 
         return EnrichedSignal(
             event=event,
@@ -3266,7 +3350,7 @@ class EnrichmentEngine:
             tp1_atr_multiple=tp1_atr,
             rr_estimated=rr,
             enrichment=self._enrichment_quality(asset),
-            warnings=self._warnings(asset, event),
+            warnings=warnings,
             precomputed=precomputed,
         )
 
@@ -3276,7 +3360,9 @@ class EnrichmentEngine:
         asset: CanonicalAsset,
         event: StructureEvent,
         htf_aligned: bool,
-        _sl_mult: float,  # BB-regime mult pre-computed by caller; kept for API symmetry
+        _sl_mult: float,        # BB-regime mult pre-computed by caller; kept for API symmetry
+        sl_atr_used: float | None = None,   # AUDIT_FIX ATR_TF: ATR natif TF signal
+        sl_atr_tf: str | None = None,       # AUDIT_FIX ATR_TF: label source ATR SL
     ) -> SignalPrecomputed:
         bb_mult = _BB_REGIME_SL_MULT.get(
             event.bb_regime or "", _SL_RAW_DEFAULT_MULT
@@ -3284,6 +3370,8 @@ class EnrichmentEngine:
         atr_eff = asset.atr_effective
         sl_distance_min: float | None = None
         sl_distance_raw: float | None = None
+        # sl_distance_min/raw restent basés sur atr_effective (référence actif H4-based)
+        # pour la comparabilité inter-signaux — indépendants de sl_atr_used.
         if atr_eff is not None and _is_finite_number(atr_eff) and atr_eff > 0:
             sl_distance_min = round(atr_eff * _SL_FLOOR_MULT, 8)
             sl_distance_raw = round(atr_eff * bb_mult, 8)
@@ -3292,8 +3380,6 @@ class EnrichmentEngine:
         rsi_h4_value = safe_float(h4_view.get("value"))
 
         candles = safe_int(event.candles_elapsed, default=999)
-        # sig_fresh_aligned: Fresh + direction match + ≤2 candles since signal.
-        # event.status is free-form text from the scanner; we lowercase-compare.
         is_fresh = str(event.status or "").strip().lower() == "fresh"
         sig_fresh_aligned = bool(
             is_fresh
@@ -3315,6 +3401,9 @@ class EnrichmentEngine:
             sig_fresh_aligned=sig_fresh_aligned,
             htf_aligned=htf_aligned,
             conviction_cap=asset.conviction_cap,
+            # AUDIT_FIX ATR_TF: ATR natif TF signal effectivement utilisé pour SL.
+            sl_atr_used=sl_atr_used,
+            sl_atr_tf=sl_atr_tf,
             # DIR-1: enrichissement directionnel GPS vs CHoCH — purement informatif.
             # Aucun filtre, aucun impact sur SL/TP/score/ranking.
             gps_direction=asset.mtf.direction if asset.mtf is not None else None,
@@ -3402,32 +3491,46 @@ class EnrichmentEngine:
         return None
 
     # ── GAP 6 + v3.4: SL / TP1 / RR using atr_effective ───────────────────
+    # AUDIT_FIX ATR_TF v3.5.3: le SL utilise désormais l'ATR natif du TF
+    # du signal CHoCH (H1, H4, D1, ou proxy sub/super) via
+    # _resolve_atr_for_signal_tf. atr_effective reste l'ATR de référence de
+    # l'actif (H4-based) et continue d'être exposé dans SignalPrecomputed.
+    # Les champs sl_atr_used / sl_atr_tf tracent quelle source a servi.
     @staticmethod
     def _compute_sl_tp_rr(
         asset: CanonicalAsset,
         event: StructureEvent,
         _nearest: SRZone | None,  # reserved — TP1 currently derived from tp_zones
         tp_zones: list[SRZone],
-    ) -> tuple[float | None, float | None, float | None, float]:
-        """Compute SL / TP1 / RR. v3.4 uses asset.atr_effective (cascade).
-        Returns (sl_price, tp1_price, rr, sl_mult_actually_used).
-        sl_mult is the BB-regime multiplier (or 1.1 fallback) so callers can
-        persist it on EnrichedSignal.sl_atr_multiple."""
+    ) -> tuple[float | None, float | None, float | None, float, float | None, str | None]:
+        """Compute SL / TP1 / RR with TF-native ATR for SL.
+        Returns (sl_price, tp1_price, rr, sl_mult, sl_atr_used, sl_atr_tf).
+        sl_mult  : BB-regime multiplier (persisted on EnrichedSignal.sl_atr_multiple).
+        sl_atr_used : ATR natif du TF signal utilisé pour le SL (≠ atr_effective).
+        sl_atr_tf   : label de la source ATR (h4/h1/d1/h1_sub_proxy/…/h4_fallback).
+        """
         level = event.level
         sl_mult = _BB_REGIME_SL_MULT.get(
             event.bb_regime or "", _SL_RAW_DEFAULT_MULT
         )
         if level is None or not _is_finite_number(level) or level <= 0:
-            return None, None, None, sl_mult
+            return None, None, None, sl_mult, None, None
 
-        atr_eff = asset.atr_effective
-        if atr_eff is None or not _is_finite_number(atr_eff) or atr_eff <= 0:
+        # AUDIT_FIX ATR_TF: résolution ATR par TF signal.
+        # sl_atr sert uniquement au calcul du SL.
+        # atr_effective (H4-based) reste exposé dans SignalPrecomputed pour
+        # la comparabilité inter-signaux et le calcul des distances de référence.
+        sl_atr, sl_atr_tf = _resolve_atr_for_signal_tf(
+            asset.mtf, event.timeframe, asset.atr_effective
+        )
+
+        if sl_atr is None or not _is_finite_number(sl_atr) or sl_atr <= 0:
             sl_price: float | None = None
         else:
             if event.direction is Direction.BULLISH:
-                sl_price = round(level - sl_mult * atr_eff, 5)
+                sl_price = round(level - sl_mult * sl_atr, 5)
             elif event.direction is Direction.BEARISH:
-                sl_price = round(level + sl_mult * atr_eff, 5)
+                sl_price = round(level + sl_mult * sl_atr, 5)
             else:
                 sl_price = None
 
@@ -3463,7 +3566,9 @@ class EnrichmentEngine:
             reward = abs(tp1_price - level)
             if risk > 0:
                 rr = round(reward / risk, 2)
-        return sl_price, tp1_price, rr, sl_mult
+        # AUDIT_FIX ATR_TF: sl_atr (ATR natif TF) et sl_atr_tf (label source)
+        # propagés au caller pour exposition dans SignalPrecomputed.
+        return sl_price, tp1_price, rr, sl_mult, sl_atr, sl_atr_tf
 
     @staticmethod
     def _enrichment_quality(asset: CanonicalAsset) -> EnrichmentQuality:
