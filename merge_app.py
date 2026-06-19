@@ -643,7 +643,14 @@ _ATR_D1_PROXY_MULT: Final[float] = 0.25
 _ATR_SYNTHETIC_PCT: Final[float] = 0.005
 # SL floor distance multiplier (v9.0 §8.2).
 _SL_FLOOR_MULT: Final[float] = 0.8
-# SL raw distance multiplier (default = Normal regime, v9.0 §8.2).
+# AUDIT_FIX SL_DOC: Le commentaire précédent disait "default = Normal regime"
+# mais Normal vaut 1.5 (voir _BB_REGIME_SL_MULT). La valeur 1.1 est délibérément
+# plus conservative que Normal pour protéger les signaux sans bb_regime renseigné
+# (edge case : source CHoCH ne fournit pas le champ bb_regime).
+# Libellé corrigé pour refléter la valeur réelle et son intention.
+# SL raw distance multiplier — fallback conservateur (bb_regime absent), v9.0 §8.2.
+# Intentionnellement inférieur à Normal (1.5) pour éviter des SL trop larges sur
+# des signaux de qualité incertaine. Ne pas aligner sur 1.5 sans test de non-régression.
 _SL_RAW_DEFAULT_MULT: Final[float] = 1.1
 
 # BB-regime → SL multiplier (v9.0 §8.2).
@@ -769,7 +776,15 @@ class MTFConsensus(BaseModel):
     @field_validator("pct", mode="before")
     @classmethod
     def _clamp_pct(cls, v: Any) -> int:
-        return max(0, min(100, safe_int(v, default=0)))
+        # AUDIT_FIX F21: safe_int() appelle int(float), ce qui tronque vers zéro.
+        # Ex: safe_int(89.7) == 89 au lieu de 90. Pour un pourcentage de consensus MTF,
+        # la troncature peut faire basculer un actif de part et d'autre d'un seuil
+        # de conviction (ex: 70% threshold) sur une valeur de 69.7%.
+        # Correction: arrondi standard (round) avant conversion int.
+        f = safe_float(v)
+        if f is None:
+            return 0
+        return max(0, min(100, int(round(f))))
 
     @field_validator("nc", mode="before")
     @classmethod
@@ -961,9 +976,14 @@ class MergeOutput(BaseModel):
     assets: dict[str, CanonicalAsset]
     signals: list[EnrichedSignal]
     correlation_groups: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
-    hot_zones: list[dict[str, Any]] = Field(default_factory=dict)
+    # AUDIT_FIX F2: hot_zones est typé list[...] mais utilisait default_factory=dict.
+    # dict() produit {} qui viole le type list lors d'une instanciation directe sans argument.
+    # En flux nominal le pipeline passe toujours une valeur explicite (jamais déclenché),
+    # mais c'est un défaut Pydantic réel exploitable hors pipeline. Correction: default_factory=list.
+    hot_zones: list[dict[str, Any]] = Field(default_factory=list)
     top_consensus: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
-    diagnostics: list[dict[str, Any]] = Field(default_factory=dict)
+    # AUDIT_FIX F2: même correction sur diagnostics (list typé avec default_factory=dict).
+    diagnostics: list[dict[str, Any]] = Field(default_factory=list)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -1040,12 +1060,20 @@ def _select_nearest_aligned_for_asset(
     Mirrors the enrichment-stage selector but operates at asset level so the
     LLM sees a pre-computed `asset.nearest_aligned_zone`.
     v3.4.1: inclut les zones UNKNOWN dont la position relative au prix
-    est cohérente avec la direction (aligné avec _select_hot_zone_primary)."""
+    est cohérente avec la direction (aligné avec _select_hot_zone_primary).
+    AUDIT_FIX F1: applique le seuil _ALIGNED_ZONE_MAX_DIST_PCT (5%) absent
+    ici mais présent dans _split_zones_by_alignment. Sans ce seuil,
+    asset.nearest_aligned_zone pouvait référencer une zone à >5% du prix
+    tandis que signal.nearest_aligned_zone utilisait le seuil — incohérence
+    observable par le LLM sur le même actif."""
     if direction is Direction.NEUTRAL:
         return None
     wanted = "BUY" if direction is Direction.BULLISH else "SELL"
 
     def _is_aligned(z: SRZone) -> bool:
+        # AUDIT_FIX F1: filtre de distance aligné sur _split_zones_by_alignment.
+        if z.distance_pct > _ALIGNED_ZONE_MAX_DIST_PCT:
+            return False
         if z.side == wanted:
             return True
         if z.side == "UNKNOWN" and z.level > 0:
@@ -3409,7 +3437,20 @@ class EnrichmentEngine:
                 event.direction, tp_zones, asset.price_context
             )
             if raw_tp1 is not None:
-                tp1_price = round(raw_tp1, 5)
+                # AUDIT_FIX F10: garde-fou directionnel — un TP du mauvais côté
+                # du prix d'entrée produirait un RR positif mathématiquement
+                # correct mais sémantiquement absurde (TP sous l'entrée en BULLISH,
+                # au-dessus en BEARISH). Cela peut survenir si une zone est mal
+                # classée (side UNKNOWN mal inféré) ou si price_context.support/
+                # resistance_level se situe du même côté que l'entrée.
+                # Correction: valider la cohérence directionnelle avant d'assigner.
+                # Si invalide → tp1_price reste None, rr reste None. Pas de crash.
+                tp1_valid = (
+                    (event.direction is Direction.BULLISH and raw_tp1 > level)
+                    or (event.direction is Direction.BEARISH and raw_tp1 < level)
+                )
+                if tp1_valid:
+                    tp1_price = round(raw_tp1, 5)
 
         rr: float | None = None
         if (
