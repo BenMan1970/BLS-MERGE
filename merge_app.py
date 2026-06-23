@@ -2810,13 +2810,18 @@ def _mc_sr_context(
     Used to compute sr_confluence_with_counter without coupling to events_summary
     inside this function.
     """
+    # PATCH — sr_context décrit la proximité de toute zone réelle (<=2%),
+    # indépendamment de la direction MTF. Le filtre z.side == wanted_side
+    # contredisait la sémantique déclarée du champ ("nearest zone proximity")
+    # et excluait silencieusement les zones PIVOT et les zones counter-side
+    # proches — informations de contexte valides et observationnelles.
+    # wanted_side est conservé uniquement pour near_counter (sr_confluence).
     wanted_side = "BUY" if mtf_direction is Direction.BULLISH else "SELL"
     counter_side = "SELL" if mtf_direction is Direction.BULLISH else "BUY"
 
     near: list[SRZone] = [
         z for z in zones
         if z.is_real_sr()
-        and z.side == wanted_side
         and z.distance_pct <= _MC_SR_NEAR_PCT
     ]
 
