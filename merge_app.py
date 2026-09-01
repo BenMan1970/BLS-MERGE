@@ -3423,9 +3423,18 @@ class EnrichmentEngine:
                 if asset.mtf is not None and event.direction is not Direction.NEUTRAL
                 else None
             ),
+            # AUDIT FIX D1: the previous expression was an unparenthesised
+            # chained ternary — Python evaluates `event.direction ==
+            # asset.mtf.direction` FIRST, before the `asset.mtf is not None`
+            # guard is ever checked (chained `if/else` binds to the *outer*
+            # condition, not the inner one). Result: AttributeError whenever
+            # asset.mtf is None (e.g. a CHoCH signal on a symbol absent from
+            # the GPS scanner), silently dropping the whole signal via the
+            # _safe_call boundary in _enrich_asset. Fixed by parenthesising
+            # the inner ternary so the None-guard is evaluated first, exactly
+            # like direction_aligned/counter_trend_signal above it.
             alignment_score=(
-                100 if event.direction == asset.mtf.direction
-                else 0
+                (100 if event.direction == asset.mtf.direction else 0)
                 if asset.mtf is not None and event.direction is not Direction.NEUTRAL
                 else None
             ),
