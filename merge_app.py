@@ -1,9 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-BLUESTAR MERGE v3.5.2 — Production-grade Streamlit application.
+BLUESTAR MERGE v3.5.3 — Production-grade Streamlit application.
 Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
 heuristic fallback, full pipeline diagnostics, and hardened against malformed
 input, DoS, and partial failures.
+
+v3.5.3 — Audit sémantique: régression PIVOT + couverture des sources:
+    • FIX (régression silencieuse introduite par MERGE-3): les sélecteurs
+      hot_zone_primary (l._select_hot_zone_primary),
+      nearest_aligned_zone asset (l._select_nearest_aligned_for_asset) et le
+      chemin signal (l._split_zones_by_alignment) n'admettaient que
+      BUY/SELL/UNKNOWN. Depuis MERGE-3 les pivots sont "PIVOT" et non plus
+      "UNKNOWN": hot_zone_primary est devenu nul sur 100% des assets dont les
+      seules "ZONE CHAUDE" sont des PIVOT (constaté: 0/33, 6 zones chaudes).
+      Les PIVOT/UNKNOWN sont désormais départagés par leur position relative à
+      current_price — même garde que V10.compute_entry.
+    • GPS: MTF_direction/MTF_pct (champs machine) prioritaires sur le re-parse
+      du string humain "MTF"; Tradable/Tradable_reason/Age D1_censored propagés
+      en pass-through (mtf.tradable, mtf.tradable_reason, mtf.age_d1_censored).
+    • RSI: le code de divergence "STALE" ne fond plus silencieusement dans NONE
+      — drapeau rsi_by_tf[*].div_stale préservé (le sens normalisé reste None).
+    • CHoCH: has_sweep/current_distance_pct/bb_width_pct propagés sur les events.
+    • meta.source_meta: traçabilité additive (scanner_version/rule_version/
+      schema_version/rsi_period/atr_period/generated_at par scanner + thresholds
+      RSI déclarés). Aucun effet sur les calculs existants.
+    Additif: consommateurs extra="ignore" (V10) inchangés. 3.5.2 -> 3.5.3.
 
 v3.5.2 — Lint fix (no behaviour change):
     Removed redundant @staticmethod decorator on _fold_current_price()
@@ -192,7 +213,7 @@ MAX_TP_ZONES: Final[int] = 3
 # market_context full payload) — both features are present in this file.
 # Bumping to "3.5.2" corrects the traceability of the meta.version JSON field.
 # Downstream consumers that hard-match "3.5.0" must be updated accordingly.
-SCHEMA_VERSION: Final[str] = "3.5.2"
+SCHEMA_VERSION: Final[str] = "3.5.3"
 
 # ── MERGE-2: HTF alignment thresholds (configurable via these constants) ──
 # Timeframes considered "high timeframe" for bias alignment.
@@ -677,6 +698,8 @@ class RSIReading(BaseModel):
     div_confidence_score: float | None = None  # confiance confirmation [0..1]
     div_kind: str | None = None                # "REGULAR" | "HIDDEN" | None
     div_confirmed: bool = False                # True = pivot confirmé
+    # v3.5.3: code scanner "STALE" auparavant fondu dans NONE — drapeau sauvé.
+    div_stale: bool = False
 
     @field_validator("value")
     @classmethod
@@ -755,6 +778,10 @@ class StructureEvent(BaseModel):
     # Permet de distinguer "CHoCH bearish dans trend bullish" vs inverse.
     # None si la source ne fournit pas ce champ (backward-compatible).
     choch_trend: Direction | None = None
+    # v3.5.3 AUDIT: champs CHoCH auparavant jetés (pass-through additif).
+    has_sweep: bool | None = None
+    current_distance_pct: float | None = None
+    bb_width_pct: float | None = None
 
 
 class MTFConsensus(BaseModel):
@@ -772,6 +799,11 @@ class MTFConsensus(BaseModel):
     htf: bool | None = None
     score: int | None = None
     grade: str | None = None
+    # v3.5.3 AUDIT: pass-through du verdict de tradabilité GPS (informatif;
+    # None si la source ne fournit pas le champ). N'affecte aucun calcul.
+    tradable: bool | None = None
+    tradable_reason: str | None = None
+    age_d1_censored: bool | None = None
 
     @field_validator("pct", mode="before")
     @classmethod
@@ -891,6 +923,7 @@ class CanonicalAsset(BaseModel):
                 "div_confidence_score": r.div_confidence_score,
                 "div_kind": r.div_kind,
                 "div_confirmed": r.div_confirmed,
+                "div_stale": r.div_stale,
             }
         self.rsi_by_tf = by_tf
         h4 = by_tf.get(Timeframe.H4.value)
@@ -977,6 +1010,8 @@ class MergeMeta(BaseModel):
     assets_count: int = 0
     signals_count: int = 0
     elapsed_ms: float = 0.0
+    # v3.5.3: traçabilité des sources (additif, aucun effet de calcul).
+    source_meta: dict[str, Any] = Field(default_factory=dict)
 
 
 class MergeOutput(BaseModel):
@@ -1089,8 +1124,9 @@ def _select_hot_zone_primary(
     asset: CanonicalAsset, direction: Direction
 ) -> SRZone | None:
     """Pick the most relevant 'ZONE CHAUDE' for the asset's direction.
-    Includes UNKNOWN-side pivot zones if their distance sign is coherent with
-    the direction (per v9.0 §6.2). Real SR zones are preferred over synthetic
+    Includes PIVOT/UNKNOWN zones when their level sits on the trade side of
+    current_price (per v9.0 §6.2; v3.5.3: PIVOT was silently excluded since
+    MERGE-3). Real SR zones are preferred over synthetic
     nearest zones — the latter rarely carry an 'alert' flag anyway."""
     if direction is Direction.NEUTRAL:
         return None
@@ -1101,7 +1137,7 @@ def _select_hot_zone_primary(
             return False
         if z.side == wanted:
             return True
-        if z.side == "UNKNOWN":
+        if z.side in ("UNKNOWN", "PIVOT"):  # v3.5.3: PIVOT ré-admis (fix MERGE-3)
             # Pivots: below price for bullish, above for bearish.
             # Note: distance_pct is stored absolute since v3.3.1 (P1 fix),
             # so we cannot use its sign. Fall back to the raw level.
@@ -1148,7 +1184,7 @@ def _select_nearest_aligned_for_asset(
             return False
         if z.side == wanted:
             return True
-        if z.side == "UNKNOWN" and z.level > 0:
+        if z.side in ("UNKNOWN", "PIVOT") and z.level > 0:  # v3.5.3
             cp = asset.current_price
             if cp is not None and _is_finite_number(cp) and cp > 0:
                 if direction is Direction.BULLISH:
@@ -1301,7 +1337,21 @@ class GPSAdapter(ScannerAdapter):
     def _build_mtf(
         raw: dict[str, Any], idx: int
     ) -> tuple[MTFConsensus | None, Diagnostic | None]:
+        # v3.5.3: champs machine MTF_direction/MTF_pct prioritaires sur le
+        # re-parse du string humain "MTF" (fallback string conservé).
         pct, direction = _parse_mtf_string(raw.get("MTF", ""))
+        _dir_m = raw.get("MTF_direction")
+        if isinstance(_dir_m, str) and _dir_m.strip():
+            _dl = _dir_m.strip().lower()
+            if _dl.startswith("bull"):
+                direction = Direction.BULLISH
+            elif _dl.startswith("bear"):
+                direction = Direction.BEARISH
+            elif _dl.startswith("neu"):
+                direction = Direction.NEUTRAL
+            _pm = safe_float(raw.get("MTF_pct"))
+            if _pm is not None:
+                pct = max(0, min(100, int(round(_pm))))
         biases = _extract_gps_biases(raw)
         quality_raw = raw.get("Quality")
         try:
@@ -1318,6 +1368,13 @@ class GPSAdapter(ScannerAdapter):
                 atr_h4=safe_float(raw.get("ATR H4")),
                 atr_daily=safe_float(raw.get("ATR Daily") or raw.get("ATR D1")),
                 biases=biases,
+                # v3.5.3: propagations GPS auparavant jetées
+                tradable=(None if raw.get("Tradable") is None
+                          else _coerce_bool(raw.get("Tradable"))),
+                tradable_reason=(safe_str(raw["Tradable_reason"], max_len=64)
+                                 if raw.get("Tradable_reason") else None),
+                age_d1_censored=(None if raw.get("Age D1_censored") is None
+                                 else _coerce_bool(raw.get("Age D1_censored"))),
             )
         except Exception as exc:
             return None, Diagnostic(
@@ -1377,6 +1434,13 @@ def _extract_nested_rsi(tfs: dict[str, Any]) -> list[RSIReading]:
         confidence = safe_float(div_obj.get("confidence_score"))
         kind = safe_str(div_obj.get("kind") or div_obj.get("div_kind"), max_len=16) or None
         confirmed = _coerce_bool(div_obj.get("confirmed", False))  # AUDIT FIX B5
+        # v3.5.3: préserver le statut STALE (divergence périmée) que _norm_div
+        # réduit à None, sans changer la direction normalisée.
+        _stale_probe = str(
+            div_obj.get("code")
+            or (div_raw if isinstance(div_raw, str) else "")
+        ).strip().lower()
+        stale = _stale_probe == "stale"
         # Normaliser la divergence : si div_raw est un dict (champ "divergence"
         # était le sous-objet), on extrait le label textuel depuis div_obj.
         if isinstance(div_raw, dict):
@@ -1391,6 +1455,7 @@ def _extract_nested_rsi(tfs: dict[str, Any]) -> list[RSIReading]:
             div_confidence_score=confidence,
             div_kind=kind if kind else None,
             div_confirmed=confirmed,
+            div_stale=stale,
         ))
     return readings
 
@@ -2071,6 +2136,11 @@ class CHoCHAdapter(ScannerAdapter):
                 # DIR-1: lire "trend" du scanner CHoCH (contexte directionnel)
                 choch_trend=_parse_direction_text(raw["trend"])
                 if raw.get("trend") else None,
+                # v3.5.3: sweep (chasse à stops) + mesures courantes propagés
+                has_sweep=(None if raw.get("has_sweep") is None
+                           else _coerce_bool(raw.get("has_sweep"))),
+                current_distance_pct=safe_float(raw.get("current_distance_pct")),
+                bb_width_pct=safe_float(raw.get("bb_width_pct")),
             )
         except Exception as exc:
             res.add(Diagnostic(
@@ -3243,6 +3313,8 @@ def _split_zones_by_alignment(
     opposite: list[SRZone] = []
     if direction is Direction.NEUTRAL:
         return aligned, opposite
+    cp = asset.current_price  # v3.5.3: départage positionnel PIVOT/UNKNOWN
+    _cp_ok = cp is not None and _is_finite_number(cp) and cp > 0
     for z in asset.zones:
         if z.distance_pct > _ALIGNED_ZONE_MAX_DIST_PCT:
             continue
@@ -3251,11 +3323,15 @@ def _split_zones_by_alignment(
                 aligned.append(z)
             elif z.side == "SELL":
                 opposite.append(z)
+            elif z.side in ("PIVOT", "UNKNOWN") and _cp_ok and z.level > 0:
+                (aligned if z.level <= cp else opposite).append(z)
         else:  # BEARISH
             if z.side == "SELL":
                 aligned.append(z)
             elif z.side == "BUY":
                 opposite.append(z)
+            elif z.side in ("PIVOT", "UNKNOWN") and _cp_ok and z.level > 0:
+                (aligned if z.level >= cp else opposite).append(z)
     return aligned, opposite
 
 
@@ -3700,6 +3776,29 @@ def _zone_dict(z: SRZone) -> dict[str, Any]:
     }
 
 
+def _extract_source_meta(payload: Any) -> dict[str, Any]:
+    """v3.5.3 — traçabilité: versions scanner/règle, schéma, périodes et
+    seuils RSI déclarés par la source (aucun effet sur les calculs)."""
+    sm: dict[str, Any] = {}
+    if not isinstance(payload, dict):
+        return sm
+    for k in ("scanner_version", "rule_version"):
+        v = payload.get(k)
+        if isinstance(v, (str, int, float)):
+            sm[k] = str(v)
+    pm = payload.get("meta")
+    if isinstance(pm, dict):
+        for k in ("scanner_version", "rule_version", "schema_version",
+                  "rsi_period", "atr_period", "generated_at"):
+            v = pm.get(k)
+            if isinstance(v, (str, int, float)):
+                sm[k] = str(v)
+        th = pm.get("thresholds")
+        if isinstance(th, dict):
+            sm["thresholds"] = th
+    return sm
+
+
 class MergePipeline:
     """Orchestrates: detect → adapt → merge → enrich → correlate."""
 
@@ -3724,7 +3823,7 @@ class MergePipeline:
                 "pipeline", Severity.ERROR, "no_input", "no files provided"
             ))
             return res
-        partials, scanners, unknown = self._adapt_phase(files, diags)
+        partials, scanners, unknown, source_meta = self._adapt_phase(files, diags)
         assets = self._merge_phase(partials, diags)
         signals = self._enrich_phase(assets, diags)
         groups, hot, top = self._post_phase(assets, signals)
@@ -3737,6 +3836,7 @@ class MergePipeline:
                 assets_count=len(assets),
                 signals_count=len(signals),
                 elapsed_ms=round(elapsed_ms, 2),
+                source_meta=source_meta,
             ),
             assets=assets,
             signals=signals,
@@ -3751,9 +3851,10 @@ class MergePipeline:
         self,
         files: list[IngestedFile],
         diags: list[Diagnostic],
-    ) -> tuple[list[list[CanonicalAsset]], list[str], int]:
+    ) -> tuple[list[list[CanonicalAsset]], list[str], int, dict[str, Any]]:
         partials: list[list[CanonicalAsset]] = []
         scanners_detected: list[str] = []
+        source_meta: dict[str, Any] = {}
         unknown_count = 0
         for f in files:
             name, r = self._registry.adapt(f.payload)
@@ -3763,7 +3864,12 @@ class MergePipeline:
                 continue
             scanners_detected.append(f"{f.name}:{name}")
             partials.append(r.value)
-        return partials, scanners_detected, unknown_count
+            # v3.5.3: traçabilité par scanner (additif)
+            entry = source_meta.setdefault(name, {"files": []})
+            entry["files"].append(f.name)
+            for k, v in _extract_source_meta(f.payload).items():
+                entry[k] = v
+        return partials, scanners_detected, unknown_count, source_meta
 
     def _merge_phase(
         self,
