@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-BLUESTAR MERGE v3.6.1 — Production-grade Streamlit application.
+BLUESTAR MERGE v3.6.2 — Production-grade Streamlit application.
 Moteur de fusion multi-scanners JSON (GPS · RSI · SR · CHoCH) :
 auto-détection, modèle canonique pivot, fallback heuristique, diagnostics
 complets, durci contre entrées invalides / DoS / échecs partiels.
@@ -46,7 +46,10 @@ total=4, bases HTF nommées, RANGE_COMPRESSION ≠ Undefined, seuil hot-zones
 paramétré (cap Tradable non appliqué volontairement : 33/33 false =
 prémisse d'audit fausse, décision amont GPS) ; 3.6.1 — nettoyage code
 (morts, archéologie, sérialiseur unifié), comportement strictement
-identique à 3.6.0 (JSON prouvé).
+identique à 3.6.0 (JSON prouvé) ; 3.6.2 — adaptateur GPS : enveloppe
+{"meta", "assets"} (export BLUESTAR GPS V9.2.0) acceptée, liste plate
+toujours valide ; source_meta enrichi (scanner, env, snapshot_to,
+completeness, run_tradable).
 """
 from __future__ import annotations
 
@@ -107,7 +110,7 @@ MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
 MAX_TP_ZONES: Final[int] = 3
 
-SCHEMA_VERSION: Final[str] = "3.6.1"
+SCHEMA_VERSION: Final[str] = "3.6.2"
 
 # ── HTF alignment thresholds (configurable via these constants) ──
 # Timeframes considered "high timeframe" for bias alignment.
@@ -1181,6 +1184,8 @@ class GPSAdapter(ScannerAdapter):
     priority = 10
 
     def detect(self, payload: Any) -> AdapterMatch:
+        if isinstance(payload, dict) and isinstance(payload.get("assets"), list):
+            payload = payload["assets"]
         if not isinstance(payload, list) or not payload:
             return AdapterMatch(0.0, "not non-empty list")
         sample = payload[0]
@@ -1195,6 +1200,8 @@ class GPSAdapter(ScannerAdapter):
     def adapt(self, payload: Any) -> Result[list[CanonicalAsset]]:
         out: list[CanonicalAsset] = []
         res: Result[list[CanonicalAsset]] = Result(value=out)
+        if isinstance(payload, dict) and isinstance(payload.get("assets"), list):
+            payload = payload["assets"]
         if not isinstance(payload, list):
             res.add(Diagnostic("gps", Severity.ERROR, "bad_root", "expected list"))
             return res
@@ -3761,13 +3768,22 @@ def _extract_source_meta(payload: Any) -> dict[str, Any]:
     pm = payload.get("meta")
     if isinstance(pm, dict):
         for k in ("scanner_version", "rule_version", "schema_version",
-                  "rsi_period", "atr_period", "generated_at"):
+                  "rsi_period", "atr_period", "generated_at", "scanner",
+                  "env", "account_hash", "snapshot_to"):
             v = pm.get(k)
-            if isinstance(v, (str, int, float)):
+            if isinstance(v, str):
+                sm[k] = v
+            elif isinstance(v, (int, float)) and not isinstance(v, bool):
                 sm[k] = str(v)
         th = pm.get("thresholds")
         if isinstance(th, dict):
             sm["thresholds"] = th
+        v = pm.get("completeness")
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            sm["completeness"] = float(v)
+        v = pm.get("run_tradable")
+        if isinstance(v, bool):
+            sm["run_tradable"] = v
     return sm
 
 
