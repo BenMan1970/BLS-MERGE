@@ -1,153 +1,52 @@
 # -*- coding: utf-8 -*-
 """
-BLUESTAR MERGE v3.5.3 — Production-grade Streamlit application.
-Multi-scanner JSON merge engine with auto-detection, canonical pivot model,
-heuristic fallback, full pipeline diagnostics, and hardened against malformed
-input, DoS, and partial failures.
+BLUESTAR MERGE v3.6.1 — Production-grade Streamlit application.
+Moteur de fusion multi-scanners JSON (GPS · RSI · SR · CHoCH) :
+auto-détection, modèle canonique pivot, fallback heuristique, diagnostics
+complets, durci contre entrées invalides / DoS / échecs partiels.
 
-v3.5.3 — Audit sémantique: régression PIVOT + couverture des sources:
-    • FIX (régression silencieuse introduite par MERGE-3): les sélecteurs
-      hot_zone_primary (l._select_hot_zone_primary),
-      nearest_aligned_zone asset (l._select_nearest_aligned_for_asset) et le
-      chemin signal (l._split_zones_by_alignment) n'admettaient que
-      BUY/SELL/UNKNOWN. Depuis MERGE-3 les pivots sont "PIVOT" et non plus
-      "UNKNOWN": hot_zone_primary est devenu nul sur 100% des assets dont les
-      seules "ZONE CHAUDE" sont des PIVOT (constaté: 0/33, 6 zones chaudes).
-      Les PIVOT/UNKNOWN sont désormais départagés par leur position relative à
-      current_price — même garde que V10.compute_entry.
-    • GPS: MTF_direction/MTF_pct (champs machine) prioritaires sur le re-parse
-      du string humain "MTF"; Tradable/Tradable_reason/Age D1_censored propagés
-      en pass-through (mtf.tradable, mtf.tradable_reason, mtf.age_d1_censored).
-    • RSI: le code de divergence "STALE" ne fond plus silencieusement dans NONE
-      — drapeau rsi_by_tf[*].div_stale préservé (le sens normalisé reste None).
-    • CHoCH: has_sweep/current_distance_pct/bb_width_pct propagés sur les events.
-    • meta.source_meta: traçabilité additive (scanner_version/rule_version/
-      schema_version/rsi_period/atr_period/generated_at par scanner + thresholds
-      RSI déclarés). Aucun effet sur les calculs existants.
-    Additif: consommateurs extra="ignore" (V10) inchangés. 3.5.2 -> 3.5.3.
+Contrat aval (consommateurs : ENGINE.V10.py, LLM prompt v9.0, UI)
+  • meta.version >= MIN_MERGE_SCHEMA V10 (3.4.0). Modèles V10 en
+    extra="ignore" : l'additif de champs est sûr ; renommer ou changer un
+    champ existant exige un bump + une synchro V10.
+  • V10 lit : assets (mtf, zones, rsi_by_tf, atr_effective, price_context,
+    hot_zone_primary, nearest_aligned_zone, market_context,
+    structure_events), signals, hot_zones, correlation_groups,
+    top_consensus, diagnostics. V10 RE-CALCULE son propre scoring (F1-F8,
+    SL/TP/RR) depuis les assets : confluence_total, tp1_price, rr_estimated
+    et precomputed.* ne se propagent pas chez lui — ces valeurs sont pour
+    le LLM/desk (arithmétique déterministe figée ici).
+  • Statuts RSI : échelle v9.0 à 7 niveaux (extreme_overbought |
+    overbought | grey_high | favorable | grey_low | oversold |
+    extreme_oversold).
 
-v3.5.2 — Lint fix (no behaviour change):
-    Removed redundant @staticmethod decorator on _fold_current_price()
-    (double @staticmethod is a no-op in Python ≥ 3.10 but is misleading).
-    Zero regression: AST-verified, no logic modified.
+Doctrine
+  • Fail-closed : donnée absente/invalide -> valeur neutre + diagnostic,
+    jamais d'invention ; caps jamais relevés par la merge.
+  • Adapters par priorité (gps 10, rsi 9, sr 8, choch 7, heuristic 0) ;
+    fold live > stale sur le prix ; provenance par champ.
+  • market_context est observationnel (passif) : il enrichit, ne score pas.
+  • Deux référentiels ATR coexistent, tous deux tracés : atr_effective
+    (référence actif, cascade h4 -> h1*1.8 -> d1*0.25 -> synthetic) sert
+    sl_distance_raw/min et tp1_atr_multiple ; sl_atr_used (ATR natif du TF
+    du signal — atr_native exact prioritaire, sinon proxy labelisé, sinon
+    fallback) sert le SL, avec sl_distance_effective = sl_atr_used x bb_mult.
+  • Tout signal a un TP1 : zone opposée ou price_context, sinon repli
+    level ± 2 x sl_atr (warning tp1_atr_fallback).
 
-v3.5.1 — Market Context Layer — schema completion (additive, zero regression):
-    Completes the market_context schema introduced in v3.5.0 with 5 fields
-    that were present in the architectural audit but missing from the initial
-    implementation. All additions are pure, derived from already-computed data.
-    No existing field is modified. No scoring/conviction/SL/TP impact.
+Déploiement : placer ce fichier en app.py, puis streamlit run app.py.
 
-      • New fields in market_context:
-          - counter_trend_classification : structured bloc (present, class,
-            dominant_tf, aligns_with_divergence, age_d1_modifier_applied,
-            description). Derived from events_summary + divergence_ctx.
-          - momentum_context.rsi_gradient : "rising"|"falling"|"neutral"|
-            "unknown". H1 vs H4 RSI differential (threshold 3 pts).
-          - sr_context.key_level_type     : "W1"|"D1"|None. Precision on
-            at_key_level when True.
-          - sr_context.sr_confluence_with_counter : bool. True if a counter-
-            side zone ≤ 2% exists AND counter structure events are present.
-          - transition_signals.weakening_trend    : bool. mtf_pct < 70 AND
-            no aligned Fresh AND counter present.
-          - transition_signals.compression_detected : bool. Projection of
-            market_state == RANGE_COMPRESSION.
-
-      • _mc_sr_context signature gains optional counter_present: bool = False.
-        Call sites updated. Existing behaviour preserved when False (default).
-
-      • _mc_divergence_context return dict gains rsi_gradient key.
-
-v3.5.0 — Market Context Layer (passive, additive, zero scoring impact):
-    Adds a `market_context` block to every CanonicalAsset in the merge output.
-    Computed after all existing pre-computations. Strictly read-only: no effect
-    on scoring, conviction, SL/TP, rankings, or rendering.
-
-      • CanonicalAsset gains:
-          - market_context : dict | None  (None only on internal crash)
-
-      • New pure functions (module-level, no side effects):
-          - _build_market_context()
-          - _mc_classify_structure_events()
-          - _mc_classify_market_state()
-          - _mc_build_confidence_drivers()
-          - _mc_divergence_context()
-          - _mc_sr_context()
-          - _mc_age_category()
-
-      • market_context schema:
-          - market_state        : 8-state enum (CLEAN_CONTINUATION …
-                                  REVERSAL_RISK / RANGE_COMPRESSION /
-                                  DATA_INCOMPLETE)
-          - structural_risk     : Low | Low-Moderate | Moderate |
-                                  Moderate-High | High | Critical | Undefined
-          - mtf_alignment       : HTF anchor, aligned TFs, conflict TFs
-          - structure_events_summary : aligned/counter counts, escalation
-          - momentum_context    : RSI H4 status + divergence confirmed TFs
-          - sr_context          : nearest zone proximity (≤ 2%)
-          - transition_signals  : age_d1 category, distribution_phase_risk
-          - confidence_drivers  : ordered list of explicit string drivers
-          - structural_risk_drivers : risk factors list
-
-      • ENGINE_V9 is unmodified. market_context is silently ignored by its
-        own CanonicalAsset model (extra="ignore"). Zero regression guaranteed.
-
-      • meta.version bumped to "3.5.0".
-
-v3.4.2 — Directional inference patch (fixed: current_price from asset) (S/R side fix):
-    When the scanner SR produces zones with side="UNKNOWN" (e.g. pivot zones
-    without explicit BUY/SELL signal), the merger now infers the direction
-    from the relative position of the level vs current_price:
-      • level < current_price → BUY  (Support)
-      • level > current_price → SELL (Resistance)
-      • level == current_price → UNKNOWN (zone touched, ambiguous)
-    This fixes 9+ assets that had unusable UNKNOWN zones in production.
-
-v3.4.0 — Pre-computation layer for prompt v9.0 (BLUESTAR DIRECT):
-    The LLM downstream now receives ALL deterministic arithmetic pre-computed,
-    eliminating ~40% of arithmetic ops on the model side and stabilising
-    cross-model behaviour. Specifically:
-
-      • CanonicalAsset gains:
-          - atr_effective   : float | None  (ATR cascade output)
-          - atr_source      : Literal[h4, h1_proxy, d1_proxy, synthetic]
-          - conviction_cap  : Literal[A, BBB] | None
-          - nearest_aligned_zone : SRZone | None  (real SR preferred)
-          - hot_zone_primary     : SRZone | None  (incl. UNKNOWN pivots)
-
-      • CanonicalAsset.rsi_h4_status now uses the 7-level v9.0 scale:
-            extreme_overbought | overbought | grey_high | favorable |
-            grey_low | oversold | extreme_oversold
-        (previously: 5-level). Same scale applied per-TF in rsi_by_tf.
-
-      • EnrichedSignal.precomputed gains a typed sub-model carrying:
-          - atr_effective, atr_source
-          - bb_mult            (Squeeze=1.0 / Normal=1.5 / Expansion=2.0)
-          - sl_distance_min    (= atr_effective × 0.8 — SL floor)
-          - sl_distance_raw    (= atr_effective × bb_mult)
-          - rsi_h4_value, rsi_h4_status
-          - candles_elapsed
-          - sig_fresh_aligned  (Fresh + direction match + ≤2 candles)
-
-      • SL / TP1 / RR now use atr_effective (with cascade fallback) instead of
-        the raw atr_h1, so signals on assets missing atr_h4 still get usable
-        levels with a conviction_cap flagged.
-
-      • meta.version bumped to "3.4.0".
-
-v3.3.1 fixes inherited and preserved:
-    - P0: _parse_price_context() regex fallback restored on dict["raw"]
-    - P1: synthetic nearest zones tagged "SR_nearest" + abs(distance)
-    - P2: _select_nearest_aligned_zone() prefers real SR over synthetic
-    - P3: _hot_zones() excludes synthetic/invalid zones
-
-v3.3 fixes inherited and preserved:
-    - BUG 1: htf_aligned requires BOTH D1 AND H4 aligned
-    - GAP 3: current_price promoted to CanonicalAsset level
-    - GAP 4: rsi_by_tf dict + rsi_h4_status pre-computed on CanonicalAsset
-    - GAP 6: sl_price / tp1_price / rr_estimated pre-computed on EnrichedSignal
-    - GAP 7: nearest_aligned_zone uses 5% threshold + price_context fallback
-
-Deploy: place this file as `app.py` and run `streamlit run app.py`.
+Historique (résumé) : 3.3/3.4 — précalculs, échelle v9.0, side inféré par
+position ; 3.5.0-3.5.1 — market_context (additif passif) ; 3.5.3 — correctif
+régression PIVOT, champs machine MTF, Tradable, drapeau div_stale,
+source_meta ; 3.6.0 — passe comportementale (audit OPUS) : confluence signée
++ RSI + zones filtrées, fallback TP1 ATR, ATR signal_native prioritaire,
+DivergenceKind.STALE + tier/actionable/age/raw, enrichment substance
+total=4, bases HTF nommées, RANGE_COMPRESSION ≠ Undefined, seuil hot-zones
+paramétré (cap Tradable non appliqué volontairement : 33/33 false =
+prémisse d'audit fausse, décision amont GPS) ; 3.6.1 — nettoyage code
+(morts, archéologie, sérialiseur unifié), comportement strictement
+identique à 3.6.0 (JSON prouvé).
 """
 from __future__ import annotations
 
@@ -208,20 +107,15 @@ MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
 MAX_TP_ZONES: Final[int] = 3
 
-# AUDIT FIX B9: SCHEMA_VERSION was frozen at "3.5.0" while the module changelog
-# documents v3.5.1 (counter_trend_classification) and v3.5.2 (rsi_gradient,
-# market_context full payload) — both features are present in this file.
-# Bumping to "3.5.2" corrects the traceability of the meta.version JSON field.
-# Downstream consumers that hard-match "3.5.0" must be updated accordingly.
-SCHEMA_VERSION: Final[str] = "3.5.3"
+SCHEMA_VERSION: Final[str] = "3.6.1"
 
-# ── MERGE-2: HTF alignment thresholds (configurable via these constants) ──
+# ── HTF alignment thresholds (configurable via these constants) ──
 # Timeframes considered "high timeframe" for bias alignment.
 _HTF_BIAS_TFS: Final[frozenset[str]] = frozenset({"MN", "W1", "D1"})
 # Minimum number of HTF timeframes that must agree to declare htf=True.
 _HTF_MIN_AGREEMENT: Final[int] = 2
 
-# ── MERGE-6: top_consensus minimum MTF % per direction ────────────────────
+# ── top_consensus minimum MTF % per direction ────────────────────
 # Bullish setups require strong consensus (typically 85%+).
 _TOP_CONSENSUS_MIN_PCT_BULL: Final[int] = 85
 # Bearish setups in a USD-driven market fragment consensus — lower threshold.
@@ -317,11 +211,7 @@ def _safe_call(
     try:
         return fn(), None
     except Exception as exc:
-        # AUDIT FIX A3: traceback.format_exc() was unconditionally called on every
-        # caught exception.  On high-volume ingestion of malformed payloads this
-        # generates N full stack-trace strings in tight succession, wasting CPU.
-        # The trace is a debug aid, not business data: generate it only when the
-        # logger is actually set to DEBUG so production paths pay zero overhead.
+        # Pas de traceback sur le chemin de production (aide de debug, pas donnée).
         _LOG.warning(
             "safe_call boundary: %s in %s/%s: %s",
             type(exc).__name__, stage, code, exc,
@@ -480,7 +370,7 @@ _TF_ALIAS: Final[dict[str, Timeframe]] = {
     "1mn": Timeframe.MN,
 }
 
-# FIX-001: _TF_EXTRACT_RE supprimé — regex ReDoS remplacé par split+set (CWE-1333)
+# _TF_EXTRACT_RE supprimé — regex ReDoS remplacé par split+set (CWE-1333)
 _TF_SET: Final[frozenset[str]] = frozenset({
     "1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w",
     "h1", "h4", "d1", "w1", "mn", "daily", "weekly", "monthly", "hourly",
@@ -596,6 +486,7 @@ class DivergenceKind(str, Enum):
     NONE = "None"
     BULL = "Bullish"
     BEAR = "Bearish"
+    STALE = "Stale"  # périmée ≠ absente
 
 
 BaseCfg: Final[ConfigDict] = ConfigDict(
@@ -664,11 +555,13 @@ _ATR_D1_PROXY_MULT: Final[float] = 0.25
 _ATR_SYNTHETIC_PCT: Final[float] = 0.005
 # SL floor distance multiplier (v9.0 §8.2).
 _SL_FLOOR_MULT: Final[float] = 0.8
-# AUDIT_FIX SL_DOC: Le commentaire précédent disait "default = Normal regime"
-# mais Normal vaut 1.5 (voir _BB_REGIME_SL_MULT). La valeur 1.1 est délibérément
-# plus conservative que Normal pour protéger les signaux sans bb_regime renseigné
-# (edge case : source CHoCH ne fournit pas le champ bb_regime).
-# Libellé corrigé pour refléter la valeur réelle et son intention.
+# multiple ATR du fallback TP1 quand aucune zone ni
+# price_context n'offre de cible exploitable — aucun signal sans RR.
+_TP1_ATR_FALLBACK_MULT: Final[float] = 2.0
+# nombre nominal de scanners du registre.
+_SCANNERS_TOTAL: Final[int] = 4
+# seuil de distance max des hot zones (ex-2.0 en dur).
+_HOT_ZONE_MAX_DIST_PCT: Final[float] = 2.0
 # SL raw distance multiplier — fallback conservateur (bb_regime absent), v9.0 §8.2.
 # Intentionnellement inférieur à Normal (1.5) pour éviter des SL trop larges sur
 # des signaux de qualité incertaine. Ne pas aligner sur 1.5 sans test de non-régression.
@@ -690,16 +583,21 @@ class RSIReading(BaseModel):
     timeframe: Timeframe
     value: float | None = None
     divergence: DivergenceKind = DivergenceKind.NONE
-    # v3.4.3 — Option A: enrichissement des métadonnées de divergence RSI.
-    # Capturés depuis le scanner RSI natif (champs strength_score,
-    # confidence_score, div_kind, confirmed). Tous optionnels pour
-    # rétrocompatibilité avec les sources qui ne les produisent pas.
+    # Métadonnées capturées depuis le scanner RSI natif (strength_score,
+    # confidence_score, div_kind, confirmed). Toutes optionnelles : les
+    # sources qui ne les produisent pas restent valides.
     div_strength_score: float | None = None    # force du signal [0..1]
     div_confidence_score: float | None = None  # confiance confirmation [0..1]
     div_kind: str | None = None                # "REGULAR" | "HIDDEN" | None
     div_confirmed: bool = False                # True = pivot confirmé
-    # v3.5.3: code scanner "STALE" auparavant fondu dans NONE — drapeau sauvé.
+    # code scanner "STALE" auparavant fondu dans NONE — drapeau sauvé.
     div_stale: bool = False
+    # couche de fiabilité du scanner RSI propagée.
+    div_quality_tier: str | None = None        # "T1".."T4"
+    div_actionable: bool | None = None
+    div_age_bars: int | None = None            # divergence_age_bars
+    div_strength_score_raw: float | None = None
+    div_confidence_score_raw: float | None = None
 
     @field_validator("value")
     @classmethod
@@ -720,7 +618,7 @@ class TrendBias(BaseModel):
 
 class SRZone(BaseModel):
     model_config = BaseCfg
-    side: Literal["BUY", "SELL", "PIVOT", "UNKNOWN"] = "UNKNOWN"  # MERGE-3: added PIVOT
+    side: Literal["BUY", "SELL", "PIVOT", "UNKNOWN"] = "UNKNOWN"  # added PIVOT
     level: float
     score: float = 0.0
     weighted_score: float = 0.0
@@ -731,8 +629,8 @@ class SRZone(BaseModel):
     has_weekly: bool = False
     has_daily: bool = False
     has_h4: bool = False
-    type: str | None = None      # MERGE-3: "Support" | "Resistance" | "Pivot"
-    strength: float | None = None  # MERGE-3: SR "Force Totale"
+    type: str | None = None  # "Support" | "Resistance" | "Pivot"
+    strength: float | None = None  # SR "Force Totale"
 
     def is_real_sr(self) -> bool:
         """True iff this zone comes from a real SR scanner (not a synthetic
@@ -750,7 +648,7 @@ class PriceContext(BaseModel):
     resistance_dist_pct: float | None = None
     resistance_tag: str | None = None
     is_intermediate: bool = False
-    # MERGE-4: derived fields (populated by _enrich_asset_precompute)
+    # derived fields (populated by _enrich_asset_precompute)
     trend: str | None = None             # D1 bias direction ("Bullish"/"Bearish"/"Range")
     near_zone: dict[str, Any] | None = None  # closest zone summary
 
@@ -774,14 +672,17 @@ class StructureEvent(BaseModel):
     bb_regime: str | None = None
     session: str | None = None
     candles_elapsed: int = 0
-    # DIR-1: trend du contexte CHoCH (Bullish|Bearish) — informatif uniquement.
+    # trend du contexte CHoCH (Bullish|Bearish) — informatif uniquement.
     # Permet de distinguer "CHoCH bearish dans trend bullish" vs inverse.
     # None si la source ne fournit pas ce champ (backward-compatible).
     choch_trend: Direction | None = None
-    # v3.5.3 AUDIT: champs CHoCH auparavant jetés (pass-through additif).
+    # AUDIT: champs CHoCH auparavant jetés (pass-through additif).
     has_sweep: bool | None = None
     current_distance_pct: float | None = None
     bb_width_pct: float | None = None
+    # ATR natif fourni par le scanner pour le TF exact du signal —
+    # la donnée exacte prime sur tout proxy.
+    atr_native: float | None = None
 
 
 class MTFConsensus(BaseModel):
@@ -790,16 +691,16 @@ class MTFConsensus(BaseModel):
     direction: Direction = Direction.NEUTRAL
     quality: str | None = None
     nc: int = 0
-    age_d1: int | None = None  # MERGE-5: None when GPS returns "N/A"
+    age_d1: int | None = None  # None when GPS returns "N/A"
     atr_h1: float | None = None
     atr_h4: float | None = None
     atr_daily: float | None = None
     biases: dict[str, str] = Field(default_factory=dict)
-    # MERGE-2: computed fields (null until _enrich_asset_precompute runs)
+    # computed fields (null until _enrich_asset_precompute runs)
     htf: bool | None = None
     score: int | None = None
     grade: str | None = None
-    # v3.5.3 AUDIT: pass-through du verdict de tradabilité GPS (informatif;
+    # AUDIT: pass-through du verdict de tradabilité GPS (informatif;
     # None si la source ne fournit pas le champ). N'affecte aucun calcul.
     tradable: bool | None = None
     tradable_reason: str | None = None
@@ -808,11 +709,7 @@ class MTFConsensus(BaseModel):
     @field_validator("pct", mode="before")
     @classmethod
     def _clamp_pct(cls, v: Any) -> int:
-        # AUDIT_FIX F21: safe_int() appelle int(float), ce qui tronque vers zéro.
-        # Ex: safe_int(89.7) == 89 au lieu de 90. Pour un pourcentage de consensus MTF,
-        # la troncature peut faire basculer un actif de part et d'autre d'un seuil
-        # de conviction (ex: 70% threshold) sur une valeur de 69.7%.
-        # Correction: arrondi standard (round) avant conversion int.
+        # Arrondi avant troncature : 69.7 ne doit pas choir sous un seuil à 70.
         f = safe_float(v)
         if f is None:
             return 0
@@ -826,7 +723,7 @@ class MTFConsensus(BaseModel):
     @field_validator("age_d1", mode="before")
     @classmethod
     def _coerce_age_d1(cls, v: Any) -> int | None:
-        # MERGE-5: "N/A" / None / empty → None instead of 0
+        # "N/A" / None / empty → None instead of 0
         if v is None:
             return None
         s = str(v).strip().upper()
@@ -862,7 +759,7 @@ class CanonicalAsset(BaseModel):
     quote: str | None = None
     asset_class: AssetClass = AssetClass.UNKNOWN
     current_price: float | None = None
-    current_price_source: Literal["live", "stale"] | None = None  # SR-1: propagé depuis scanner S/R
+    current_price_source: Literal["live", "stale"] | None = None  # propagé depuis scanner S/R
     rsi: list[RSIReading] = Field(default_factory=list)
     rsi_by_tf: dict[str, dict[str, Any]] = Field(default_factory=dict)
     rsi_h4_status: str | None = None
@@ -873,15 +770,15 @@ class CanonicalAsset(BaseModel):
     structure_events: list[StructureEvent] = Field(default_factory=list)
     provenance: dict[str, list[str]] = Field(default_factory=dict)
 
-    # ── v3.4 pre-computation layer ────────────────────────────────────────
+    # ── pre-computation layer ────────────────────────────────────────
     atr_effective: float | None = None
     atr_source: Literal["h4", "h1_proxy", "d1_proxy", "synthetic"] | None = None
     conviction_cap: Literal["A", "BBB"] | None = None
     nearest_aligned_zone: SRZone | None = None
     hot_zone_primary: SRZone | None = None
-    # v3.4.3: direction dénormalisée au top-level (évite asset.mtf.direction dans le LLM)
+    # direction dénormalisée au top-level (évite asset.mtf.direction dans le LLM)
     direction: Direction = Direction.NEUTRAL
-    # v3.5.0: market_context — bloc passif, observabilité uniquement.
+    # market_context — bloc passif, observabilité uniquement.
     # Calculé dans MergeEngine._enrich_asset_precompute après les autres pre-computations.
     # IGNORÉ par ENGINE_V9 (extra="ignore" dans son propre CanonicalAsset).
     # Aucun impact sur scoring/conviction/SL/TP/ranking.
@@ -917,13 +814,17 @@ class CanonicalAsset(BaseModel):
                 "value": r.value,
                 "divergence": r.divergence.value,
                 "status": _rsi_status_from_value(r.value),
-                # v3.4.3 — Option A: métadonnées de divergence enrichies.
-                # None si la source ne les fournit pas (rétrocompat totale).
+                # None si la source ne fournit pas (rétrocompat totale).
                 "div_strength_score": r.div_strength_score,
                 "div_confidence_score": r.div_confidence_score,
                 "div_kind": r.div_kind,
                 "div_confirmed": r.div_confirmed,
                 "div_stale": r.div_stale,
+                "div_quality_tier": r.div_quality_tier,
+                "div_actionable": r.div_actionable,
+                "div_age_bars": r.div_age_bars,
+                "div_strength_score_raw": r.div_strength_score_raw,
+                "div_confidence_score_raw": r.div_confidence_score_raw,
             }
         self.rsi_by_tf = by_tf
         h4 = by_tf.get(Timeframe.H4.value)
@@ -946,7 +847,7 @@ class EnrichmentQuality(BaseModel):
     scanners_total: int = 0
 
 
-# ── v3.4: typed pre-computation block embedded in every EnrichedSignal ────
+# ── typed pre-computation block embedded in every EnrichedSignal ────
 class SignalPrecomputed(BaseModel):
     """Deterministic pre-computations for the v9.0 DAG.
     All fields are derived ONLY from the merged asset + event — no I/O.
@@ -963,16 +864,13 @@ class SignalPrecomputed(BaseModel):
     sig_fresh_aligned: bool = False
     htf_aligned: bool = False
     conviction_cap: Literal["A", "BBB"] | None = None
-    # AUDIT_FIX ATR_TF: ATR effectivement utilisé pour le calcul du SL.
-    # Distinct de atr_effective (ATR de référence de l'actif, toujours H4-based).
-    # sl_atr_used = ATR natif du TF du signal quand disponible, sinon atr_effective.
-    # sl_atr_tf   = label de la source : "h4" | "h1" | "d1" |
-    #               "h1_sub_proxy" | "d1_super_proxy" | "h4_fallback".
-    # "h4_fallback" indique que le TF natif était absent → comportement pré-v3.5.3.
-    # Ces deux champs permettent au LLM de contextualiser le SL sans ambiguïté.
+    # ATR réellement utilisé pour le SL + label de sa source.
+    # sl_atr_tf ∈ "signal_native" | "h4" | "h1" | "d1" | "h1_sub_proxy" |
+    #             "d1_super_proxy" | "h4_fallback".
+    # Distinct de atr_effective (référence actif, H4-based).
     sl_atr_used: float | None = None
     sl_atr_tf: str | None = None
-    # DIR-1: contexte directionnel GPS vs CHoCH — purement informatif.
+    # contexte directionnel GPS vs CHoCH — purement informatif.
     # Aucun filtre, aucune modification de score/SL/TP/ranking.
     # L'engine consomme ces champs pour ses propres décisions.
     gps_direction: Direction | None = None        # = asset.mtf.direction
@@ -980,6 +878,12 @@ class SignalPrecomputed(BaseModel):
     direction_aligned: bool | None = None         # True si gps == choch
     counter_trend_signal: bool | None = None      # True si gps != choch
     alignment_score: int | None = None            # 100 si aligné, 0 sinon
+    # distance SL réellement appliquée
+    # (sl_atr_used × bb_mult) — à ne pas confondre avec sl_distance_raw/min
+    # (référence atr_effective H4-based, conservée par comparabilité).
+    sl_distance_effective: float | None = None
+    # nomme la base du champ htf_aligned ci-dessus.
+    htf_aligned_basis: str = "strict_D1_H4_vs_event"
 
 
 class EnrichedSignal(BaseModel):
@@ -1010,7 +914,7 @@ class MergeMeta(BaseModel):
     assets_count: int = 0
     signals_count: int = 0
     elapsed_ms: float = 0.0
-    # v3.5.3: traçabilité des sources (additif, aucun effet de calcul).
+    # traçabilité des sources (additif, aucun effet de calcul).
     source_meta: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -1020,18 +924,18 @@ class MergeOutput(BaseModel):
     assets: dict[str, CanonicalAsset]
     signals: list[EnrichedSignal]
     correlation_groups: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
-    # AUDIT_FIX F2: hot_zones est typé list[...] mais utilisait default_factory=dict.
+    # hot_zones est typé list[...] mais utilisait default_factory=dict.
     # dict() produit {} qui viole le type list lors d'une instanciation directe sans argument.
     # En flux nominal le pipeline passe toujours une valeur explicite (jamais déclenché),
     # mais c'est un défaut Pydantic réel exploitable hors pipeline. Correction: default_factory=list.
     hot_zones: list[dict[str, Any]] = Field(default_factory=list)
     top_consensus: dict[str, list[dict[str, Any]]] = Field(default_factory=dict)
-    # AUDIT_FIX F2: même correction sur diagnostics (list typé avec default_factory=dict).
+    # même correction sur diagnostics (list typé avec default_factory=dict).
     diagnostics: list[dict[str, Any]] = Field(default_factory=list)
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# v3.4 — ATR CASCADE & ZONE PRE-COMPUTATION HELPERS
+# ATR CASCADE & ZONE PRE-COMPUTATION HELPERS
 # ════════════════════════════════════════════════════════════════════════════
 def compute_atr_effective(
     mtf: MTFConsensus | None,
@@ -1057,17 +961,11 @@ def compute_atr_effective(
     return None, None
 
 
-# ── AUDIT_FIX ATR_TF: ATR natif par timeframe du signal ─────────────────────
-# Mapping timeframe → (getter sur MTFConsensus, label source).
-# Les TF sans ATR natif (M1..M30, W1, MN) utilisent le proxy le plus proche
-# avec un label distinct pour que le LLM sache que c'est une estimation.
-# Ordre de résolution par TF :
-#   H4          → atr_h4          (exact, pas de proxy)
-#   H1          → atr_h1          (exact)
-#   D1          → atr_daily       (exact)
-#   M1/M5/M15/M30 → atr_h1       (sub-hourly : H1 est le plus proche disponible)
-#   W1/MN       → atr_daily       (super-daily : D1 est le plus proche disponible)
-#   UNKNOWN     → None (fallback sur atr_effective assuré par l'appelant)
+# ── ATR par timeframe du signal ──────────────────────────────────────────────
+# Table timeframe → (champ MTFConsensus, label source). L'ATR natif de
+# l'event (atr_native, label "signal_native") prime sur cette table.
+# H4/H1/D1 → atr exact ; M1-M30 → atr_h1 (h1_sub_proxy) ; W1/MN → atr_daily
+# (d1_super_proxy) ; UNKNOWN → fallback atr_effective par l'appelant.
 _ATR_TF_RESOLUTION: Final[dict[str, tuple[str, str]]] = {
     # tf_value : (mtf_field_name, sl_atr_label)
     Timeframe.H4.value:  ("atr_h4",    "h4"),
@@ -1086,8 +984,13 @@ def _resolve_atr_for_signal_tf(
     mtf: "MTFConsensus | None",
     signal_tf: "Timeframe",
     atr_effective_fallback: float | None,
+    native_atr: float | None = None,
 ) -> tuple[float | None, str | None]:
     """Résout l'ATR le plus approprié pour le timeframe du signal CHoCH.
+
+    v3.6.0 (OPUS P0-5): native_atr (ATR fourni par le scanner pour le TF
+    exact du signal) est PRIORITAIRE sur table/proxy/fallback, label
+    "signal_native".
 
     Stratégie :
     - TF avec ATR natif (H1, H4, D1) → ATR natif si disponible et > 0.
@@ -1101,7 +1004,10 @@ def _resolve_atr_for_signal_tf(
     "h4_fallback" signale que le TF natif était indisponible et qu'on utilise
     l'ATR H4 de l'actif (comportement pré-correction, traçable par le LLM).
     """
-    # AUDIT_FIX ATR_TF: résolution par table — pas de if/elif, extensible.
+    # la donnée exacte prime sur l'estimation.
+    if native_atr is not None and _is_finite_number(native_atr) and native_atr > 0:
+        return float(native_atr), "signal_native"
+    # résolution par table — pas de if/elif, extensible.
     resolution = _ATR_TF_RESOLUTION.get(signal_tf.value if signal_tf else "")
     if resolution is not None and mtf is not None:
         field_name, label = resolution
@@ -1137,7 +1043,7 @@ def _select_hot_zone_primary(
             return False
         if z.side == wanted:
             return True
-        if z.side in ("UNKNOWN", "PIVOT"):  # v3.5.3: PIVOT ré-admis (fix MERGE-3)
+        if z.side in ("UNKNOWN", "PIVOT"):  # PIVOT ré-admis (fix MERGE-3)
             # Pivots: below price for bullish, above for bearish.
             # Note: distance_pct is stored absolute since v3.3.1 (P1 fix),
             # so we cannot use its sign. Fall back to the raw level.
@@ -1179,12 +1085,12 @@ def _select_nearest_aligned_for_asset(
     wanted = "BUY" if direction is Direction.BULLISH else "SELL"
 
     def _is_aligned(z: SRZone) -> bool:
-        # AUDIT_FIX F1: filtre de distance aligné sur _split_zones_by_alignment.
+        # filtre de distance aligné sur _split_zones_by_alignment.
         if z.distance_pct > _ALIGNED_ZONE_MAX_DIST_PCT:
             return False
         if z.side == wanted:
             return True
-        if z.side in ("UNKNOWN", "PIVOT") and z.level > 0:  # v3.5.3
+        if z.side in ("UNKNOWN", "PIVOT") and z.level > 0:
             cp = asset.current_price
             if cp is not None and _is_finite_number(cp) and cp > 0:
                 if direction is Direction.BULLISH:
@@ -1337,7 +1243,7 @@ class GPSAdapter(ScannerAdapter):
     def _build_mtf(
         raw: dict[str, Any], idx: int
     ) -> tuple[MTFConsensus | None, Diagnostic | None]:
-        # v3.5.3: champs machine MTF_direction/MTF_pct prioritaires sur le
+        # champs machine MTF_direction/MTF_pct prioritaires sur le
         # re-parse du string humain "MTF" (fallback string conservé).
         pct, direction = _parse_mtf_string(raw.get("MTF", ""))
         _dir_m = raw.get("MTF_direction")
@@ -1355,7 +1261,7 @@ class GPSAdapter(ScannerAdapter):
         biases = _extract_gps_biases(raw)
         quality_raw = raw.get("Quality")
         try:
-            # MERGE-5: pass raw Age D1 to MTFConsensus — the _coerce_age_d1 validator
+            # pass raw Age D1 to MTFConsensus — the _coerce_age_d1 validator
             # handles "N/A" / None → None (instead of silently coercing to 0).
             raw_age_d1 = raw.get("Age D1") or raw.get("AgeD1")
             mtf = MTFConsensus(
@@ -1368,7 +1274,7 @@ class GPSAdapter(ScannerAdapter):
                 atr_h4=safe_float(raw.get("ATR H4")),
                 atr_daily=safe_float(raw.get("ATR Daily") or raw.get("ATR D1")),
                 biases=biases,
-                # v3.5.3: propagations GPS auparavant jetées
+                # propagations GPS auparavant jetées
                 tradable=(None if raw.get("Tradable") is None
                           else _coerce_bool(raw.get("Tradable"))),
                 tradable_reason=(safe_str(raw["Tradable_reason"], max_len=64)
@@ -1397,6 +1303,7 @@ _DIV_MAP: Final[dict[str, DivergenceKind]] = {
     "bearish": DivergenceKind.BEAR,
     "baissiere": DivergenceKind.BEAR,
     "baissière": DivergenceKind.BEAR,
+    "stale": DivergenceKind.STALE,  # fin de la fusion STALE→NONE
 }
 
 
@@ -1412,7 +1319,7 @@ _TF_REMAP_LOG: Final[dict[str, str]] = {"d": "D1", "w": "W1"}
 def _extract_nested_rsi(tfs: dict[str, Any]) -> list[RSIReading]:
     readings: list[RSIReading] = []
     for k, v in tfs.items():
-        # MERGE-7: log TF label remapping for observability (D→D1, W→W1)
+        # log TF label remapping for observability (D→D1, W→W1)
         k_lc = k.strip().lower()
         if k_lc in _TF_REMAP_LOG:
             _LOG.debug(
@@ -1433,8 +1340,8 @@ def _extract_nested_rsi(tfs: dict[str, Any]) -> list[RSIReading]:
         )
         confidence = safe_float(div_obj.get("confidence_score"))
         kind = safe_str(div_obj.get("kind") or div_obj.get("div_kind"), max_len=16) or None
-        confirmed = _coerce_bool(div_obj.get("confirmed", False))  # AUDIT FIX B5
-        # v3.5.3: préserver le statut STALE (divergence périmée) que _norm_div
+        confirmed = _coerce_bool(div_obj.get("confirmed", False))
+        # préserver le statut STALE (divergence périmée) que _norm_div
         # réduit à None, sans changer la direction normalisée.
         _stale_probe = str(
             div_obj.get("code")
@@ -1447,6 +1354,7 @@ def _extract_nested_rsi(tfs: dict[str, Any]) -> list[RSIReading]:
             div_label = div_raw.get("label") or div_raw.get("code") or ""
         else:
             div_label = div_raw
+        _age_raw = div_obj.get("divergence_age_bars")
         readings.append(RSIReading(
             timeframe=tf,
             value=safe_float(v.get("rsi") or v.get("value")),
@@ -1456,6 +1364,16 @@ def _extract_nested_rsi(tfs: dict[str, Any]) -> list[RSIReading]:
             div_kind=kind if kind else None,
             div_confirmed=confirmed,
             div_stale=stale,
+            # métadonnées de fiabilité autrefois jetées
+            div_quality_tier=(safe_str(div_obj.get("quality_tier"), max_len=8)
+                              or None),
+            div_actionable=(None if "actionable" not in div_obj
+                            else _coerce_bool(div_obj.get("actionable"))),
+            div_age_bars=(int(_age_raw)
+                          if isinstance(_age_raw, (int, float))
+                          and _is_finite_number(_age_raw) else None),
+            div_strength_score_raw=safe_float(div_obj.get("strength_score_raw")),
+            div_confidence_score_raw=safe_float(div_obj.get("confidence_score_raw")),
         ))
     return readings
 
@@ -1689,7 +1607,7 @@ def _resolve_zone_side(
     if side != "UNKNOWN":
         return side
 
-    # MERGE-3: Pivots are bidirectional — return "PIVOT" not "UNKNOWN".
+    # Pivots are bidirectional — return "PIVOT" not "UNKNOWN".
     original_signal = str(z.get("Signal") or z.get("signal") or "")
     original_type = str(z.get("Type") or z.get("type") or "")
     if "PIVOT" in original_signal.upper() or "PIVOT" in original_type.upper():
@@ -1701,7 +1619,7 @@ def _resolve_zone_side(
     if has_explicit_key:
         return "UNKNOWN"
 
-    # v3.4.4 (FIX-003): robust float inference with isfinite + isclose
+    # robust float inference with isfinite + isclose
     if level > 0 and current_price is not None and current_price > 0:
         if not math.isfinite(level) or not math.isfinite(current_price):
             return "UNKNOWN"
@@ -1734,11 +1652,11 @@ def _build_zone_from_raw(z: dict[str, Any], current_price: float | None = None) 
     )
     # Side resolution: explicit keys first, then positional inference.
     side = _resolve_zone_side(z, current_price, level)
-    # MERGE-3: preserve zone type (Support / Resistance / Pivot)
+    # preserve zone type (Support / Resistance / Pivot)
     zone_type = safe_str(
         z.get("zone_type") or z.get("Type") or z.get("type") or "", max_len=32
     ) or None
-    # MERGE-3: preserve raw strength score from SR scanner
+    # preserve raw strength score from SR scanner
     zone_strength = safe_float(
         z.get("zone_strength") or z.get("Force Totale") or z.get("force_totale")
     )
@@ -1793,7 +1711,7 @@ def _parse_price_context(raw: Any) -> PriceContext:
         res_level = safe_float(raw.get("resistance_level"))
         res_dist = safe_float(raw.get("resistance_dist_pct"))
         res_tag = raw.get("resistance_tag")
-        # FIX-002: inline nearest_support / nearest_resistance (was _apply_nearest_fallback)
+        # inline nearest_support / nearest_resistance (was _apply_nearest_fallback)
         if sup_level is None or res_level is None:
             ns = raw.get("nearest_support")
             nr = raw.get("nearest_resistance")
@@ -1911,7 +1829,7 @@ class SRAdapter(ScannerAdapter):
             asset = self._build_asset(raw, idx, res)
             if asset is not None:
                 out.append(asset)
-        # SR-1: propager diagnostics.assets_with_no_zones comme INFO dans le pipeline
+        # propager diagnostics.assets_with_no_zones comme INFO dans le pipeline
         diag_block = payload.get("diagnostics")
         if isinstance(diag_block, dict):
             no_zones = diag_block.get("assets_with_no_zones")
@@ -1943,7 +1861,7 @@ class SRAdapter(ScannerAdapter):
         cp = safe_float(raw.get("current_price") or raw.get("price"))
         if cp is not None:
             asset.current_price = cp
-        # SR-1: propager la source du prix (live vs stale/marché fermé)
+        # propager la source du prix (live vs stale/marché fermé)
         cp_source = raw.get("current_price_source")
         if cp_source in ("live", "stale"):
             asset.current_price_source = cp_source
@@ -2133,14 +2051,16 @@ class CHoCHAdapter(ScannerAdapter):
                 bb_regime=_maybe_str(raw, "bb_regime"),
                 session=_maybe_str(raw, "session"),
                 candles_elapsed=safe_int(raw.get("candles_elapsed")),
-                # DIR-1: lire "trend" du scanner CHoCH (contexte directionnel)
+                # lire "trend" du scanner CHoCH (contexte directionnel)
                 choch_trend=_parse_direction_text(raw["trend"])
                 if raw.get("trend") else None,
-                # v3.5.3: sweep (chasse à stops) + mesures courantes propagés
+                # sweep (chasse à stops) + mesures courantes propagés
                 has_sweep=(None if raw.get("has_sweep") is None
                            else _coerce_bool(raw.get("has_sweep"))),
                 current_distance_pct=safe_float(raw.get("current_distance_pct")),
                 bb_width_pct=safe_float(raw.get("bb_width_pct")),
+                # ATR natif du TF du signal (champ "atr" du scanner)
+                atr_native=safe_float(raw.get("atr")),
             )
         except Exception as exc:
             res.add(Diagnostic(
@@ -2416,7 +2336,7 @@ class MergeEngine:
         ))
         return res
 
-    # ── v3.4: per-asset pre-computation (ATR cascade, zones) ──────────────
+    # ── per-asset pre-computation (ATR cascade, zones) ──────────────
     @staticmethod
     def _enrich_asset_precompute(
         asset: CanonicalAsset,
@@ -2428,7 +2348,7 @@ class MergeEngine:
         asset.atr_effective = atr_eff
         asset.atr_source = atr_src
         cap = _ATR_CONVICTION_CAP.get(atr_src) if atr_src is not None else None
-        # SR-1: prix stale (marché fermé) → conviction cap plafonnée à BBB
+        # prix stale (marché fermé) → conviction cap plafonnée à BBB
         # même si l'ATR serait normalement A. Le prix de référence est figé,
         # donc nearest_aligned_zone et sl/tp sont moins fiables.
         if asset.current_price_source == "stale":
@@ -2438,7 +2358,7 @@ class MergeEngine:
             "Literal['A', 'BBB'] | None", cap
         )
 
-        # MERGE-1: populate asset.biases (top-level list) from mtf.biases dict.
+        # populate asset.biases (top-level list) from mtf.biases dict.
         # ENGINE_V9 reads asset.biases for HTF alignment; mtf.biases is preserved.
         if asset.mtf is not None and asset.mtf.biases:
             asset.biases = [
@@ -2450,7 +2370,7 @@ class MergeEngine:
                 for tf, direction in asset.mtf.biases.items()
             ]
 
-        # MERGE-2: compute mtf.htf, mtf.score, mtf.grade from biases + quality.
+        # compute mtf.htf, mtf.score, mtf.grade from biases + quality.
         if asset.mtf is not None:
             # grade = quality (already computed by GPS)
             asset.mtf.grade = asset.mtf.quality
@@ -2481,13 +2401,13 @@ class MergeEngine:
                 )
 
         direction = asset.mtf.direction if asset.mtf else Direction.NEUTRAL
-        asset.direction = direction  # v3.4.3: dénormalisation top-level
+        asset.direction = direction  # dénormalisation top-level
         asset.nearest_aligned_zone = _select_nearest_aligned_for_asset(
             asset, direction
         )
         asset.hot_zone_primary = _select_hot_zone_primary(asset, direction)
 
-        # MERGE-4: derive price_context.trend and near_zone
+        # derive price_context.trend and near_zone
         if asset.price_context is not None:
             # trend = D1 bias
             d1_bias = next(
@@ -2523,7 +2443,7 @@ class MergeEngine:
                 {"sym": asset.symbol, "atr_effective": atr_eff},
             ))
 
-        # v3.5.0: market_context — passive, additive, zero scoring impact.
+        # market_context — passive, additive, zero scoring impact.
         # Computed last so all other pre-computations are already finalised.
         ctx, ctx_diag = _safe_call(
             "merge.market_ctx", "market_ctx_crash",
@@ -2664,7 +2584,7 @@ class MergeEngine:
 
     @staticmethod
     def _fold_zones(target: CanonicalAsset, source: CanonicalAsset) -> None:
-        # FIX-004: clé enrichie round(6)+status pour éviter collisions sur niveaux très proches
+        # clé enrichie round(6)+status pour éviter collisions sur niveaux très proches
         existing = {(z.side, round(z.level, 6), z.status) for z in target.zones}
         for z in source.zones:
             if len(target.zones) >= MAX_ZONES_PER_ASSET:
@@ -2716,7 +2636,7 @@ class MergeEngine:
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# v3.5.0 — MARKET CONTEXT (passive, read-only, zero scoring impact)
+# MARKET CONTEXT (passive, read-only, zero scoring impact)
 # ════════════════════════════════════════════════════════════════════════════
 # Timeframe seniority ordinal: higher = structurally more significant.
 _MC_TF_SENIORITY: Final[dict[str, int]] = {
@@ -2733,11 +2653,7 @@ _MC_SR_NEAR_PCT: Final[float] = 2.0
 # RSI divergence TFs considered "higher-timeframe" for risk amplification.
 _MC_DIV_HTF: Final[frozenset[str]] = frozenset({"D1", "W1"})
 
-# AUDIT FIX C3: _MC_RSI_GRADIENT_THRESHOLD was defined as a local variable inside
-# _mc_divergence_context(), making it invisible to linters and inconsistent with
-# every other _MC_* constant defined at module scope.  Hoisting it here makes the
-# threshold discoverable, configurable, and consistent with naming conventions.
-# Semantic value is unchanged (3.0 RSI points, same as the local definition).
+# Seuil du gradient RSI H1-H4 (points RSI), en constante _MC_* comme les autres.
 _MC_RSI_GRADIENT_THRESHOLD: Final[float] = 3.0
 
 
@@ -2843,11 +2759,8 @@ def _mc_divergence_context(rsi_by_tf: dict[str, dict[str, Any]]) -> dict[str, An
             if div_direction is None:
                 div_direction = div_dir
 
-    # rsi_gradient: H1 vs H4 momentum direction.
-    # Threshold of 3 RSI points filters noise while remaining sensitive to
-    # meaningful short-term vs medium-term RSI divergence.
-    # Values: "rising" | "falling" | "neutral" | "unknown"
-    # AUDIT FIX C3: threshold is now the module-level constant _MC_RSI_GRADIENT_THRESHOLD.
+    # rsi_gradient : H1 vs H4, seuil anti-bruit _MC_RSI_GRADIENT_THRESHOLD.
+    # "rising" | "falling" | "neutral" | "unknown"
     h1_val = safe_float((rsi_by_tf.get("H1") or {}).get("value"))
     h4_val = safe_float((rsi_by_tf.get("H4") or {}).get("value"))
     if h1_val is not None and h4_val is not None:
@@ -2880,13 +2793,8 @@ def _mc_sr_context(
     Used to compute sr_confluence_with_counter without coupling to events_summary
     inside this function.
     """
-    # PATCH — sr_context décrit la proximité de toute zone réelle (<=2%),
-    # indépendamment de la direction MTF. Le filtre z.side == wanted_side
-    # contredisait la sémantique déclarée du champ ("nearest zone proximity")
-    # et excluait silencieusement les zones PIVOT et les zones counter-side
-    # proches — informations de contexte valides et observationnelles.
-    # wanted_side est conservé uniquement pour near_counter (sr_confluence).
-    wanted_side = "BUY" if mtf_direction is Direction.BULLISH else "SELL"
+    # Proximité S/R : toute zone réelle ≤ 2 %, sans filtre de côté — pivots
+    # et zones counter-side sont du contexte valide.
     counter_side = "SELL" if mtf_direction is Direction.BULLISH else "BUY"
 
     near: list[SRZone] = [
@@ -2945,7 +2853,6 @@ def _mc_classify_market_state(
     if mtf_direction is Direction.NEUTRAL or mtf_pct == 0:
         return "DATA_INCOMPLETE", "Undefined"
 
-    counter_class = events_summary.get("counter_classification", "none")
     escalation = events_summary.get("escalation_detected", False)
     highest_sen = events_summary.get("highest_counter_seniority", 0)
     aligned_fresh = events_summary.get("aligned_fresh_count", 0)
@@ -2967,7 +2874,7 @@ def _mc_classify_market_state(
     # No structure events at all — classify purely from MTF bias
     if aligned_fresh == 0 and highest_sen == 0:
         if mtf_pct < 60:
-            return "RANGE_COMPRESSION", "Undefined"
+            return "RANGE_COMPRESSION", ("Low-Moderate" if htf_div else "Low")
         if mtf_pct >= 85:
             risk = "Low-Moderate" if htf_div else "Low"
             return "CLEAN_CONTINUATION", risk
@@ -2976,7 +2883,7 @@ def _mc_classify_market_state(
             return "PULLBACK_CONTINUATION", risk
         if mtf_pct >= 60:
             return "TRANSITION_WATCH", "Moderate-High"
-        return "RANGE_COMPRESSION", "Undefined"
+        return "RANGE_COMPRESSION", ("Low-Moderate" if htf_div else "Low")
 
     # REVERSAL_RISK — escalation full OR W1+ counter OR (D1 counter + htf div + mature)
     if escalation and highest_sen >= 4:
@@ -3006,7 +2913,7 @@ def _mc_classify_market_state(
             risk = "Moderate"
         return "PULLBACK_CONTINUATION", risk
 
-    # FIX-B: counter H1/M15 in mid MTF (50–70%) — conflicted structure, not range
+    # counter H1/M15 in mid MTF (50–70%) — conflicted structure, not range
     # Covers: AUD/CHF (Bear 58% + H1 Bull counter), GBP/NZD (Bull 56% + H1 Bear counter)
     if highest_sen <= 2 and aligned_fresh == 0 and 50 <= mtf_pct < 70:
         return "TRANSITION_WATCH", "Moderate-High"
@@ -3018,7 +2925,7 @@ def _mc_classify_market_state(
             risk = "Low-Moderate"
         return "CLEAN_CONTINUATION", risk
 
-    # FIX-A: aligned Fresh present but MTF too weak for CLEAN/PULLBACK
+    # aligned Fresh present but MTF too weak for CLEAN/PULLBACK
     # Covers: AUD/JPY (Bull 51% + H1 aligned Fresh, no counter)
     if aligned_fresh >= 1 and highest_sen == 0 and 40 <= mtf_pct < 60:
         return "TRANSITION_WATCH", "Moderate-High"
@@ -3027,7 +2934,7 @@ def _mc_classify_market_state(
     if mtf_pct >= 60 and aligned_fresh >= 1:
         return "PULLBACK_CONTINUATION", "Low-Moderate"
     if mtf_pct < 60:
-        return "RANGE_COMPRESSION", "Undefined"
+        return "RANGE_COMPRESSION", ("Low-Moderate" if htf_div else "Low")
 
     return "DATA_INCOMPLETE", "Undefined"
 
@@ -3204,7 +3111,6 @@ def _build_market_context(asset: CanonicalAsset) -> dict[str, Any]:
     # events_summary + divergence_ctx. No new calculation.
     counter_class = events_summary.get("counter_classification", "none")
     highest_counter_tf = events_summary.get("highest_counter_tf")
-    highest_counter_sen = events_summary.get("highest_counter_seniority", 0)
     # htf_div: counter-to-MTF divergence confirmed on D1/W1 — mirrors logic in
     # _mc_classify_market_state to remain consistent without duplication.
     div_dir = divergence_ctx.get("divergence_direction")
@@ -3259,6 +3165,9 @@ def _build_market_context(asset: CanonicalAsset) -> dict[str, Any]:
             "direction": mtf_direction.value,
             "pct": mtf_pct,
             "htf_anchor": bool(len(htf_tfs_aligned) >= 2),
+            # base explicite — ancrage SOFT (≥2 parmi
+            # MN/W1/D1) ≠ htf_aligned STRICT (D1 ET H4 vs event).
+            "htf_anchor_basis": "soft_MN_W1_D1_count_ge2",
             "htf_tfs_aligned": htf_tfs_aligned,
             "conflict_tfs": conflict_tfs,
         },
@@ -3302,7 +3211,7 @@ def _direction_from_text(text: str) -> Direction:
     return Direction.NEUTRAL
 
 
-# v3.3 (GAP 7): relaxed threshold for aligned zone detection.
+# relaxed threshold for aligned zone detection.
 _ALIGNED_ZONE_MAX_DIST_PCT: Final[float] = 5.0
 
 
@@ -3313,7 +3222,7 @@ def _split_zones_by_alignment(
     opposite: list[SRZone] = []
     if direction is Direction.NEUTRAL:
         return aligned, opposite
-    cp = asset.current_price  # v3.5.3: départage positionnel PIVOT/UNKNOWN
+    cp = asset.current_price  # départage positionnel PIVOT/UNKNOWN
     _cp_ok = cp is not None and _is_finite_number(cp) and cp > 0
     for z in asset.zones:
         if z.distance_pct > _ALIGNED_ZONE_MAX_DIST_PCT:
@@ -3382,14 +3291,14 @@ class EnrichmentEngine:
         self, asset: CanonicalAsset, event: StructureEvent
     ) -> EnrichedSignal:
         aligned, opposite = _split_zones_by_alignment(asset, event.direction)
-        nearest = self._select_nearest_aligned_zone(asset, event, aligned)
+        nearest = self._select_nearest_aligned_zone(aligned)
         tp_zones = opposite[:MAX_TP_ZONES]
         htf_aligned = self._htf_aligned(asset, event)
         confluence = self._confluence(asset, event)
 
-        # AUDIT_FIX ATR_TF v3.5.3: _compute_sl_tp_rr retourne désormais 6 valeurs.
-        # sl_atr_used / sl_atr_tf propagés à _build_precomputed pour le LLM.
-        sl_price, tp1_price, rr, sl_mult, sl_atr_used, sl_atr_tf = self._compute_sl_tp_rr(
+        # SL/TP1/RR + traçabilité ATR ; tp1_fallback = TP issu du repli ATR.
+        (sl_price, tp1_price, rr, sl_mult,
+         sl_atr_used, sl_atr_tf, tp1_fallback) = self._compute_sl_tp_rr(
             asset, event, nearest, tp_zones
         )
 
@@ -3410,13 +3319,16 @@ class EnrichmentEngine:
             asset, event, htf_aligned, sl_mult, sl_atr_used, sl_atr_tf
         )
 
-        # AUDIT_FIX ATR_TF: warning si le SL n'est pas basé sur l'ATR natif du TF.
+        # warning si le SL n'est pas basé sur l'ATR natif du TF.
         # "h4_fallback" = ATR H4 utilisé faute d'ATR natif disponible.
         # "*_proxy" = TF sub/super-daily sans ATR natif, proxy le plus proche utilisé.
         # Le warning est ajouté après _warnings() pour ne pas modifier sa signature.
         warnings = self._warnings(asset, event)
-        if sl_atr_tf and sl_atr_tf not in ("h4", "h1", "d1"):
+        if sl_atr_tf and sl_atr_tf not in ("h4", "h1", "d1", "signal_native"):
             warnings.append(f"sl_atr_tf={sl_atr_tf}")
+        if tp1_fallback:
+            # TP1 issu du fallback ATR, pas d'une zone SR.
+            warnings.append(f"tp1_atr_fallback(k={_TP1_ATR_FALLBACK_MULT:g})")
 
         return EnrichedSignal(
             event=event,
@@ -3435,15 +3347,15 @@ class EnrichmentEngine:
             precomputed=precomputed,
         )
 
-    # ── v3.4: typed precomputed block (consumed verbatim by prompt v9.0) ─
+    # ── typed precomputed block (consumed verbatim by prompt v9.0) ─
     @staticmethod
     def _build_precomputed(
         asset: CanonicalAsset,
         event: StructureEvent,
         htf_aligned: bool,
         _sl_mult: float,        # BB-regime mult pre-computed by caller; kept for API symmetry
-        sl_atr_used: float | None = None,   # AUDIT_FIX ATR_TF: ATR natif TF signal
-        sl_atr_tf: str | None = None,       # AUDIT_FIX ATR_TF: label source ATR SL
+        sl_atr_used: float | None = None,  # ATR natif TF signal
+        sl_atr_tf: str | None = None,  # label source ATR SL
     ) -> SignalPrecomputed:
         bb_mult = _BB_REGIME_SL_MULT.get(
             event.bb_regime or "", _SL_RAW_DEFAULT_MULT
@@ -3456,6 +3368,12 @@ class EnrichmentEngine:
         if atr_eff is not None and _is_finite_number(atr_eff) and atr_eff > 0:
             sl_distance_min = round(atr_eff * _SL_FLOOR_MULT, 8)
             sl_distance_raw = round(atr_eff * bb_mult, 8)
+        # réconciliation — distance effectivement
+        # appliquée au SL, sur la base de sl_atr_used.
+        sl_distance_effective: float | None = None
+        if (sl_atr_used is not None and _is_finite_number(sl_atr_used)
+                and sl_atr_used > 0):
+            sl_distance_effective = round(sl_atr_used * bb_mult, 8)
 
         h4_view = asset.rsi_by_tf.get(Timeframe.H4.value) or {}
         rsi_h4_value = safe_float(h4_view.get("value"))
@@ -3481,11 +3399,13 @@ class EnrichmentEngine:
             candles_elapsed=candles,
             sig_fresh_aligned=sig_fresh_aligned,
             htf_aligned=htf_aligned,
+            htf_aligned_basis="strict_D1_H4_vs_event",
+            sl_distance_effective=sl_distance_effective,
             conviction_cap=asset.conviction_cap,
-            # AUDIT_FIX ATR_TF: ATR natif TF signal effectivement utilisé pour SL.
+            # ATR natif TF signal effectivement utilisé pour SL.
             sl_atr_used=sl_atr_used,
             sl_atr_tf=sl_atr_tf,
-            # DIR-1: enrichissement directionnel GPS vs CHoCH — purement informatif.
+            # enrichissement directionnel GPS vs CHoCH — purement informatif.
             # Aucun filtre, aucun impact sur SL/TP/score/ranking.
             gps_direction=asset.mtf.direction if asset.mtf is not None else None,
             choch_direction=event.direction if event.direction is not Direction.NEUTRAL else None,
@@ -3499,16 +3419,8 @@ class EnrichmentEngine:
                 if asset.mtf is not None and event.direction is not Direction.NEUTRAL
                 else None
             ),
-            # AUDIT FIX D1: the previous expression was an unparenthesised
-            # chained ternary — Python evaluates `event.direction ==
-            # asset.mtf.direction` FIRST, before the `asset.mtf is not None`
-            # guard is ever checked (chained `if/else` binds to the *outer*
-            # condition, not the inner one). Result: AttributeError whenever
-            # asset.mtf is None (e.g. a CHoCH signal on a symbol absent from
-            # the GPS scanner), silently dropping the whole signal via the
-            # _safe_call boundary in _enrich_asset. Fixed by parenthesising
-            # the inner ternary so the None-guard is evaluated first, exactly
-            # like direction_aligned/counter_trend_signal above it.
+            # Parenthésé : la guard None doit être évaluée AVANT la
+            # comparaison chaînée (sinon AttributeError muet via _safe_call).
             alignment_score=(
                 (100 if event.direction == asset.mtf.direction else 0)
                 if asset.mtf is not None and event.direction is not Direction.NEUTRAL
@@ -3516,7 +3428,7 @@ class EnrichmentEngine:
             ),
         )
 
-    # ── BUG 1 FIX: htf_aligned requires BOTH D1 AND H4 aligned ────────────
+    # ── FIX: htf_aligned requires BOTH D1 AND H4 aligned ────────────
     @staticmethod
     def _htf_aligned(asset: CanonicalAsset, event: StructureEvent) -> bool:
         if asset.mtf is None:
@@ -3535,8 +3447,6 @@ class EnrichmentEngine:
 
     @staticmethod
     def _select_nearest_aligned_zone(
-        _asset: CanonicalAsset,  # reserved for future alignment filtering
-        _event: StructureEvent,  # reserved for future timeframe filtering
         aligned_zones: list[SRZone],
     ) -> SRZone | None:
         if not aligned_zones:
@@ -3550,13 +3460,53 @@ class EnrichmentEngine:
 
     @staticmethod
     def _confluence(asset: CanonicalAsset, event: StructureEvent) -> float:
+        """v3.6.0 (OPUS P0-1/2/3): confluence signée, filtrée, multicanaux.
+        - MTF : ±pct×0.5 selon l'alignement avec l'EVENT proposé (l'ancien
+          bonus non signé récompensait l'anti-alignement).
+        - Zones réelles : côté aligné avec l'event (PIVOT/UNKNOWN départagés
+          par position vs current_price), distance ≤ 2 %, 2 zones max — fin
+          du biais de comptage support+pivot+résistance additionnés.
+        - RSI : divergences confirmées ±(strength×confidence×20) selon
+          qu'elles soutiennent ou contredisent l'event (le RSI était absent
+          du score de croisement).
+        """
         total = event.confluence_score or 0.0
-        if asset.mtf is not None:
-            total += asset.mtf.pct * 0.5
-        for z in asset.zones:
-            if not z.is_real_sr():
-                continue
-            total += z.weighted_score * 0.1
+        ev_dir = event.direction
+        if asset.mtf is not None and ev_dir is not Direction.NEUTRAL:
+            aligned = ev_dir is asset.mtf.direction
+            total += asset.mtf.pct * 0.5 * (1.0 if aligned else -1.0)
+        cp = asset.current_price
+        cp_ok = cp is not None and _is_finite_number(cp) and cp > 0
+        wanted = "BUY" if ev_dir is Direction.BULLISH else "SELL"
+        counted = 0
+        if ev_dir is not Direction.NEUTRAL:
+            for z in asset.zones:
+                if counted >= 2:
+                    break
+                if not z.is_real_sr() or z.distance_pct > 2.0:
+                    continue
+                if z.side == wanted:
+                    ok = True
+                elif z.side in ("PIVOT", "UNKNOWN") and cp_ok and z.level > 0:
+                    ok = ((z.level <= cp) if ev_dir is Direction.BULLISH
+                          else (z.level >= cp))
+                else:
+                    ok = False
+                if ok:
+                    total += z.weighted_score * 0.1
+                    counted += 1
+            for tf in ("W1", "D1", "H4", "H1", "M15"):
+                rv = (asset.rsi_by_tf or {}).get(tf)
+                if not isinstance(rv, dict) or not rv.get("div_confirmed"):
+                    continue
+                dval = str(rv.get("divergence") or "").lower()
+                if dval not in ("bullish", "bearish"):
+                    continue
+                s = safe_float(rv.get("div_strength_score")) or 0.0
+                cnf = safe_float(rv.get("div_confidence_score")) or 0.0
+                side = (dval == ("bullish" if ev_dir is Direction.BULLISH
+                                 else "bearish"))
+                total += (s * cnf * 20.0) if side else -(s * cnf * 20.0)
         return round(total, 2)
 
     @staticmethod
@@ -3580,12 +3530,8 @@ class EnrichmentEngine:
             return tp_zones[0].level
         return None
 
-    # ── GAP 6 + v3.4: SL / TP1 / RR using atr_effective ───────────────────
-    # AUDIT_FIX ATR_TF v3.5.3: le SL utilise désormais l'ATR natif du TF
-    # du signal CHoCH (H1, H4, D1, ou proxy sub/super) via
-    # _resolve_atr_for_signal_tf. atr_effective reste l'ATR de référence de
-    # l'actif (H4-based) et continue d'être exposé dans SignalPrecomputed.
-    # Les champs sl_atr_used / sl_atr_tf tracent quelle source a servi.
+    # ── SL / TP1 / RR — SL sur l'ATR du TF du signal (natif exact sinon
+    # proxy labelisé) ; atr_effective reste la référence actif exposée.
     @staticmethod
     def _compute_sl_tp_rr(
         asset: CanonicalAsset,
@@ -3594,7 +3540,8 @@ class EnrichmentEngine:
         tp_zones: list[SRZone],
     ) -> tuple[float | None, float | None, float | None, float, float | None, str | None]:
         """Compute SL / TP1 / RR with TF-native ATR for SL.
-        Returns (sl_price, tp1_price, rr, sl_mult, sl_atr_used, sl_atr_tf).
+        Returns (sl_price, tp1_price, rr, sl_mult, sl_atr_used, sl_atr_tf,
+        tp1_fallback).
         sl_mult  : BB-regime multiplier (persisted on EnrichedSignal.sl_atr_multiple).
         sl_atr_used : ATR natif du TF signal utilisé pour le SL (≠ atr_effective).
         sl_atr_tf   : label de la source ATR (h4/h1/d1/h1_sub_proxy/…/h4_fallback).
@@ -3606,12 +3553,13 @@ class EnrichmentEngine:
         if level is None or not _is_finite_number(level) or level <= 0:
             return None, None, None, sl_mult, None, None
 
-        # AUDIT_FIX ATR_TF: résolution ATR par TF signal.
+        # résolution ATR par TF signal.
         # sl_atr sert uniquement au calcul du SL.
         # atr_effective (H4-based) reste exposé dans SignalPrecomputed pour
         # la comparabilité inter-signaux et le calcul des distances de référence.
         sl_atr, sl_atr_tf = _resolve_atr_for_signal_tf(
-            asset.mtf, event.timeframe, asset.atr_effective
+            asset.mtf, event.timeframe, asset.atr_effective,
+            native_atr=event.atr_native,
         )
 
         if sl_atr is None or not _is_finite_number(sl_atr) or sl_atr <= 0:
@@ -3630,20 +3578,30 @@ class EnrichmentEngine:
                 event.direction, tp_zones, asset.price_context
             )
             if raw_tp1 is not None:
-                # AUDIT_FIX F10: garde-fou directionnel — un TP du mauvais côté
-                # du prix d'entrée produirait un RR positif mathématiquement
-                # correct mais sémantiquement absurde (TP sous l'entrée en BULLISH,
-                # au-dessus en BEARISH). Cela peut survenir si une zone est mal
-                # classée (side UNKNOWN mal inféré) ou si price_context.support/
-                # resistance_level se situe du même côté que l'entrée.
-                # Correction: valider la cohérence directionnelle avant d'assigner.
-                # Si invalide → tp1_price reste None, rr reste None. Pas de crash.
+                # Garde-fou directionnel : un TP du mauvais côté de l'entrée
+                # donnerait un RR positif mais absurde → tp1/rr restent None.
                 tp1_valid = (
                     (event.direction is Direction.BULLISH and raw_tp1 > level)
                     or (event.direction is Direction.BEARISH and raw_tp1 < level)
                 )
                 if tp1_valid:
                     tp1_price = round(raw_tp1, 5)
+
+        # fallback ATR — plus aucun signal sans RR quand
+        # le SL est calculable. Marqué par tp1_fallback (warning en aval).
+        tp1_fallback = False
+        if (
+            tp1_price is None
+            and event.direction in (Direction.BULLISH, Direction.BEARISH)
+            and sl_atr is not None
+            and _is_finite_number(sl_atr)
+            and sl_atr > 0
+        ):
+            if event.direction is Direction.BULLISH:
+                tp1_price = round(level + _TP1_ATR_FALLBACK_MULT * sl_atr, 5)
+            else:
+                tp1_price = round(level - _TP1_ATR_FALLBACK_MULT * sl_atr, 5)
+            tp1_fallback = True
 
         rr: float | None = None
         if (
@@ -3656,14 +3614,22 @@ class EnrichmentEngine:
             reward = abs(tp1_price - level)
             if risk > 0:
                 rr = round(reward / risk, 2)
-        # AUDIT_FIX ATR_TF: sl_atr (ATR natif TF) et sl_atr_tf (label source)
+        # sl_atr (ATR natif TF) et sl_atr_tf (label source)
         # propagés au caller pour exposition dans SignalPrecomputed.
-        return sl_price, tp1_price, rr, sl_mult, sl_atr, sl_atr_tf
+        return sl_price, tp1_price, rr, sl_mult, sl_atr, sl_atr_tf, tp1_fallback
 
     @staticmethod
     def _enrichment_quality(asset: CanonicalAsset) -> EnrichmentQuality:
-        sources = {k for k in asset.provenance if k != "heuristic"}
-        n = len(sources)
+        """v3.6.0 (OPUS P1-5): scanners_total = 4 (registre nominal) et statut
+        fondé sur la SUBSTANCE par source — un provenance sr:['0zones'] ne
+        compte plus comme un croisement réel (ancien faux positif 4/4)."""
+        substance = (
+            asset.mtf is not None,                       # gps
+            len(asset.rsi) >= 1,                         # rsi
+            any(z.is_real_sr() for z in asset.zones),    # sr réel
+            len(asset.structure_events) >= 1,            # choch
+        )
+        n = sum(1 for v in substance if v)
         if n >= 3:
             status: Literal["complete", "partial", "minimal", "empty"] = "complete"
         elif n == 2:
@@ -3672,11 +3638,17 @@ class EnrichmentEngine:
             status = "minimal"
         else:
             status = "empty"
-        return EnrichmentQuality(status=status, scanners_matched=n, scanners_total=n)
+        return EnrichmentQuality(status=status, scanners_matched=n,
+                                 scanners_total=_SCANNERS_TOTAL)
 
     @staticmethod
     def _warnings(asset: CanonicalAsset, event: StructureEvent) -> list[str]:
         w: list[str] = []
+        # le verdict Tradable du scanner GPS est
+        # visible sans être un cap — sur ce flux, 33/33 assets sont false,
+        # l'éviction systématique est une décision amont à documenter.
+        if asset.mtf is not None and asset.mtf.tradable is False:
+            w.append("gps_tradable_false")
         if event.direction is Direction.NEUTRAL:
             w.append("neutral direction")
         if event.level is not None and event.level <= 0:
@@ -3771,8 +3743,8 @@ def _zone_dict(z: SRZone) -> dict[str, Any]:
         "has_weekly": z.has_weekly,
         "has_daily": z.has_daily,
         "has_h4": z.has_h4,
-        "type": z.type,          # MERGE-3: "Support" | "Resistance" | "Pivot"
-        "strength": z.strength,  # MERGE-3: Force Totale from SR scanner
+        "type": z.type,  # "Support" | "Resistance" | "Pivot"
+        "strength": z.strength,  # Force Totale from SR scanner
     }
 
 
@@ -3864,7 +3836,7 @@ class MergePipeline:
                 continue
             scanners_detected.append(f"{f.name}:{name}")
             partials.append(r.value)
-            # v3.5.3: traçabilité par scanner (additif)
+            # traçabilité par scanner (additif)
             entry = source_meta.setdefault(name, {"files": []})
             entry["files"].append(f.name)
             for k, v in _extract_source_meta(f.payload).items():
@@ -3921,22 +3893,32 @@ class MergePipeline:
         assets: dict[str, CanonicalAsset]
     ) -> list[dict[str, Any]]:
         zones: list[dict[str, Any]] = []
+        excluded = 0
         soft_cap = MAX_HOT_ZONES_OUT * 2
         for sym, asset in assets.items():
             for z in asset.zones:
                 if not z.is_real_sr():
                     continue
-                if z.distance_pct >= 2.0:
+                if z.distance_pct >= _HOT_ZONE_MAX_DIST_PCT:
+                    excluded += 1
                     continue
-                # FIX-006: log discret si zone UNKNOWN devient hot (aide debug)
+                # log discret si zone UNKNOWN devient hot (aide debug)
                 if z.side == "UNKNOWN" and z.alert == "🔥 ZONE CHAUDE":
                     _LOG.debug("hot_zone_primary UNKNOWN pour %s (niveau %s)", sym, z.level)
-                zones.append({"symbol": sym, **_zone_dict(z)})
+                # le verdict tradabilité GPS est porté par l'entrée
+                # chaude (visibilité, pas éviction — cf. _warnings).
+                _trad = asset.mtf.tradable if asset.mtf is not None else None
+                zones.append({"symbol": sym, "gps_tradable": _trad,
+                              **_zone_dict(z)})
                 if len(zones) >= soft_cap:
                     break
             if len(zones) >= soft_cap:
                 break
         zones.sort(key=lambda x: safe_float(x["distance_pct"]) or 999.0)
+        if excluded:
+            # l'exclusion >seuil est désormais visible.
+            _LOG.info("hot_zones: %d zones exclues (distance >= %.1f%%)",
+                      excluded, _HOT_ZONE_MAX_DIST_PCT)
         return zones[:MAX_HOT_ZONES_OUT]
 
     @staticmethod
@@ -3985,11 +3967,15 @@ def _json_default(o: Any) -> Any:
     raise TypeError(f"Type {type(o).__name__} not serializable")
 
 
-def export_json(output: MergeOutput, *, indent: int = 2) -> str:
-    payload = output.model_dump(mode="json")
+def _dump_json(payload: dict[str, Any], *, indent: int = 2) -> str:
     return json.dumps(
         payload, indent=indent, ensure_ascii=False, default=_json_default
     )
+
+
+def export_json(output: MergeOutput, *, indent: int = 2) -> str:
+    """Sérialiseur canonique — même rendu que le téléchargement UI."""
+    return _dump_json(output.model_dump(mode="json"), indent=indent)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -3997,14 +3983,9 @@ def export_json(output: MergeOutput, *, indent: int = 2) -> str:
 # ════════════════════════════════════════════════════════════════════════════
 @dataclass(frozen=True, slots=True)
 class FileEntry:
-    """Content-addressed file. Streamlit hashes via ``__hash__``/``__eq__``,
-    which use only the SHA-256 fingerprint — never the raw bytes.
-    ``__hash__`` and ``__eq__`` are intentional overrides: frozen dataclasses
-    generate an ``__eq__`` that compares all fields (including ``data``),
-    which would be prohibitively slow and would break Streamlit's cache key.
-    The ``type: ignore[override]`` annotations below suppress the mypy false
-    positive that arises because frozen dataclasses generate a ``__hash__``
-    whose signature is technically identical — not a real conflict.
+    """Fichier addressé par contenu : le cache Streamlit ne hache que
+    (name, sha256), jamais les octets bruts. __hash__/__eq__ sont des
+    overrides délibérés (l'__eq__ généré comparerait ``data`` — trop lent).
     """
     name: str
     sha256: str
@@ -4036,7 +4017,7 @@ def get_pipeline() -> MergePipeline:
     return MergePipeline(registry=registry)
 
 
-@st.cache_data(show_spinner=False, max_entries=64, ttl=3600, persist=False)  # FIX-005: 128→64
+@st.cache_data(show_spinner=False, max_entries=64, ttl=3600, persist=False)  # 128→64
 def parse_json_bytes(entry: FileEntry) -> tuple[Any | None, str | None]:
     """Cache-friendly JSON parsing — keyed on (name, sha256), not raw bytes."""
     data = entry.data
@@ -4157,7 +4138,7 @@ def _render_header() -> None:
 
 
 def _render_metrics(meta: dict[str, Any], hot_count: int, is_cached: bool = False) -> None:
-    # AUDIT FIX C5: elapsed_ms is computed once at pipeline execution time and
+    # elapsed_ms is computed once at pipeline execution time and
     # stored in the cached result.  On a cache hit the displayed value is the
     # duration of the original run, not the current request.  The is_cached flag
     # lets the UI communicate this clearly so operators are not misled.
@@ -4263,7 +4244,7 @@ def _render_top_consensus(top: dict[str, Any]) -> None:
     bear = top.get("top_bearish") or []
     if not bull and not bear:
         return
-    st.subheader("🏆 Top consensus MTF (Bull ≥85% · Bear ≥50%)")  # AUDIT FIX B10: reflect actual bear threshold (_TOP_CONSENSUS_MIN_PCT_BEAR = 50)
+    st.subheader("🏆 Top consensus MTF (Bull ≥85% · Bear ≥50%)")  # reflect actual bear threshold (_TOP_CONSENSUS_MIN_PCT_BEAR = 50)
     col1, col2 = st.columns(2)
     with col1:
         _render_consensus_column("🟢 Bullish", bull)
@@ -4369,9 +4350,7 @@ def _render_diagnostics(diags: list[dict[str, Any]]) -> None:
 def _render_export(payload_dict: dict[str, Any]) -> None:
     payload, diag = _safe_call(
         "ui.export", "serialize_crash",
-        lambda p=payload_dict: json.dumps(
-            p, indent=2, ensure_ascii=False, default=_json_default
-        ),
+        lambda p=payload_dict: _dump_json(p),
         None,
     )
     if payload is None:
@@ -4500,7 +4479,7 @@ def _render_sidebar() -> None:
             st.rerun()
 
 
-def _render_results(result: dict[str, Any], is_cached: bool = False) -> None:  # AUDIT FIX C5
+def _render_results(result: dict[str, Any], is_cached: bool = False) -> None:
     parse_errors = result.get("parse_errors") or []
     if parse_errors:
         st.error(
@@ -4515,7 +4494,7 @@ def _render_results(result: dict[str, Any], is_cached: bool = False) -> None:  #
         return
     meta = output.get("meta") or {}
     hot = output.get("hot_zones") or []
-    _render_metrics(meta, len(hot), is_cached=is_cached)  # AUDIT FIX C5
+    _render_metrics(meta, len(hot), is_cached=is_cached)
     st.divider()
     _render_signals(output.get("signals") or [])
     _render_top_consensus(output.get("top_consensus") or {})
@@ -4566,7 +4545,7 @@ def main() -> None:
 
     fingerprint = _files_fingerprint(entries)
     entries_tuple = tuple(entries)
-    # AUDIT FIX C5: measure wall time around the cached call.  A Streamlit cache
+    # measure wall time around the cached call.  A Streamlit cache
     # hit returns a deep-copied dict in microseconds; an actual pipeline run takes
     # tens-to-hundreds of milliseconds.  We use the ratio between UI elapsed time
     # and the stored elapsed_ms to detect cache hits and label the metric correctly.
@@ -4591,12 +4570,12 @@ def main() -> None:
         result is not None
         and _pipeline_ms > 0.0
         and _ui_wall_ms < max(50.0, _pipeline_ms * 0.1)
-    )  # AUDIT FIX C5
+    )
     if result is None:
         msg = diag.message if diag else "unknown"
         st.error(f"Erreur fatale du pipeline: {msg}")
         return
-    _render_results(result, is_cached=_is_cached)  # AUDIT FIX C5
+    _render_results(result, is_cached=_is_cached)
 
 
 if __name__ == "__main__":
