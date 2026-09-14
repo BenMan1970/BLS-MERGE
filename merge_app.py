@@ -110,7 +110,9 @@ MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
 MAX_TP_ZONES: Final[int] = 3
 
-SCHEMA_VERSION: Final[str] = "3.6.2"
+# OPTIMISATION BLUESTAR : bump 3.6.2 -> 3.6.3 (champs de zone SORTANTS
+# additifs conditionnels, aucun champ retiré ; min schéma 3.4.0 inchangé).
+SCHEMA_VERSION: Final[str] = "3.6.3"
 
 # ── HTF alignment thresholds (configurable via these constants) ──
 # Timeframes considered "high timeframe" for bias alignment.
@@ -548,6 +550,11 @@ _ATR_CONVICTION_CAP: Final[dict[str, str | None]] = {
     "h1_proxy":  "A",
     "d1_proxy":  "BBB",
     "synthetic": "BBB",
+    # OPTIMISATION BLUESTAR (m9) : médiane des ATR RÉELS des zones du scanner
+    # S/R — proxy mesuré (pas un ATR H4 par bougie) : cap prudent = BBB,
+    # strictement égal à celui du "synthetic" qu'il remplace (aucun relâche-
+    # ment de gating en aval).
+    "sr_reference": "BBB",
 }
 
 # Multiplier applied to atr_h1 when used as proxy for ATR_H4.
@@ -634,6 +641,20 @@ class SRZone(BaseModel):
     has_h4: bool = False
     type: str | None = None  # "Support" | "Resistance" | "Pivot"
     strength: float | None = None  # SR "Force Totale"
+    # ── OPTIMISATION BLUESTAR (additif, rétro-compatible) ────────────────────
+    # Champs OPTIONNELS mappés depuis l'export scanner v2.1 ; None pour tout
+    # scanner qui ne les fournit pas. Ils ne changent AUCUN calcul existant
+    # (weighted_score, sides, TP1, coques de tri inchangés) : propagation pure
+    # de la couche calibrée §5.6 jusqu'à la sortie MergeOutput.
+    zone_id: str | None = None
+    zone_id_stable: str | None = None
+    distance_atr: float | None = None
+    distance_atr_edge: float | None = None
+    reach_probability: float | None = None
+    reach_is_discriminant: bool | None = None
+    has_synthetic_level: bool | None = None
+    atr_reference: float | None = None
+    nb_tf: int | None = None
 
     def is_real_sr(self) -> bool:
         """True iff this zone comes from a real SR scanner (not a synthetic
@@ -746,7 +767,7 @@ class CanonicalAsset(BaseModel):
 
     v3.4 adds (pre-computation for prompt v9.0):
       - atr_effective       : float | None     (ATR cascade output)
-      - atr_source          : str | None       (h4 | h1_proxy | d1_proxy | synthetic)
+      - atr_source          : str | None       (h4 | h1_proxy | d1_proxy | synthetic | sr_reference)
       - conviction_cap      : str | None       (A | BBB | None)
       - nearest_aligned_zone: SRZone | None    (real SR preferred over synth)
       - hot_zone_primary    : SRZone | None    (incl. UNKNOWN pivots by sign)
@@ -775,7 +796,8 @@ class CanonicalAsset(BaseModel):
 
     # ── pre-computation layer ────────────────────────────────────────
     atr_effective: float | None = None
-    atr_source: Literal["h4", "h1_proxy", "d1_proxy", "synthetic"] | None = None
+    atr_source: Literal["h4", "h1_proxy", "d1_proxy", "synthetic",
+                     "sr_reference"] | None = None
     conviction_cap: Literal["A", "BBB"] | None = None
     nearest_aligned_zone: SRZone | None = None
     hot_zone_primary: SRZone | None = None
@@ -857,7 +879,8 @@ class SignalPrecomputed(BaseModel):
     """
     model_config = BaseCfg
     atr_effective: float | None = None
-    atr_source: Literal["h4", "h1_proxy", "d1_proxy", "synthetic"] | None = None
+    atr_source: Literal["h4", "h1_proxy", "d1_proxy", "synthetic",
+                     "sr_reference"] | None = None
     bb_mult: float = _SL_RAW_DEFAULT_MULT
     sl_distance_min: float | None = None
     sl_distance_raw: float | None = None
@@ -1525,12 +1548,15 @@ def _extract_rsi_list(items: list[Any]) -> list[RSIReading]:
 
 
 # ──── S/R adapter ─────────────────────────────────────────────────────────
+# OPTIMISATION BLUESTAR : \(?\s* tolère le format parenthéthé du scanner
+# (« S proche: 0.97826 (-1.65%) »), que l'ancien motif manquait (0/33 assets
+# parsés ; 33/33 avec le \(? — mesuré contre l'export réel du 2026-09-13).
 _SUP_RE: Final[re.Pattern[str]] = re.compile(
-    r"(SUR\s+support|S\s+proche|support)[:\s]+([\d.]+)\s*(([-+]?[\d.]+)\s*%)",
+    r"(SUR\s+support|S\s+proche|support)[:\s]+([\d.]+)\s*\(?\s*(([-+]?[\d.]+)\s*%)",
     re.I,
 )
 _RES_RE: Final[re.Pattern[str]] = re.compile(
-    r"(SUR\s+resistance|R\s+proche|resistance)[:\s]+([\d.]+)\s*(([-+]?[\d.]+)\s*%)",
+    r"(SUR\s+resistance|R\s+proche|resistance)[:\s]+([\d.]+)\s*\(?\s*(([-+]?[\d.]+)\s*%)",
     re.I,
 )
 _INTER_RE: Final[re.Pattern[str]] = re.compile(
@@ -1681,6 +1707,28 @@ def _build_zone_from_raw(z: dict[str, Any], current_price: float | None = None) 
         has_h4=Timeframe.H4 in tf_list,
         type=zone_type,
         strength=zone_strength,
+        # OPTIMISATION BLUESTAR : propagation des champs calibrés v2.1
+        # (absents -> None, jamais 0 ou "", pour ne pas imiter une valeur).
+        zone_id=safe_str(z.get("zone_id"), max_len=64) or None,
+        zone_id_stable=safe_str(z.get("zone_id_stable"), max_len=64) or None,
+        distance_atr=safe_float(z.get("distance_atr")),
+        distance_atr_edge=safe_float(z.get("distance_atr_edge")),
+        reach_probability=safe_float(z.get("reach_probability")),
+        reach_is_discriminant=(
+            None if z.get("reach_is_discriminant") is None
+            else _coerce_bool(z.get("reach_is_discriminant"))
+        ),
+        has_synthetic_level=(
+            None if z.get("has_synthetic_level") is None
+            else _coerce_bool(z.get("has_synthetic_level"))
+        ),
+        atr_reference=safe_float(z.get("atr_reference")),
+        nb_tf=(
+            safe_int(z.get("Nb TF") if z.get("Nb TF") is not None
+                     else z.get("nb_tf"), default=0)
+            if (z.get("Nb TF") is not None or z.get("nb_tf") is not None)
+            else None
+        ),
     )
 
 
@@ -2352,6 +2400,28 @@ class MergeEngine:
         """Compute ATR cascade output, conviction cap, nearest aligned zone
         and primary hot zone. Pure, deterministic, no I/O."""
         atr_eff, atr_src = compute_atr_effective(asset.mtf, asset.current_price)
+        # OPTIMISATION BLUESTAR (m9, périmètre S/R uniquement) : quand la
+        # cascade retombe sur "synthetic" (prix × 0,5 %), préférer l'ATR de
+        # référence RÉEL que le scanner S/R porte déjà sur chaque zone
+        # (atr_reference = ATR diurne du TF de formation ; médiane des zones).
+        # MESURÉ le 2026-09-14 sur la sortie de production : la médiane réelle
+        # vaut 2,01× le synthétique -> distances normalisées, repli TP1 (×2 ATR)
+        # et badges de conviction calés sur un ATR faux de moitié.
+        # Si un AUTRE scanner fournit l'ATR (h4/h1_proxy/d1_proxy), cette
+        # branche ne s'exécute JAMAIS : zéro impact sur le reste du pipeline.
+        if atr_src == "synthetic" and asset.zones:
+            _refs = sorted(
+                z.atr_reference for z in asset.zones
+                if getattr(z, "atr_reference", None) is not None
+                and _is_finite_number(z.atr_reference) and z.atr_reference > 0
+            )
+            if _refs:
+                _n = len(_refs)
+                _med = (
+                    _refs[_n // 2] if _n % 2
+                    else (_refs[_n // 2 - 1] + _refs[_n // 2]) / 2.0
+                )
+                atr_eff, atr_src = round(float(_med), 8), "sr_reference"
         asset.atr_effective = atr_eff
         asset.atr_source = atr_src
         cap = _ATR_CONVICTION_CAP.get(atr_src) if atr_src is not None else None
@@ -3738,7 +3808,7 @@ class IngestedFile:
 
 
 def _zone_dict(z: SRZone) -> dict[str, Any]:
-    return {
+    out = {
         "side": z.side,
         "level": z.level,
         "score": z.score,
@@ -3753,6 +3823,16 @@ def _zone_dict(z: SRZone) -> dict[str, Any]:
         "type": z.type,  # "Support" | "Resistance" | "Pivot"
         "strength": z.strength,  # Force Totale from SR scanner
     }
+    # OPTIMISATION BLUESTAR : ne sérialise les champs calibrés que si la
+    # source les fournit — les zones des AUTRES scanners gardent leur format
+    # sortant bit à bit (rétro-compat stricte de la sortie merge).
+    for _k in ("zone_id", "zone_id_stable", "distance_atr", "distance_atr_edge",
+               "reach_probability", "reach_is_discriminant",
+               "has_synthetic_level", "atr_reference", "nb_tf"):
+        _v = getattr(z, _k, None)
+        if _v is not None:
+            out[_k] = _v
+    return out
 
 
 def _extract_source_meta(payload: Any) -> dict[str, Any]:
@@ -3761,7 +3841,9 @@ def _extract_source_meta(payload: Any) -> dict[str, Any]:
     sm: dict[str, Any] = {}
     if not isinstance(payload, dict):
         return sm
-    for k in ("scanner_version", "rule_version"):
+    # OPTIMISATION BLUESTAR : run_id/schema_version racine propagés —
+    # l'empreinte d'artefact du scanner (RUNID-2) traverse enfin le merge.
+    for k in ("scanner_version", "rule_version", "run_id", "schema_version"):
         v = payload.get(k)
         if isinstance(v, (str, int, float)):
             sm[k] = str(v)
@@ -4129,6 +4211,7 @@ _ATR_SRC_BADGE: Final[dict[str, str]] = {
     "h1_proxy": "🟡H1×1.8",
     "d1_proxy": "🟠D1×0.25",
     "synthetic": "🔴SYNTH",
+    "sr_reference": "📐ATR-sr",
 }
 
 
@@ -4298,11 +4381,17 @@ def _render_hot_zones(hot: list[dict[str, Any]]) -> None:
     with st.expander(f"🔥 Zones chaudes ({len(hot)})"):
         for z in hot[:50]:
             dist = safe_float(z.get("distance_pct")) or 0.0
+            _cal = ""
+            if z.get("distance_atr") is not None:
+                _cal += f", {z['distance_atr']}×ATR"
+            if z.get("reach_probability") is not None:
+                _cal += f", portée {z['reach_probability']:.0%}"
+            _synth = " ⚠️synthétique" if z.get("has_synthetic_level") else ""
             st.markdown(
                 f"-  `{z.get('symbol', '?')}`  {z.get('side', '?')}  "
                 f"@  `{z.get('level')}` "
                 f"(d={dist:.2f}%, sc={z.get('weighted_score')},  "
-                f"TF={_hot_zone_tags(z)}, {z.get('status')})  "
+                f"TF={_hot_zone_tags(z)}, {z.get('status')}){_cal}{_synth}  "
                 f"{z.get('alert') or ''}"
             )
 
