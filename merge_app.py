@@ -49,7 +49,10 @@ prémisse d'audit fausse, décision amont GPS) ; 3.6.1 — nettoyage code
 identique à 3.6.0 (JSON prouvé) ; 3.6.2 — adaptateur GPS : enveloppe
 {"meta", "assets"} (export BLUESTAR GPS V9.2.0) acceptée, liste plate
 toujours valide ; source_meta enrichi (scanner, env, snapshot_to,
-completeness, run_tradable).
+completeness, run_tradable) ; 3.6.3 — champs de zone sortants additifs ;
+3.6.4 — gardes d'ingestion artefact RSI 3.0.0 (export_status ERROR,
+complétude, fraîcheur generated_at, majeure de schéma) + scan_id et
+complétude détaillée dans source_meta ; additif, calculs inchangés.
 """
 from __future__ import annotations
 
@@ -108,11 +111,20 @@ MAX_HOT_ZONES_OUT: Final[int] = 500
 MAX_CORRELATION_GROUP_SIZE: Final[int] = 50
 MAX_PROVENANCE_ENTRIES: Final[int] = 32
 MAX_DIAGNOSTICS: Final[int] = 5_000
+
+# ── Gardes d'ingestion artefact RSI (audit 22/09/2026, schéma 3.0.0) ──────
+# Périmètre : diagnostics + source_meta UNIQUEMENT — aucun effet sur les
+# calculs, l'adaptation ou la fusion. Seuils configurables ici.
+RSI_EXPECTED_SCHEMA_MAJOR: Final[int] = 3
+RSI_MIN_COMPLETION_RATIO: Final[float] = 0.95
+RSI_MAX_ARTIFACT_AGE_HOURS: Final[float] = 12.0
 MAX_TP_ZONES: Final[int] = 3
 
 # OPTIMISATION BLUESTAR : bump 3.6.2 -> 3.6.3 (champs de zone SORTANTS
 # additifs conditionnels, aucun champ retiré ; min schéma 3.4.0 inchangé).
-SCHEMA_VERSION: Final[str] = "3.6.3"
+# Bump 3.6.3 -> 3.6.4 : gardes d'ingestion artefact RSI 3.0.0 (diagnostics +
+# source_meta enrichi ; additif, aucun calcul modifié, min schéma inchangé).
+SCHEMA_VERSION: Final[str] = "3.6.4"
 
 # ── HTF alignment thresholds (configurable via these constants) ──
 # Timeframes considered "high timeframe" for bias alignment.
@@ -3835,6 +3847,89 @@ def _zone_dict(z: SRZone) -> dict[str, Any]:
     return out
 
 
+def _rsi_ingest_guards(payload: Any, file_name: str) -> list[Diagnostic]:
+    """Gardes d'ingestion propres à l'artefact du scanner RSI (schéma 3.0.0).
+
+    Périmètre strict : produit des DIAGNOSTICS, jamais de modification des
+    données — les calculs, l'adaptation et la fusion sont inchangés. Ne
+    s'applique qu'aux documents en forme {"meta": dict, "instruments": list}
+    ; les enveloppes des autres scanners (GPS/SR/CHoCH) sont ignorées.
+    """
+    if not isinstance(payload, dict):
+        return []
+    meta = payload.get("meta")
+    if not isinstance(meta, dict) or not isinstance(payload.get("instruments"), list):
+        return []
+    stage = "ingest.rsi"
+    out: list[Diagnostic] = []
+    # 1) export_status : un document d'erreur du scanner ne doit plus être
+    # ingéré en silence (sinon instruments vides -> "unknown" muet).
+    status = meta.get("export_status")
+    if isinstance(status, str) and status.upper() == "ERROR":
+        out.append(Diagnostic(
+            stage, Severity.ERROR, "rsi_export_error",
+            f"{file_name}: le scanner a exporté un document d'erreur "
+            "(export_status=ERROR) — contenu dégradé, décisions à risque.",
+            {"error": str(meta.get("error") or ""),
+             "scan_id": str(meta.get("scan_id") or "")},
+        ))
+    # 2) Complétude : couverture partielle de l'univers attendu.
+    comp = meta.get("completeness")
+    ratio: float | None = None
+    ctx: dict[str, Any] = {}
+    if isinstance(comp, dict):
+        rv = comp.get("completion_ratio")
+        if isinstance(rv, (int, float)) and not isinstance(rv, bool):
+            ratio = float(rv)
+            ctx = {"completion_ratio": ratio,
+                   "cells_ok": comp.get("cells_ok"),
+                   "cells_expected": comp.get("cells_expected")}
+    elif isinstance(comp, (int, float)) and not isinstance(comp, bool):
+        ratio = float(comp)
+        ctx = {"completion_ratio": ratio}
+    if ratio is not None and ratio < RSI_MIN_COMPLETION_RATIO:
+        out.append(Diagnostic(
+            stage, Severity.WARNING, "rsi_incomplete",
+            f"{file_name}: scan RSI incomplet ({ratio:.1%} des cellules "
+            f"attendues, seuil {RSI_MIN_COMPLETION_RATIO:.0%}) — univers partiel.",
+            ctx,
+        ))
+    # 3) Fraîcheur : artefact trop ancien (scanner arrêté, publication figée).
+    gen = meta.get("generated_at")
+    if isinstance(gen, str) and gen:
+        try:
+            ts = datetime.fromisoformat(gen.replace("Z", "+00:00"))
+        except ValueError:
+            ts = None  # horodatage illisible : pas de fausse alerte
+        if ts is not None:
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            age_h = (datetime.now(timezone.utc) - ts).total_seconds() / 3600.0
+            if age_h > RSI_MAX_ARTIFACT_AGE_HOURS:
+                out.append(Diagnostic(
+                    stage, Severity.WARNING, "rsi_stale_artifact",
+                    f"{file_name}: artefact RSI généré il y a {age_h:.1f} h "
+                    f"(seuil {RSI_MAX_ARTIFACT_AGE_HOURS:.0f} h) — vérifier "
+                    "qu'un scan récent a bien été publié.",
+                    {"generated_at": gen, "age_hours": round(age_h, 2)},
+                ))
+    # 4) Version de schéma : majeure attendue RSI_EXPECTED_SCHEMA_MAJOR.
+    sv = meta.get("schema_version")
+    if isinstance(sv, str) and sv:
+        try:
+            major = int(sv.split(".", 1)[0])
+        except ValueError:
+            major = -1
+        if major != RSI_EXPECTED_SCHEMA_MAJOR:
+            out.append(Diagnostic(
+                stage, Severity.WARNING, "rsi_schema_version",
+                f"{file_name}: schéma RSI « {sv} » ≠ majeure attendue "
+                f"{RSI_EXPECTED_SCHEMA_MAJOR} — interprétation non garantie.",
+                {"schema_version": sv},
+            ))
+    return out
+
+
 def _extract_source_meta(payload: Any) -> dict[str, Any]:
     """v3.5.3 — traçabilité: versions scanner/règle, schéma, périodes et
     seuils RSI déclarés par la source (aucun effet sur les calculs)."""
@@ -3851,7 +3946,7 @@ def _extract_source_meta(payload: Any) -> dict[str, Any]:
     if isinstance(pm, dict):
         for k in ("scanner_version", "rule_version", "schema_version",
                   "rsi_period", "atr_period", "generated_at", "scanner",
-                  "env", "account_hash", "snapshot_to"):
+                  "env", "account_hash", "snapshot_to", "scan_id"):
             v = pm.get(k)
             if isinstance(v, str):
                 sm[k] = v
@@ -3863,6 +3958,17 @@ def _extract_source_meta(payload: Any) -> dict[str, Any]:
         v = pm.get("completeness")
         if isinstance(v, (int, float)) and not isinstance(v, bool):
             sm["completeness"] = float(v)
+        elif isinstance(v, dict):
+            # Schéma RSI 3.0.0 : completeness est un objet détaillé — on
+            # n'en aplanit que les scalaires de synthèse (traçabilité).
+            rv = v.get("completion_ratio")
+            if isinstance(rv, (int, float)) and not isinstance(rv, bool):
+                sm["completeness"] = float(rv)
+            for kc in ("cells_ok", "cells_failed", "cells_expected",
+                       "universe_complete"):
+                vv = v.get(kc)
+                if isinstance(vv, bool) or isinstance(vv, (int, float)):
+                    sm[f"completeness_{kc}"] = vv
         v = pm.get("run_tradable")
         if isinstance(v, bool):
             sm["run_tradable"] = v
@@ -3927,6 +4033,10 @@ class MergePipeline:
         source_meta: dict[str, Any] = {}
         unknown_count = 0
         for f in files:
+            # Gardes d'ingestion RSI 3.0.0 AVANT adaptation : un document
+            # d'erreur (instruments vides) tomberait sinon dans "unknown"
+            # sans jamais être signalé. Additif : diagnostics uniquement.
+            diags.extend(_rsi_ingest_guards(f.payload, f.name))
             name, r = self._registry.adapt(f.payload)
             diags.extend(r.diagnostics)
             if name == "unknown" or not r.value:
