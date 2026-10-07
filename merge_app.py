@@ -1305,7 +1305,12 @@ class GPSAdapter(ScannerAdapter):
         try:
             # pass raw Age D1 to MTFConsensus — the _coerce_age_d1 validator
             # handles "N/A" / None → None (instead of silently coercing to 0).
-            raw_age_d1 = raw.get("Age D1") or raw.get("AgeD1")
+            # NOTE: `or` would treat the valid value 0 (D1 trend changed
+            # TODAY — freshest signal) as falsy and fall through to AgeD1,
+            # silently dropping it to None. Use explicit None checks instead.
+            raw_age_d1 = raw.get("Age D1")
+            if raw_age_d1 is None:
+                raw_age_d1 = raw.get("AgeD1")
             mtf = MTFConsensus(
                 pct=pct,
                 direction=direction,
